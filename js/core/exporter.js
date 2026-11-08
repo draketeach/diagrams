@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: CC0-1.0
 // Export a rendered TikZJax SVG as SVG / PNG files or to the clipboard.
 //
 // TikZJax draws text with Computer Modern web fonts referenced from its

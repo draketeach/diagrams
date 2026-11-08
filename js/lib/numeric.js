@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: CC0-1.0
 // Numerical helpers for function graphs: roots, turning points, rounding.
 
 export function bisect(pred, a, b, iterations = 60) {

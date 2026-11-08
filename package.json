@@ -2,6 +2,8 @@
   "name": "tikz-diagrams",
   "version": "0.1.0",
   "private": true,
+  "license": "CC0-1.0",
+  "repository": "github:draketeach/diagrams",
   "description": "Build exam-style TikZ diagrams from options, preview with TikZJax, export PNG/SVG.",
   "type": "module",
   "scripts": {

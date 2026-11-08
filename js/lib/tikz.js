@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: CC0-1.0
 // Small helpers for writing TikZ code.
 
 /** Number formatted for TikZ coordinates (max 4 dp, no trailing zeros). */

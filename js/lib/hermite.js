@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: CC0-1.0
 // Smooth cubic Hermite curves through points, tuned for exam-style sketches.
 //
 // - A point higher (or lower) than both neighbours is a turning point and

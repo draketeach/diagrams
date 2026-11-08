@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: CC0-1.0
 // Renders TikZ code to an inline <svg> using TikZJax.
 //
 // Each render runs inside a fresh hidden iframe. TikZJax only processes

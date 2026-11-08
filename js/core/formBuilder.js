@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: CC0-1.0
 // Builds an options form from a declarative schema.
 //
 // Field types:

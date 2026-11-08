@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: CC0-1.0
 // Generates example diagrams and compiles them with a local pdflatex
 // (if installed) to check the TikZ is valid. Output goes to tests/out/.
 // Run: node tests/compile-examples.js

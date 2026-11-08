@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: CC0-1.0
 // Unit tests for the pure (non-DOM) modules. Run: node tests/run-tests.js
 import assert from 'node:assert/strict';
 import { parseExpression, parseConstant } from '../js/lib/mathParser.js';

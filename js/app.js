@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: CC0-1.0
 // Page wiring: diagram picker -> options form -> code box -> preview -> export.
 // All of the real work lives in js/core (shared) and js/diagrams (per type).
 

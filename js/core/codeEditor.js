@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: CC0-1.0
 // Minimal editable code box (a textarea with a few conveniences).
 // Ctrl/Cmd+Enter calls onRun; Tab inserts two spaces.
 

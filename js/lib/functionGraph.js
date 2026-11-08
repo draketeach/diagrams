@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: CC0-1.0
 // Shared toolkit for "function graph" diagram modules (polynomials now;
 // trig, exponential, log, hyperbola, ... later).
 //

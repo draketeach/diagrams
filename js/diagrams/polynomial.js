@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: CC0-1.0
 // Polynomial graph diagram module.
 //
 // Four ways to define the curve:

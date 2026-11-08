@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: CC0-1.0
 // Helpers for turning the code in the code box into the different forms
 // we need: TikZJax input, a standalone .tex document, or just the picture.
 

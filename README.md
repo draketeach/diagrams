@@ -1,4 +1,8 @@
-# TikZ Diagrams for Exams
+# diagrams — TikZ Diagrams for Exams
+
+[![License: CC0-1.0](https://img.shields.io/badge/License-CC0_1.0-lightgrey.svg)](http://creativecommons.org/publicdomain/zero/1.0/)
+
+Mathematical diagrams with TikZ. Live site (once GitHub Pages is on): https://draketeach.github.io/diagrams/
 
 A static website for building exam-style maths diagrams. Choose options, get
 editable TikZ code, see it rendered live with [TikZJax](https://tikzjax.com),
@@ -108,3 +112,13 @@ The schema field types are `group`, `select`, `number`, `text`, `textarea` and
   tikzjax.com. If that download is blocked, the image uses a fallback font and
   the site shows a warning.
 - PNGs carry their dpi, so Word/Google Docs insert them at the correct physical size.
+
+## License
+
+[CC0 1.0 Universal](LICENSE). To the extent possible under law, the author has
+waived all copyright and related rights to this work. Every source file has an
+`SPDX-License-Identifier: CC0-1.0` header. The TikZ code and images this site
+generates are also yours to use without restriction.
+
+TikZJax itself is loaded from tikzjax.com and is not part of this repository.
+Its license is its own.

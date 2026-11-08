@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: CC0-1.0
 // Global configuration for the TikZ Diagrams site.
 //
 // TikZJax is loaded from tikzjax.com by default. The public v1 build has the

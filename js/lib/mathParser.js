@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: CC0-1.0
 // Small maths expression parser shared by function-graph modules.
 //
 //   const e = parseExpression('2x^3 - 3sin(x) + 1/2');

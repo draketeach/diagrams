@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: CC0-1.0
 // Diagram type registry.
 //
 // Every diagram type is a plain object ("diagram module") with this shape:
