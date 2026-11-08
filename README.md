@@ -21,7 +21,8 @@ The first diagram type is the **Polynomial graph**, which can be defined in four
 | Sketch through points | `x, y [, label]` per line | Uses your values or custom labels such as `a` |
 
 You can toggle x-/y-intercept labels, tick marks at the intercepts, evenly spaced
-scale ticks (optionally numbered) on either axis, turning points (coordinates, or
+scale ticks (optionally numbered) on either axis, custom ticks at chosen values
+(e.g. `3`, `5/2`, `pi`, or `3:a` for a custom label), turning points (coordinates, or
 dashed lines to the axes), dots, the equation, the axis labels, the origin `O`,
 arrowheads, line widths and font size.
 

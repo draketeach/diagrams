@@ -8,6 +8,7 @@
 
 import { bisect, derivative, niceLatex, niceRound } from './numeric.js';
 import { n, pt, arrowSpec, mathLabel, LINE_WIDTHS, ARROW_TIPS, FONT_SIZES } from './tikz.js';
+import { parseConstant } from './mathParser.js';
 
 // ---------------------------------------------------------------- schema
 
@@ -15,6 +16,7 @@ export function windowFields() {
   return {
     type: 'group',
     label: 'Window & size',
+    collapsed: true,
     fields: [
       {
         type: 'select',
@@ -41,8 +43,9 @@ export function axesFields() {
   return {
     type: 'group',
     label: 'Axes',
+    collapsed: true,
     fields: [
-      { type: 'select', key: 'axisArrow', label: 'Axis arrowheads', default: 'stealth', options: ARROW_TIPS },
+      { type: 'select', key: 'axisArrow', label: 'Axis arrowheads', default: 'latex', options: ARROW_TIPS },
       { type: 'select', key: 'axisWidth', label: 'Axis line width', default: 'thin', options: LINE_WIDTHS },
       { type: 'text', key: 'xAxisLabel', label: 'x-axis label', default: 'x' },
       {
@@ -91,6 +94,28 @@ export function axesFields() {
         showIf: (v) => v.yScaleTicks,
       },
       { type: 'checkbox', key: 'yScaleNumbers', label: 'Number the y ticks', default: true, showIf: (v) => v.yScaleTicks },
+      {
+        type: 'text',
+        key: 'xCustomTicks',
+        label: 'Custom x ticks',
+        default: '',
+        placeholder: 'e.g. 3, 5/2, pi',
+        help: 'Comma separated. Add a label after a colon, e.g. 3:a or 2pi:2\\pi.',
+      },
+      {
+        type: 'text',
+        key: 'yCustomTicks',
+        label: 'Custom y ticks',
+        default: '',
+        placeholder: 'e.g. 12, -4',
+      },
+      {
+        type: 'checkbox',
+        key: 'customTickLabels',
+        label: 'Label custom ticks',
+        default: true,
+        showIf: (v) => !!(v.xCustomTicks || v.yCustomTicks),
+      },
     ],
   };
 }
@@ -116,13 +141,14 @@ export function curveStyleFields({ includeMethod = true } = {}) {
       { type: 'number', key: 'samples', label: 'Samples', default: 100, min: 10, max: 400, step: 10 }
     );
   }
-  return { type: 'group', label: 'Curve style', fields };
+  return { type: 'group', label: 'Curve style', collapsed: true, fields };
 }
 
 export function labelFields() {
   return {
     type: 'group',
     label: 'Labels',
+    collapsed: true,
     fields: [
       { type: 'checkbox', key: 'labelX', label: 'Label x-intercepts', default: true },
       {
@@ -528,6 +554,70 @@ export function drawScaleTicks(b, win, values, { skipX = [], skipY = [] } = {}) 
   }
   if (win.xmin <= 0 && win.xmax >= 0) {
     axis(values.yScaleTicks, win.ymin, win.ymax, values.yStep, skipY, values.yScaleNumbers, 'y');
+  }
+  return warnings;
+}
+
+// ---------------------------------------------------------------- custom ticks
+
+/** Parse "3, 5/2, pi:a" into [{ value, latex }]. */
+export function parseTickList(src, axisName) {
+  return String(src ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((item) => {
+      const i = item.indexOf(':');
+      const valueText = i >= 0 ? item.slice(0, i).trim() : item;
+      const label = i >= 0 ? item.slice(i + 1).trim() : null;
+      let c;
+      try {
+        c = parseConstant(valueText);
+      } catch (e) {
+        throw new Error(`Could not read custom ${axisName} tick "${item}": ${e.message}`);
+      }
+      return { value: c.value, latex: label ?? c.latex };
+    });
+}
+
+/**
+ * Ticks at chosen values: below the x-axis, left of the y-axis.
+ * Labels that would repeat an existing label (skipX / skipY) are left off.
+ */
+export function drawCustomTicks(b, win, values, { skipX = [], skipY = [] } = {}) {
+  const warnings = [];
+  const width = values.axisWidth || 'thin';
+  const near = (v, list) => list.some((u) => Math.abs(u - v) < 1e-9);
+  const xs = parseTickList(values.xCustomTicks, 'x');
+  const ys = parseTickList(values.yCustomTicks, 'y');
+  const lines = [];
+  if (xs.length && win.ymin <= 0 && win.ymax >= 0) {
+    for (const t of xs) {
+      if (t.value < win.xmin || t.value > win.xmax) {
+        warnings.push(`Custom x tick ${t.latex} is outside the axes range.`);
+        continue;
+      }
+      lines.push(`\\draw[${width}] ${pt(t.value, 0)} -- ++(0,-3pt);`);
+      if (values.customTickLabels && Math.abs(t.value) > 1e-12 && !near(t.value, skipX)) {
+        lines.push(`\\node[anchor=north, inner sep=2pt, yshift=-2pt] at ${pt(t.value, 0)} {${mathLabel(t.latex)}};`);
+      }
+    }
+  }
+  if (ys.length && win.xmin <= 0 && win.xmax >= 0) {
+    for (const t of ys) {
+      if (t.value < win.ymin || t.value > win.ymax) {
+        warnings.push(`Custom y tick ${t.latex} is outside the axes range.`);
+        continue;
+      }
+      lines.push(`\\draw[${width}] ${pt(0, t.value)} -- ++(-3pt,0);`);
+      if (values.customTickLabels && Math.abs(t.value) > 1e-12 && !near(t.value, skipY)) {
+        lines.push(`\\node[anchor=east, inner sep=2pt, xshift=-2pt] at ${pt(0, t.value)} {${mathLabel(t.latex)}};`);
+      }
+    }
+  }
+  if (lines.length) {
+    b.comment('custom ticks');
+    lines.forEach((l) => b.add(l));
   }
   return warnings;
 }

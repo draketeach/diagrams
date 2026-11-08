@@ -29,6 +29,7 @@ import {
   drawTurningPoints,
   drawEquation,
   drawScaleTicks,
+  drawCustomTicks,
 } from '../lib/functionGraph.js';
 
 const MODES = [
@@ -282,6 +283,12 @@ function generateFormula(values) {
       skipY: values.labelY ? [f(0)] : [],
     })
   );
+  warnings.push(
+    ...drawCustomTicks(b, win, values, {
+      skipX: values.labelX ? roots.map((r) => r.x) : [],
+      skipY: values.labelY ? [f(0)] : [],
+    })
+  );
   drawCurve(b, pieces, values, { pgfExpr: model.pgf, f, method });
   drawXIntercepts(b, roots, f, values, win);
   drawYIntercept(b, f, values, win);
@@ -358,6 +365,12 @@ function generateSketch(values) {
   warnings.push(...drawAxes(b, win, values));
   warnings.push(
     ...drawScaleTicks(b, win, values, {
+      skipX: [...(values.labelX ? roots.map((r) => r.x) : []), ...custom.filter((p) => Math.abs(p.y) < 1e-12).map((p) => p.x)],
+      skipY: yPoint && values.labelY ? [yPoint.y] : [],
+    })
+  );
+  warnings.push(
+    ...drawCustomTicks(b, win, values, {
       skipX: [...(values.labelX ? roots.map((r) => r.x) : []), ...custom.filter((p) => Math.abs(p.y) < 1e-12).map((p) => p.x)],
       skipY: yPoint && values.labelY ? [yPoint.y] : [],
     })

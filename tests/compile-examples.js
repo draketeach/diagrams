@@ -21,6 +21,7 @@ const examples = {
   'scale-ticks': { mode: 'roots', labelY: true, yTick: true, xScaleTicks: true, yScaleTicks: true },
   'scale-ticks-steps': { mode: 'expression', expression: 'x^3 - 7x + 6', yTick: true, xScaleTicks: true, xStep: 0.5, xScaleNumbers: false, yScaleTicks: true, yStep: 2 },
   'near-origin-x': { mode: 'expression', expression: '-(x+0.3)^2 + 4', tpLabel: 'axes' },
+  'custom-ticks': { mode: 'roots', xCustomTicks: '3, -2, 5/2:a', yCustomTicks: '12, 20, -10:k', labelY: true },
   'sketch-default': { mode: 'sketch' },
   'sketch-custom': { mode: 'sketch', points: '-3.5,-6\n-3,0,a\n-1,4\n0,3\n1.5,0,b\n2.5,-2\n3.2,4', labelY: true },
 };
