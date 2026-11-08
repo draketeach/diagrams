@@ -144,6 +144,45 @@ export function curveStyleFields({ includeMethod = true } = {}) {
   return { type: 'group', label: 'Curve style', collapsed: true, fields };
 }
 
+export function curvePointFields() {
+  return {
+    type: 'group',
+    label: 'Points on curve',
+    collapsed: true,
+    fields: [
+      {
+        type: 'text',
+        key: 'curvePoints',
+        label: 'x-values of points',
+        default: '',
+        placeholder: 'e.g. 3, -1:P, 1/2:Q',
+        help: 'Each point is drawn on the curve at that x-value. Add a name after a colon, e.g. 3:P.',
+      },
+      {
+        type: 'select',
+        key: 'curvePointLabel',
+        label: 'Label',
+        default: 'coords',
+        options: [
+          { value: 'coords', label: 'Coordinates, e.g. (3, 12)' },
+          { value: 'nameCoords', label: 'Name and coordinates, e.g. P(3, 12)' },
+          { value: 'name', label: 'Name only, e.g. P' },
+          { value: 'axes', label: 'Dashed lines, values on the axes' },
+          { value: 'none', label: 'No label' },
+        ],
+      },
+      {
+        type: 'checkbox',
+        key: 'curvePointLines',
+        label: 'Dashed lines to the axes',
+        default: false,
+        showIf: (v) => v.curvePointLabel !== 'axes',
+      },
+      { type: 'checkbox', key: 'curvePointDots', label: 'Dots', default: true },
+    ],
+  };
+}
+
 export function labelFields() {
   return {
     type: 'group',
@@ -617,6 +656,89 @@ export function drawCustomTicks(b, win, values, { skipX = [], skipY = [] } = {})
   }
   if (lines.length) {
     b.comment('custom ticks');
+    lines.forEach((l) => b.add(l));
+  }
+  return warnings;
+}
+
+// ---------------------------------------------------------------- points on curve
+
+/** Parse "3, -1:P" into [{ x, xLatex, name }]. */
+export function parseCurvePoints(src) {
+  return String(src ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((item) => {
+      const i = item.indexOf(':');
+      const valueText = i >= 0 ? item.slice(0, i).trim() : item;
+      const name = i >= 0 ? item.slice(i + 1).trim() : '';
+      let c;
+      try {
+        c = parseConstant(valueText);
+      } catch (e) {
+        throw new Error(`Could not read point "${item}": ${e.message}`);
+      }
+      return { x: c.value, xLatex: c.latex, name };
+    });
+}
+
+/** Dots (and labels / dashed lines) at chosen x-values on the curve f. */
+export function drawCurvePoints(b, f, win, values, { xUnit = 1, yUnit = 1 } = {}) {
+  const pts = parseCurvePoints(values.curvePoints);
+  if (!pts.length) return [];
+  const warnings = [];
+  const dp = values.dp ?? 2;
+  const width = values.axisWidth || 'thin';
+  const style = values.curvePointLabel;
+  const lines = [];
+  for (const p of pts) {
+    const y = f(p.x);
+    if (!isFinite(y)) {
+      warnings.push(`The curve is not defined at x = ${p.xLatex}.`);
+      continue;
+    }
+    if (p.x < win.xmin || p.x > win.xmax || y < win.ymin || y > win.ymax) {
+      warnings.push(`The point at x = ${p.xLatex} is outside the axes range.`);
+      continue;
+    }
+    const yLatex = niceLatex(y, dp, values.exact);
+    if (style === 'axes' || values.curvePointLines) {
+      lines.push(`\\draw[dashed, ${width}] ${pt(p.x, 0)} -- ${pt(p.x, y)} -- ${pt(0, y)};`);
+    }
+    if (style === 'axes') {
+      const nearO = (cm) => values.originLabel && Math.abs(cm) < 0.6;
+      if (Math.abs(p.x) > 1e-9 && Math.abs(y) > 1e-9) {
+        let anchor = y > 0 ? 'north' : 'south';
+        if (y > 0 && p.x < 0 && nearO(p.x * xUnit)) anchor = 'south east';
+        lines.push(`\\node[anchor=${anchor}, inner sep=2pt] at ${pt(p.x, 0)} {${mathLabel(p.xLatex)}};`);
+        let yAnchor = p.x > 0 ? 'east' : 'west';
+        if (p.x > 0 && y < 0 && nearO(y * yUnit)) yAnchor = 'north west';
+        lines.push(`\\node[anchor=${yAnchor}, inner sep=2pt] at ${pt(0, y)} {${mathLabel(yLatex)}};`);
+      }
+    }
+    if (values.curvePointDots) lines.push(`\\fill ${pt(p.x, y)} circle[radius=1.3pt];`);
+    let text = '';
+    const coords = `(${p.xLatex}, ${yLatex})`;
+    if (style === 'coords') text = coords;
+    else if (style === 'nameCoords') text = p.name ? `${p.name}${coords}` : coords;
+    else if (style === 'name' || style === 'axes') text = p.name;
+    if (text) {
+      // Put the label where the curve isn't: look at the curve about 0.6 cm
+      // either side. Near a minimum -> below; near a maximum -> above;
+      // otherwise above, on the side the curve is not heading.
+      const d = 0.6 / xUnit;
+      const yl = f(p.x - d);
+      const yr = f(p.x + d);
+      let anchor;
+      if (yl > y && yr > y) anchor = 'north';
+      else if (yl < y && yr < y) anchor = 'south';
+      else anchor = derivative(f, p.x) > 0 ? 'south east' : 'south west';
+      lines.push(`\\node[anchor=${anchor}, inner sep=3pt] at ${pt(p.x, y)} {${mathLabel(text)}};`);
+    }
+  }
+  if (lines.length) {
+    b.comment('points on curve');
     lines.forEach((l) => b.add(l));
   }
   return warnings;

@@ -30,6 +30,8 @@ import {
   drawEquation,
   drawScaleTicks,
   drawCustomTicks,
+  curvePointFields,
+  drawCurvePoints,
 } from '../lib/functionGraph.js';
 
 const MODES = [
@@ -96,6 +98,7 @@ const schema = [
   axesFields(),
   curveStyleFields(),
   labelFields(),
+  curvePointFields(),
 ];
 
 // ------------------------------------------------------------------ helpers
@@ -293,6 +296,7 @@ function generateFormula(values) {
   drawXIntercepts(b, roots, f, values, win);
   drawYIntercept(b, f, values, win);
   drawTurningPoints(b, tps, values, win, { xUnit, yUnit });
+  warnings.push(...drawCurvePoints(b, f, win, values, { xUnit, yUnit }));
   drawEquation(b, model.latex, f, pieces, values);
 
   return { code: b.toString([...options, fontOption(values)]), warnings };
@@ -379,6 +383,7 @@ function generateSketch(values) {
   drawXIntercepts(b, roots, f, values, win);
   if (yPoint) drawYIntercept(b, f, values, win, { latex: yPoint.yLatex, slope: slopes[pts.indexOf(yPoint)] });
   drawTurningPoints(b, tps, values, win, { xUnit, yUnit });
+  warnings.push(...drawCurvePoints(b, f, win, values, { xUnit, yUnit }));
 
   if (custom.length) {
     b.comment('custom labels');

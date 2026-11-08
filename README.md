@@ -22,7 +22,8 @@ The first diagram type is the **Polynomial graph**, which can be defined in four
 
 You can toggle x-/y-intercept labels, tick marks at the intercepts, evenly spaced
 scale ticks (optionally numbered) on either axis, custom ticks at chosen values
-(e.g. `3`, `5/2`, `pi`, or `3:a` for a custom label), turning points (coordinates, or
+(e.g. `3`, `5/2`, `pi`, or `3:a` for a custom label), points on the curve at chosen
+x-values (e.g. `2:P` labelled P(2, −6), or dashed lines with values on the axes), turning points (coordinates, or
 dashed lines to the axes), dots, the equation, the axis labels, the origin `O`,
 arrowheads, line widths and font size.
 
