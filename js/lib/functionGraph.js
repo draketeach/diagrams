@@ -410,7 +410,7 @@ export function drawYIntercept(b, f, values, win, { latex, slope } = {}) {
 }
 
 /** Turning points: [{ x, y, kind, latex? }] */
-export function drawTurningPoints(b, tps, values, win) {
+export function drawTurningPoints(b, tps, values, win, { xUnit = 1, yUnit = 1 } = {}) {
   const style = values.tpLabel;
   if (style === 'none' && !values.tpDots) return;
   const dp = values.dp ?? 2;
@@ -423,11 +423,20 @@ export function drawTurningPoints(b, tps, values, win) {
     const onAxis = Math.abs(p.y) < 1e-9 && values.labelX;
     if (style === 'axes' && !onAxis) {
       lines.push(`\\draw[dashed, ${values.axisWidth || 'thin'}] ${pt(p.x, 0)} -- ${pt(p.x, p.y)} -- ${pt(0, p.y)};`);
+      // The origin label "O" sits below-left of the origin. A value label that
+      // would land on it goes to the other side of its axis instead.
+      const nearO = (cm) => values.originLabel && Math.abs(cm) < 0.6;
       if (Math.abs(p.x) > 1e-9) {
-        lines.push(`\\node[anchor=${p.y > 0 ? 'north' : 'south'}, inner sep=2pt] at ${pt(p.x, 0)} {${mathLabel(xs)}};`);
+        let anchor = p.y > 0 ? 'north' : 'south';
+        // moved across: sit above the axis, just left of the dashed line
+        if (p.y > 0 && p.x < 0 && nearO(p.x * xUnit)) anchor = 'south east';
+        lines.push(`\\node[anchor=${anchor}, inner sep=2pt] at ${pt(p.x, 0)} {${mathLabel(xs)}};`);
       }
       if (Math.abs(p.y) > 1e-9) {
-        lines.push(`\\node[anchor=${p.x > 0 ? 'east' : 'west'}, inner sep=2pt] at ${pt(0, p.y)} {${mathLabel(ys)}};`);
+        let anchor = p.x > 0 ? 'east' : 'west';
+        // moved across: sit just below the dashed line rather than on it
+        if (p.x > 0 && p.y < 0 && nearO(p.y * yUnit)) anchor = 'north west';
+        lines.push(`\\node[anchor=${anchor}, inner sep=2pt] at ${pt(0, p.y)} {${mathLabel(ys)}};`);
       }
     }
     if (values.tpDots) lines.push(`\\fill ${pt(p.x, p.y)} circle[radius=1.3pt];`);

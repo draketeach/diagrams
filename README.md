@@ -114,10 +114,11 @@ The schema field types are `group`, `select`, `number`, `text`, `textarea` and
 - PNG/SVG export embeds the Computer Modern fonts by downloading them from
   tikzjax.com. If that download is blocked, the image uses a fallback font and
   the site shows a warning.
-- TikZJax's fonts show some maths-mode punctuation as the wrong symbol: `.` as ▷,
-  `,` as a hook and `/` as ◁. The renderer adds `\mathcode` fixes for these
-  before rendering. They only apply to what TikZJax renders, so copied and
-  downloaded code is unchanged and real LaTeX is unaffected.
+- TikZJax's fonts show some maths characters wrongly: `.` as ▷, `,` as a hook,
+  `/` as ◁, and the minus sign in a substitute font with the wrong width. Before
+  rendering, the site remaps `.` `,` `/` to the roman font and draws the minus as a
+  rule sized from the real minus. Copied and downloaded code is unchanged, and real
+  LaTeX is unaffected. (Details in `js/core/tikzDocument.js`.)
 - PNGs carry their dpi, so Word/Google Docs insert them at the correct physical size.
 
 ## Credits

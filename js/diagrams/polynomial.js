@@ -272,7 +272,7 @@ function generateFormula(values) {
     warnings.push('Large y-values can overflow TikZ maths. Switch "Plot method" to pre-computed coordinates if rendering fails.');
   }
 
-  const { options } = scaleOptions(win, values);
+  const { options, xUnit, yUnit } = scaleOptions(win, values);
   const b = new TikzBuilder();
   b.comment(`y = ${model.latex}`);
   warnings.push(...drawAxes(b, win, values));
@@ -285,7 +285,7 @@ function generateFormula(values) {
   drawCurve(b, pieces, values, { pgfExpr: model.pgf, f, method });
   drawXIntercepts(b, roots, f, values, win);
   drawYIntercept(b, f, values, win);
-  drawTurningPoints(b, tps, values, win);
+  drawTurningPoints(b, tps, values, win, { xUnit, yUnit });
   drawEquation(b, model.latex, f, pieces, values);
 
   return { code: b.toString([...options, fontOption(values)]), warnings };
@@ -353,7 +353,7 @@ function generateSketch(values) {
   });
   const yPoint = pts.find((p) => Math.abs(p.x) < 1e-12 && !p.label);
 
-  const { options } = scaleOptions(win, values);
+  const { options, xUnit, yUnit } = scaleOptions(win, values);
   const b = new TikzBuilder();
   warnings.push(...drawAxes(b, win, values));
   warnings.push(
@@ -365,7 +365,7 @@ function generateSketch(values) {
   drawHermite(b, pts, slopes, values);
   drawXIntercepts(b, roots, f, values, win);
   if (yPoint) drawYIntercept(b, f, values, win, { latex: yPoint.yLatex, slope: slopes[pts.indexOf(yPoint)] });
-  drawTurningPoints(b, tps, values, win);
+  drawTurningPoints(b, tps, values, win, { xUnit, yUnit });
 
   if (custom.length) {
     b.comment('custom labels');

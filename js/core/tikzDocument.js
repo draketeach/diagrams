@@ -41,17 +41,32 @@ function cleanPreamble(preamble) {
 
 // TikZJax displays text with the BaKoMa Computer Modern fonts, which keep
 // characters at their TeX positions, but it looks each character up by its
-// Unicode value. In the maths-italic font (cmmi10) a few punctuation marks
-// sit at a different position from their Unicode value, so the browser
-// shows whatever glyph is stored at the Unicode position instead:
+// Unicode value. Some maths characters therefore show the wrong glyph:
 //   .  cmmi10 58 -> Unicode 46 holds "▷"
 //   ,  cmmi10 59 -> Unicode 44 holds a hook
 //   /  cmmi10 61 -> Unicode 47 holds "◁"
-// Taking these from the roman font (cmr10), where position = Unicode, fixes
-// the display and looks identical in real LaTeX. (The comma keeps its
-// punctuation spacing: class 6.) Applied only to what TikZJax renders, so
-// copied/downloaded code stays clean.
-export const TIKZJAX_FIXES = '\\mathcode`\\.="002E \\mathcode`\\,="602C \\mathcode`\\/="002F';
+//   −  cmsy10 0  -> Unicode U+2212 is missing (BaKoMa stores it at U+00A1),
+//                   so the browser substitutes a minus from another font.
+// Fixes (TikZJax rendering only, so copied/downloaded code stays clean and
+// real LaTeX is unaffected):
+//   - take . , / from the roman font (cmr10), where position = Unicode;
+//   - draw the minus as a rule sized from the real minus at the current
+//     size: advance = the real minus's width; ink from 10.7% to 89.3% of it,
+//     centred on the maths axis, 5.1% of the width thick (cmsy10's
+//     proportions). It stays a binary operator (\mathbin), so "−3" and
+//     "x − 3" are spaced as usual. Plain TeX primitives only (TikZJax's TeX
+//     has no e-TeX).
+export const TIKZJAX_FIXES = [
+  '\\mathcode`\\.="002E \\mathcode`\\,="602C \\mathcode`\\/="002F',
+  '\\def\\tikzjaxrule#1#2{\\setbox0\\hbox{$#1\\mathchar"200$}' +
+    '\\dimen0=.10714\\wd0 \\dimen2=.78571\\wd0 \\dimen6=.02571\\wd0 ' +
+    '\\dimen4=\\fontdimen22#2 2 \\advance\\dimen4 by\\dimen6 ' +
+    '\\dimen8=-\\fontdimen22#2 2 \\advance\\dimen8 by\\dimen6 ' +
+    '\\hbox{\\kern\\dimen0\\vrule height\\dimen4 depth\\dimen8 width\\dimen2\\kern\\dimen0}}',
+  '\\def\\tikzjaxminus{\\mathbin{\\mathchoice{\\tikzjaxrule\\displaystyle\\textfont}{\\tikzjaxrule\\textstyle\\textfont}' +
+    '{\\tikzjaxrule\\scriptstyle\\scriptfont}{\\tikzjaxrule\\scriptscriptstyle\\scriptscriptfont}}}',
+  '\\begingroup\\lccode`\\~=`\\-\\lowercase{\\endgroup\\let~}\\tikzjaxminus\\mathcode`\\-="8000',
+].join('\n');
 
 /** Code suitable for TikZJax (tikz is preloaded; no \documentclass). */
 export function toTikzJaxSource(code, { supportsLibraries = false } = {}) {

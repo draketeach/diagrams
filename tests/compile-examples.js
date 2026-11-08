@@ -20,6 +20,7 @@ const examples = {
   'expression-trig-coords': { mode: 'expression', expression: '2sin(x)', plotMethod: 'coordinates', windowMode: 'manual', xmin: -7, xmax: 7, ymin: -3, ymax: 3 },
   'scale-ticks': { mode: 'roots', labelY: true, yTick: true, xScaleTicks: true, yScaleTicks: true },
   'scale-ticks-steps': { mode: 'expression', expression: 'x^3 - 7x + 6', yTick: true, xScaleTicks: true, xStep: 0.5, xScaleNumbers: false, yScaleTicks: true, yStep: 2 },
+  'near-origin-x': { mode: 'expression', expression: '-(x+0.3)^2 + 4', tpLabel: 'axes' },
   'sketch-default': { mode: 'sketch' },
   'sketch-custom': { mode: 'sketch', points: '-3.5,-6\n-3,0,a\n-1,4\n0,3\n1.5,0,b\n2.5,-2\n3.2,4', labelY: true },
 };

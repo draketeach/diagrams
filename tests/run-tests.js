@@ -94,7 +94,8 @@ test('exact labels', () => {
 
 test('tikzjax source wrapping', () => {
   const { source } = toTikzJaxSource('\\begin{tikzpicture}\n\n\\draw (0,0)--(1,1);\n\\end{tikzpicture}');
-  assert.ok(source.startsWith('\\mathcode`\\.="002E \\mathcode`\\,="602C \\mathcode`\\/="002F\n\\begin{document}'));
+  assert.ok(source.startsWith('\\mathcode`\\.="002E'));
+  assert.ok(source.includes('\\mathcode`\\-="8000\n\\begin{document}'));
   assert.ok(!/\n\s*\n/.test(source.trim()));
   const doc = toStandaloneDocument('\\begin{tikzpicture}\\end{tikzpicture}');
   assert.ok(doc.includes('\\documentclass'));
