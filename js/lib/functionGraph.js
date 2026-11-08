@@ -67,6 +67,30 @@ export function axesFields() {
         ],
       },
       { type: 'checkbox', key: 'originLabel', label: 'Label origin "O"', default: true },
+      { type: 'checkbox', key: 'xScaleTicks', label: 'Scale ticks on x-axis', default: false },
+      {
+        type: 'number',
+        key: 'xStep',
+        label: 'x tick spacing',
+        default: null,
+        step: 0.5,
+        min: 0,
+        help: 'Leave blank for automatic spacing.',
+        showIf: (v) => v.xScaleTicks,
+      },
+      { type: 'checkbox', key: 'xScaleNumbers', label: 'Number the x ticks', default: true, showIf: (v) => v.xScaleTicks },
+      { type: 'checkbox', key: 'yScaleTicks', label: 'Scale ticks on y-axis', default: false },
+      {
+        type: 'number',
+        key: 'yStep',
+        label: 'y tick spacing',
+        default: null,
+        step: 0.5,
+        min: 0,
+        help: 'Leave blank for automatic spacing.',
+        showIf: (v) => v.yScaleTicks,
+      },
+      { type: 'checkbox', key: 'yScaleNumbers', label: 'Number the y ticks', default: true, showIf: (v) => v.yScaleTicks },
     ],
   };
 }
@@ -114,6 +138,7 @@ export function labelFields() {
       },
       { type: 'checkbox', key: 'ticks', label: 'Tick marks at x-intercepts', default: true, showIf: (v) => v.labelX },
       { type: 'checkbox', key: 'labelY', label: 'Label y-intercept', default: false },
+      { type: 'checkbox', key: 'yTick', label: 'Tick mark at y-intercept', default: false },
       {
         type: 'select',
         key: 'yLabelFormat',
@@ -365,12 +390,13 @@ export function drawXIntercepts(b, roots, f, values, win) {
 }
 
 export function drawYIntercept(b, f, values, win, { latex, slope } = {}) {
-  if (!values.labelY && !values.interceptDots) return;
+  if (!values.labelY && !values.interceptDots && !values.yTick) return;
   if (win.xmin > 0 || win.xmax < 0) return;
   const c = f(0);
   if (!isFinite(c) || c < win.ymin || c > win.ymax) return;
   if (Math.abs(c) < 1e-9) return; // that's the origin
   b.comment('y-intercept');
+  if (values.yTick) b.add(`\\draw[${values.axisWidth || 'thin'}] ${pt(0, c)} -- ++(-3pt,0);`);
   if (values.interceptDots) b.add(`\\fill ${pt(0, c)} circle[radius=1.3pt];`);
   if (!values.labelY) return;
   const s = slope ?? derivative(f, 0);
@@ -425,4 +451,74 @@ export function drawEquation(b, latex, f, pieces, values) {
   if (!isFinite(y)) return;
   b.comment('equation');
   b.add(`\\node[anchor=west, inner sep=3pt] at ${pt(x, y)} {$y = ${latex}$};`);
+}
+
+// ---------------------------------------------------------------- scale ticks
+
+/** A "nice" tick spacing (1, 2 or 5 × 10^k) giving roughly `target` ticks. */
+export function niceStep(span, target = 8) {
+  const raw = span / target;
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  for (const m of [1, 2, 5, 10]) if (m * mag >= raw) return m * mag;
+  return 10 * mag;
+}
+
+function tickValues(lo, hi, step) {
+  const out = [];
+  const start = Math.ceil((lo + 1e-9) / step);
+  const end = Math.floor((hi - 1e-9) / step);
+  for (let k = start; k <= end; k++) {
+    const v = Number((k * step).toPrecision(12));
+    if (Math.abs(v) > 1e-12) out.push(v);
+  }
+  return out;
+}
+
+/**
+ * Evenly spaced ticks: below the x-axis and left of the y-axis.
+ * skipX / skipY: values already labelled elsewhere (no duplicate number).
+ * The arrow end of each axis is kept clear of ticks.
+ */
+export function drawScaleTicks(b, win, values, { skipX = [], skipY = [] } = {}) {
+  const warnings = [];
+  const width = values.axisWidth || 'thin';
+  const near = (v, list, tol) => list.some((u) => Math.abs(u - v) < tol);
+  const axis = (on, lo, hi, step, skip, numbers, name) => {
+    if (!on) return;
+    let st = step && step > 0 ? step : niceStep(hi - lo);
+    // keep the arrow end (and the axis label there) clear of ticks
+    const clear = () => Math.max(0.6 * st, 0.07 * (hi - lo));
+    let ticks = tickValues(lo, hi - clear(), st);
+    if (ticks.length > 60) {
+      warnings.push(`Too many ${name}-axis ticks; spacing increased.`);
+      st = niceStep(hi - lo, 20);
+      ticks = tickValues(lo, hi - clear(), st);
+    }
+    if (!ticks.length) return;
+    const list = ticks.map((t) => n(t)).join(',');
+    b.comment(`${name}-axis scale`);
+    if (name === 'x') {
+      b.add(`\\foreach \\t in {${list}} \\draw[${width}] (\\t,0) -- ++(0,-3pt);`);
+    } else {
+      b.add(`\\foreach \\t in {${list}} \\draw[${width}] (0,\\t) -- ++(-3pt,0);`);
+    }
+    if (numbers) {
+      const labelled = ticks.filter((t) => !near(t, skip, st * 0.3));
+      if (labelled.length) {
+        const nums = labelled.map((t) => n(t)).join(',');
+        b.add(
+          name === 'x'
+            ? `\\foreach \\t in {${nums}} \\node[anchor=north, inner sep=2pt, yshift=-2pt] at (\\t,0) {$\\t$};`
+            : `\\foreach \\t in {${nums}} \\node[anchor=east, inner sep=2pt, xshift=-2pt] at (0,\\t) {$\\t$};`
+        );
+      }
+    }
+  };
+  if (win.ymin <= 0 && win.ymax >= 0) {
+    axis(values.xScaleTicks, win.xmin, win.xmax, values.xStep, skipX, values.xScaleNumbers, 'x');
+  }
+  if (win.xmin <= 0 && win.xmax >= 0) {
+    axis(values.yScaleTicks, win.ymin, win.ymax, values.yStep, skipY, values.yScaleNumbers, 'y');
+  }
+  return warnings;
 }

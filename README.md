@@ -4,6 +4,8 @@
 
 Mathematical diagrams with TikZ. Live site (once GitHub Pages is on): https://draketeach.github.io/diagrams/
 
+Made by [MrDrake](https://mrdrake.com) with [Claude](https://www.anthropic.com/claude) (Anthropic).
+
 A static website for building exam-style maths diagrams. Choose options, get
 editable TikZ code, see it rendered live with [TikZJax](https://tikzjax.com),
 and export PNG (150/300/600 dpi, optional transparent background), SVG, or a
@@ -18,7 +20,8 @@ The first diagram type is the **Polynomial graph**, which can be defined in four
 | Coefficients | `1, 0, -13, 12` | Same as typed equation |
 | Sketch through points | `x, y [, label]` per line | Uses your values or custom labels such as `a` |
 
-You can toggle x-/y-intercept labels, tick marks, turning points (coordinates, or
+You can toggle x-/y-intercept labels, tick marks at the intercepts, evenly spaced
+scale ticks (optionally numbered) on either axis, turning points (coordinates, or
 dashed lines to the axes), dots, the equation, the axis labels, the origin `O`,
 arrowheads, line widths and font size.
 
@@ -111,7 +114,16 @@ The schema field types are `group`, `select`, `number`, `text`, `textarea` and
 - PNG/SVG export embeds the Computer Modern fonts by downloading them from
   tikzjax.com. If that download is blocked, the image uses a fallback font and
   the site shows a warning.
+- TikZJax's fonts show some maths-mode punctuation as the wrong symbol: `.` as ▷,
+  `,` as a hook and `/` as ◁. The renderer adds `\mathcode` fixes for these
+  before rendering. They only apply to what TikZJax renders, so copied and
+  downloaded code is unchanged and real LaTeX is unaffected.
 - PNGs carry their dpi, so Word/Google Docs insert them at the correct physical size.
+
+## Credits
+
+Made by [MrDrake](https://mrdrake.com) with [Claude](https://www.anthropic.com/claude) (Anthropic).
+Rendering by [TikZJax](https://tikzjax.com).
 
 ## License
 

@@ -39,6 +39,20 @@ function cleanPreamble(preamble) {
     .join('\n');
 }
 
+// TikZJax displays text with the BaKoMa Computer Modern fonts, which keep
+// characters at their TeX positions, but it looks each character up by its
+// Unicode value. In the maths-italic font (cmmi10) a few punctuation marks
+// sit at a different position from their Unicode value, so the browser
+// shows whatever glyph is stored at the Unicode position instead:
+//   .  cmmi10 58 -> Unicode 46 holds "▷"
+//   ,  cmmi10 59 -> Unicode 44 holds a hook
+//   /  cmmi10 61 -> Unicode 47 holds "◁"
+// Taking these from the roman font (cmr10), where position = Unicode, fixes
+// the display and looks identical in real LaTeX. (The comma keeps its
+// punctuation spacing: class 6.) Applied only to what TikZJax renders, so
+// copied/downloaded code stays clean.
+export const TIKZJAX_FIXES = '\\mathcode`\\.="002E \\mathcode`\\,="602C \\mathcode`\\/="002F';
+
 /** Code suitable for TikZJax (tikz is preloaded; no \documentclass). */
 export function toTikzJaxSource(code, { supportsLibraries = false } = {}) {
   const warnings = [];
@@ -54,7 +68,7 @@ export function toTikzJaxSource(code, { supportsLibraries = false } = {}) {
   }
   // Blank lines become \par, which can upset TikZ inside a picture.
   const strip = (s) => s.split('\n').filter((l) => l.trim() !== '').join('\n');
-  const source = `${strip(pre)}\n\\begin{document}\n${strip(body)}\n\\end{document}\n`.replace(/^\n/, '');
+  const source = `${TIKZJAX_FIXES}\n${strip(pre)}\n\\begin{document}\n${strip(body)}\n\\end{document}\n`.replace(/\n\n/, '\n');
   return { source, warnings };
 }
 
