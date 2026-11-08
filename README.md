@@ -118,8 +118,9 @@ The schema field types are `group`, `select`, `number`, `text`, `textarea` and
   the site shows a warning.
 - TikZJax's fonts show some maths characters wrongly: `.` as ▷, `,` as a hook,
   `/` as ◁, and the minus sign in a substitute font with the wrong width. Before
-  rendering, the site remaps `.` `,` `/` to the roman font and draws the minus as a
-  rule sized from the real minus. Copied and downloaded code is unchanged, and real
+  rendering, the site remaps `.` `,` `/` to the roman font and replaces each `-` inside
+  `$…$` with a minus drawn as a rule sized from the real minus. (TikZJax's TeX hangs on
+  `\mathcode"8000`, so the source is rewritten instead.) Copied and downloaded code is unchanged, and real
   LaTeX is unaffected. (Details in `js/core/tikzDocument.js`.)
 - PNGs carry their dpi, so Word/Google Docs insert them at the correct physical size.
 

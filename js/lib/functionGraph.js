@@ -579,12 +579,15 @@ export function drawScaleTicks(b, win, values, { skipX = [], skipY = [] } = {}) 
     if (numbers) {
       const labelled = ticks.filter((t) => !near(t, skip, st * 0.3));
       if (labelled.length) {
-        const nums = labelled.map((t) => n(t)).join(',');
-        b.add(
-          name === 'x'
-            ? `\\foreach \\t in {${nums}} \\node[anchor=north, inner sep=2pt, yshift=-2pt] at (\\t,0) {$\\t$};`
-            : `\\foreach \\t in {${nums}} \\node[anchor=east, inner sep=2pt, xshift=-2pt] at (0,\\t) {$\\t$};`
-        );
+        // one node per number (not \\foreach) so each label is plain text in
+        // the code and the TikZJax minus fix can see it
+        for (const t of labelled) {
+          b.add(
+            name === 'x'
+              ? `\\node[anchor=north, inner sep=2pt, yshift=-2pt] at ${pt(t, 0)} {$${n(t)}$};`
+              : `\\node[anchor=east, inner sep=2pt, xshift=-2pt] at ${pt(0, t)} {$${n(t)}$};`
+          );
+        }
       }
     }
   };

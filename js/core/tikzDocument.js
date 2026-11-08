@@ -47,15 +47,16 @@ function cleanPreamble(preamble) {
 //   /  cmmi10 61 -> Unicode 47 holds "◁"
 //   −  cmsy10 0  -> Unicode U+2212 is missing (BaKoMa stores it at U+00A1),
 //                   so the browser substitutes a minus from another font.
-// Fixes (TikZJax rendering only, so copied/downloaded code stays clean and
-// real LaTeX is unaffected):
+// Fixes, applied only to what TikZJax renders (copied/downloaded code stays
+// clean and real LaTeX is unaffected):
 //   - take . , / from the roman font (cmr10), where position = Unicode;
 //   - draw the minus as a rule sized from the real minus at the current
-//     size: advance = the real minus's width; ink from 10.7% to 89.3% of it,
-//     centred on the maths axis, 5.1% of the width thick (cmsy10's
-//     proportions). It stays a binary operator (\mathbin), so "−3" and
-//     "x − 3" are spaced as usual. Plain TeX primitives only (TikZJax's TeX
-//     has no e-TeX).
+//     size (advance = its width; ink 10.7%–89.3% of it, centred on the maths
+//     axis, 5.1% of the width thick — cmsy10's proportions), as \mathbin so
+//     spacing is unchanged. Every "-" inside $...$ is rewritten to
+//     \tikzjaxminus before rendering. (Making "-" math-active with
+//     \mathcode"8000 hangs TikZJax's TeX, so the source is rewritten instead.)
+//     Plain TeX primitives only (TikZJax's TeX has no e-TeX).
 export const TIKZJAX_FIXES = [
   '\\mathcode`\\.="002E \\mathcode`\\,="602C \\mathcode`\\/="002F',
   '\\def\\tikzjaxrule#1#2{\\setbox0\\hbox{$#1\\mathchar"200$}' +
@@ -65,8 +66,44 @@ export const TIKZJAX_FIXES = [
     '\\hbox{\\kern\\dimen0\\vrule height\\dimen4 depth\\dimen8 width\\dimen2\\kern\\dimen0}}',
   '\\def\\tikzjaxminus{\\mathbin{\\mathchoice{\\tikzjaxrule\\displaystyle\\textfont}{\\tikzjaxrule\\textstyle\\textfont}' +
     '{\\tikzjaxrule\\scriptstyle\\scriptfont}{\\tikzjaxrule\\scriptscriptstyle\\scriptscriptfont}}}',
-  '\\begingroup\\lccode`\\~=`\\-\\lowercase{\\endgroup\\let~}\\tikzjaxminus\\mathcode`\\-="8000',
 ].join('\n');
+
+/**
+ * Replace "-" inside maths ($...$, $$...$$, \(...\), \[...\]) with
+ * \tikzjaxminus. Escaped \$ and % comments are respected.
+ */
+export function rewriteMathMinus(src) {
+  let out = '';
+  let inMath = false;
+  for (let i = 0; i < src.length; i++) {
+    const c = src[i];
+    if (c === '\\') {
+      const next = src[i + 1] ?? '';
+      if (next === '(' || next === '[') inMath = true;
+      else if (next === ')' || next === ']') inMath = false;
+      out += c + next;
+      i++;
+      continue;
+    }
+    if (c === '%') {
+      const end = src.indexOf('\n', i);
+      const stop = end < 0 ? src.length : end;
+      out += src.slice(i, stop);
+      i = stop - 1;
+      continue;
+    }
+    if (c === '$') {
+      if (src[i + 1] === '$') {
+        out += '$$';
+        i++;
+      } else out += c;
+      inMath = !inMath;
+      continue;
+    }
+    out += inMath && c === '-' ? '\\tikzjaxminus ' : c;
+  }
+  return out;
+}
 
 /** Code suitable for TikZJax (tikz is preloaded; no \documentclass). */
 export function toTikzJaxSource(code, { supportsLibraries = false } = {}) {
@@ -83,7 +120,7 @@ export function toTikzJaxSource(code, { supportsLibraries = false } = {}) {
   }
   // Blank lines become \par, which can upset TikZ inside a picture.
   const strip = (s) => s.split('\n').filter((l) => l.trim() !== '').join('\n');
-  const source = `${TIKZJAX_FIXES}\n${strip(pre)}\n\\begin{document}\n${strip(body)}\n\\end{document}\n`.replace(/\n\n/, '\n');
+  const source = `${TIKZJAX_FIXES}\n${strip(pre)}\n\\begin{document}\n${rewriteMathMinus(strip(body))}\n\\end{document}\n`.replace(/\n\n/, '\n');
   return { source, warnings };
 }
 
