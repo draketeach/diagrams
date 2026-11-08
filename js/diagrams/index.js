@@ -1,0 +1,8 @@
+// Register every diagram type here. To add a new type:
+//   1. create js/diagrams/<name>.js exporting a module (see js/core/registry.js)
+//   2. import it below and add it to the list.
+
+import { registerDiagram } from '../core/registry.js';
+import polynomial from './polynomial.js';
+
+[polynomial].forEach(registerDiagram);

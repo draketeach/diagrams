@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TikZ Diagrams for Exams</title>
+  <link rel="stylesheet" href="https://tikzjax.com/v1/fonts.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>TikZ Diagrams</h1>
+    <label class="type-picker">
+      <span>Diagram type</span>
+      <select id="diagram-type"></select>
+    </label>
+    <p id="diagram-help" class="type-help"></p>
+  </header>
+
+  <main class="layout">
+    <section class="panel panel-options" aria-labelledby="h-options">
+      <div class="panel-head">
+        <h2 id="h-options">Options</h2>
+      </div>
+      <form id="options-form" class="options-form" onsubmit="return false"></form>
+      <div class="panel-foot">
+        <button id="btn-generate" class="primary" type="button">Generate &amp; render</button>
+        <button id="btn-reset" type="button">Reset</button>
+      </div>
+    </section>
+
+    <section class="panel panel-code" aria-labelledby="h-code">
+      <div class="panel-head">
+        <h2 id="h-code">TikZ code</h2>
+        <span class="hint">Editable · Ctrl+Enter to render</span>
+      </div>
+      <textarea id="code" class="code" aria-label="TikZ code"></textarea>
+      <div class="panel-foot">
+        <button id="btn-render" class="primary" type="button">Render code</button>
+        <button id="btn-copy-picture" type="button" title="Copy just the tikzpicture environment">Copy tikzpicture</button>
+        <button id="btn-copy-standalone" type="button" title="Copy a complete standalone LaTeX document">Copy full .tex</button>
+        <button id="btn-download-tex" type="button">Download .tex</button>
+      </div>
+      <div id="messages" class="messages" aria-live="polite"></div>
+    </section>
+
+    <section class="panel panel-preview" aria-labelledby="h-preview">
+      <div class="panel-head">
+        <h2 id="h-preview">Preview</h2>
+        <span id="status" class="status" aria-live="polite"></span>
+        <label class="zoom">Zoom
+          <select id="zoom">
+            <option value="fit">Fit</option>
+            <option value="1">100%</option>
+            <option value="1.5" selected>150%</option>
+            <option value="2">200%</option>
+          </select>
+        </label>
+      </div>
+      <div id="preview" class="preview"></div>
+      <div class="panel-foot export">
+        <label>File name <input id="filename" type="text" size="12"></label>
+        <label>PNG
+          <select id="png-dpi">
+            <option value="150">150 dpi</option>
+            <option value="300">300 dpi</option>
+            <option value="600">600 dpi</option>
+          </select>
+        </label>
+        <label><input id="png-transparent" type="checkbox"> Transparent</label>
+        <button id="btn-download-png" class="primary" type="button" disabled>Download PNG</button>
+        <button id="btn-copy-png" type="button" disabled>Copy PNG</button>
+        <button id="btn-download-svg" type="button" disabled>Download SVG</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    Rendering by <a href="https://tikzjax.com" target="_blank" rel="noopener">TikZJax</a>. The first render downloads TeX (~a few MB) and can take a few seconds.
+  </footer>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

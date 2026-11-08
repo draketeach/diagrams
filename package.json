@@ -1,0 +1,11 @@
+{
+  "name": "tikz-diagrams",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Build exam-style TikZ diagrams from options, preview with TikZJax, export PNG/SVG.",
+  "type": "module",
+  "scripts": {
+    "test": "node tests/run-tests.js",
+    "compile-examples": "node tests/compile-examples.js"
+  }
+}
