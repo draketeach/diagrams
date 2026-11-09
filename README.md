@@ -26,6 +26,10 @@ papers (`patterns.meta` dots in three densities), crosshatched or grey;
 labels as z-scores, real values (from μ and σ) or μ ± kσ; dashed boundary
 lines; calculated or typed area labels; and the 68–95–99.7% empirical rule.
 
+Function graphs (polynomial and piecewise) can show dashed **asymptotes**, e.g.
+`y = 5, x = -2`, optionally shortened with a range (`y = 5 from 0 to 10`),
+labelled by their value on the axis, by their equation, both, or not at all.
+
 Function graphs (polynomial and piecewise) can also have **extra graphs**, such
 as a straight line crossing a parabola. Each line of the box is an equation with
 optional settings after semicolons, e.g. `y = 6 - 3x; dashed; thick; no arrows;

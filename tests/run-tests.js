@@ -268,13 +268,15 @@ test('sketch with a plain start, asymptote and turning-point dot (exam image)', 
     tpLabel: 'none',
     tpDots: true,
     xCustomTicks: '2, 5',
-    yCustomTicks: '5',
-    extraGraphs: 'y = 5; dashed; thin; no arrows; from 0 to 10.6',
+    asymptotes: 'y = 5 from 0 to 10.6',
   });
   assert.deepEqual(warnings, []);
+  assert.ok(code.includes('\\node[anchor=east, inner sep=2pt, xshift=-2pt] at (0,5) {$5$};'), 'value on the y-axis');
+  const eq = polynomial.generate({ ...defaultValues(polynomial.schema), roots: '1', asymptotes: 'x = -2, y = 3', asymptoteLabel: 'equation' }).code;
+  assert.ok(eq.includes('{$x = -2$}') && eq.includes('{$y = 3$}') && !eq.includes('{$-2$}'), 'equation labels only');
   assert.ok(code.includes('\\draw[semithick, -to] (0,-1.24)'), 'arrow at the right end only');
   assert.ok(code.includes('\\fill (2,-2.35) circle'), 'dot at the minimum');
-  assert.ok(code.includes('\\draw[thin, dashed] (0,5) -- (10.6,5);'), 'dashed asymptote');
+  assert.ok(code.includes('\\draw[dashed, thin] (0,5) -- (10.6,5);'), 'dashed asymptote');
 });
 
 test('index.html versions are up to date (run: node tools/stamp-versions.mjs)', () => {

@@ -836,3 +836,119 @@ export function drawCurvePoints(b, f, win, values, { xUnit = 1, yUnit = 1 } = {}
   }
   return warnings;
 }
+
+// ---------------------------------------------------------------- asymptotes
+
+export function asymptoteFields() {
+  return {
+    type: 'group',
+    label: 'Asymptotes',
+    collapsed: true,
+    fields: [
+      {
+        type: 'text',
+        key: 'asymptotes',
+        label: 'Dashed asymptotes',
+        default: '',
+        placeholder: 'e.g. y = 5, x = -2',
+        help: 'Separate with commas. Add a range to shorten one, e.g. "y = 5 from 0 to 10".',
+      },
+      {
+        type: 'select',
+        key: 'asymptoteLabel',
+        label: 'Label',
+        default: 'axis',
+        options: [
+          { value: 'axis', label: 'Value on the axis, e.g. 5' },
+          { value: 'equation', label: 'Equation by the line, e.g. y = 5' },
+          { value: 'both', label: 'Both' },
+          { value: 'none', label: 'No label' },
+        ],
+      },
+    ],
+  };
+}
+
+/** "y = 5, x = -2 from -3 to 4" -> [{ axis, value, latex, from, to }] */
+export function parseAsymptotes(src) {
+  const num = (t, s) => {
+    try {
+      return parseConstant(String(t).trim().replace(/√/g, 'sqrt'));
+    } catch (e) {
+      throw new Error(`Asymptote "${s}": could not read "${t}" (${e.message})`);
+    }
+  };
+  return String(src ?? '')
+    .split(/[,;]/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((s) => {
+      const m = s.match(/^([xy])\s*=\s*(.+?)(?:\s+from\s+(.+?)\s+to\s+(.+))?$/i);
+      if (!m) throw new Error(`Asymptote "${s}" should look like "x = 2" or "y = 1" (optionally "from 0 to 10")`);
+      const c = num(m[2], s);
+      const a = { axis: m[1].toLowerCase(), value: c.value, latex: c.latex, from: null, to: null };
+      if (m[3] !== undefined) {
+        a.from = num(m[3], s).value;
+        a.to = num(m[4], s).value;
+        if (a.from >= a.to) throw new Error(`Asymptote "${s}": "from" must be less than "to".`);
+      }
+      return a;
+    });
+}
+
+/**
+ * Dashed asymptotes with their labels. Returns { warnings, skipX, skipY }:
+ * values labelled on the axes, so scale/custom ticks can leave them out.
+ */
+export function drawAsymptotes(b, win, values, f = null) {
+  const list = parseAsymptotes(values.asymptotes);
+  const out = { warnings: [], skipX: [], skipY: [] };
+  if (!list.length) return out;
+  const width = values.axisWidth || 'thin';
+  const mode = values.asymptoteLabel ?? 'axis';
+  const onAxis = mode === 'axis' || mode === 'both';
+  const equation = mode === 'equation' || mode === 'both';
+  const lines = [];
+  for (const a of list) {
+    const vertical = a.axis === 'x';
+    const [min, max] = vertical ? [win.xmin, win.xmax] : [win.ymin, win.ymax];
+    if (a.value < min || a.value > max) {
+      out.warnings.push(`The asymptote ${a.axis} = ${a.latex} is outside the axes range.`);
+      continue;
+    }
+    const [lo0, hi0] = vertical ? [win.ymin, win.ymax] : [win.xmin, win.xmax];
+    const lo = Math.max(lo0, a.from ?? -Infinity);
+    const hi = Math.min(hi0, a.to ?? Infinity);
+    if (!(hi > lo)) continue;
+    if (vertical) {
+      // equation at the bottom, clear of the y label at the top
+      const label = equation ? ` node[pos=0, anchor=south west, inner sep=2pt] {$x = ${a.latex}$}` : '';
+      lines.push(`\\draw[dashed, ${width}] ${pt(a.value, lo)} -- ${pt(a.value, hi)}${label};`);
+      if (onAxis && Math.abs(a.value) > 1e-9 && win.ymin <= 0 && win.ymax >= 0) {
+        lines.push(`\\draw[${width}] ${pt(a.value, 0)} -- ++(0,-3pt);`);
+        lines.push(`\\node[anchor=north, inner sep=2pt, yshift=-2pt] at ${pt(a.value, 0)} {${mathLabel(a.latex)}};`);
+        out.skipX.push(a.value);
+      }
+    } else {
+      // equation at the right-hand end, on the side away from the curve
+      let side = 'south';
+      if (f) {
+        const span = hi - lo;
+        const ys = [0.02, 0.06, 0.1].map((k) => f(hi - k * span)).filter(isFinite);
+        if (ys.length && ys.every((y) => y > a.value)) side = 'north';
+      }
+      const label = equation ? ` node[pos=1, anchor=${side} east, inner sep=2pt] {$y = ${a.latex}$}` : '';
+      lines.push(`\\draw[dashed, ${width}] ${pt(lo, a.value)} -- ${pt(hi, a.value)}${label};`);
+      if (onAxis && Math.abs(a.value) > 1e-9 && win.xmin <= 0 && win.xmax >= 0) {
+        lines.push(`\\draw[${width}] ${pt(0, a.value)} -- ++(-3pt,0);`);
+        lines.push(`\\node[anchor=east, inner sep=2pt, xshift=-2pt] at ${pt(0, a.value)} {${mathLabel(a.latex)}};`);
+        out.skipY.push(a.value);
+      }
+    }
+  }
+  if (lines.length) {
+    b.comment('asymptotes');
+    lines.forEach((l) => b.add(l));
+  }
+  return out;
+}

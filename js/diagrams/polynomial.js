@@ -35,6 +35,9 @@ import {
   drawGrid,
   curvePointFields,
   drawCurvePoints,
+  asymptoteFields,
+  drawAsymptotes,
+  parseAsymptotes,
 } from '../lib/functionGraph.js';
 import { extraGraphFields, drawExtraGraphs, extraGraphFeatures } from '../lib/extraGraphs.js';
 
@@ -147,6 +150,7 @@ const schema = [
   curveStyleFields(),
   labelFields(),
   curvePointFields(),
+  asymptoteFields(),
   extraGraphFields(),
 ];
 
@@ -306,6 +310,7 @@ function generateFormula(values) {
   };
   const pre = probe();
   const extra = extraGraphFeatures(values, f);
+  for (const a of parseAsymptotes(values.asymptotes)) (a.axis === 'x' ? extra.xs : extra.ys).push(a.value);
 
   const win = resolveWindow(values, () =>
     autoWindow({
@@ -364,19 +369,15 @@ function generateFormula(values) {
   const b = new TikzBuilder();
   b.comment(`y = ${model.latex}`);
   warnings.push(...drawGrid(b, win, values));
+  const asym = drawAsymptotes(b, win, values, f);
+  warnings.push(...asym.warnings);
   warnings.push(...drawAxes(b, win, values));
-  warnings.push(
-    ...drawScaleTicks(b, win, values, {
-      skipX: values.labelX ? roots.map((r) => r.x) : [],
-      skipY: values.labelY ? [f(0)] : [],
-    })
-  );
-  warnings.push(
-    ...drawCustomTicks(b, win, values, {
-      skipX: values.labelX ? roots.map((r) => r.x) : [],
-      skipY: values.labelY ? [f(0)] : [],
-    })
-  );
+  const skip = {
+    skipX: [...(values.labelX ? roots.map((r) => r.x) : []), ...asym.skipX],
+    skipY: [...(values.labelY ? [f(0)] : []), ...asym.skipY],
+  };
+  warnings.push(...drawScaleTicks(b, win, values, skip));
+  warnings.push(...drawCustomTicks(b, win, values, skip));
   drawCurve(b, pieces, values, { pgfExpr: model.pgf, f, method });
   if (endDots.length) {
     b.comment('dots at curve ends');
@@ -425,8 +426,9 @@ function generateSketch(values) {
   const f = hermiteFunction(pts, slopes);
 
   const win = resolveWindow(values, () => {
-    const xs = pts.map((p) => p.x);
-    const ys = pts.map((p) => p.y);
+    const asy = parseAsymptotes(values.asymptotes);
+    const xs = [...pts.map((p) => p.x), ...asy.filter((a) => a.axis === 'x').map((a) => a.value)];
+    const ys = [...pts.map((p) => p.y), ...asy.filter((a) => a.axis === 'y').map((a) => a.value)];
     const pad = (arr) => {
       const lo = Math.min(0, ...arr);
       const hi = Math.max(0, ...arr);
@@ -457,19 +459,19 @@ function generateSketch(values) {
   const { options, xUnit, yUnit } = scaleOptions(win, values);
   const b = new TikzBuilder();
   warnings.push(...drawGrid(b, win, values));
+  const asym = drawAsymptotes(b, win, values, f);
+  warnings.push(...asym.warnings);
   warnings.push(...drawAxes(b, win, values));
-  warnings.push(
-    ...drawScaleTicks(b, win, values, {
-      skipX: [...(values.labelX ? roots.map((r) => r.x) : []), ...custom.filter((p) => Math.abs(p.y) < 1e-12).map((p) => p.x)],
-      skipY: yPoint && values.labelY ? [yPoint.y] : [],
-    })
-  );
-  warnings.push(
-    ...drawCustomTicks(b, win, values, {
-      skipX: [...(values.labelX ? roots.map((r) => r.x) : []), ...custom.filter((p) => Math.abs(p.y) < 1e-12).map((p) => p.x)],
-      skipY: yPoint && values.labelY ? [yPoint.y] : [],
-    })
-  );
+  const skip = {
+    skipX: [
+      ...(values.labelX ? roots.map((r) => r.x) : []),
+      ...custom.filter((p) => Math.abs(p.y) < 1e-12).map((p) => p.x),
+      ...asym.skipX,
+    ],
+    skipY: [...(yPoint && values.labelY ? [yPoint.y] : []), ...asym.skipY],
+  };
+  warnings.push(...drawScaleTicks(b, win, values, skip));
+  warnings.push(...drawCustomTicks(b, win, values, skip));
   drawHermite(b, pts, slopes, values, {
     startDot: values.endDots === 'left' || values.endDots === 'both',
     endDot: values.endDots === 'right' || values.endDots === 'both',

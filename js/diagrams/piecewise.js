@@ -29,6 +29,9 @@ import {
   drawCurvePoints,
   gridFields,
   drawGrid,
+  asymptoteFields,
+  drawAsymptotes,
+  parseAsymptotes,
 } from '../lib/functionGraph.js';
 
 /** Copy a schema group with some field defaults changed. */
@@ -118,21 +121,7 @@ const schema = [
       },
     ],
   },
-  {
-    type: 'group',
-    label: 'Asymptotes',
-    collapsed: true,
-    fields: [
-      {
-        type: 'text',
-        key: 'asymptotes',
-        label: 'Dashed asymptotes',
-        default: '',
-        placeholder: 'e.g. x = 0, y = 1',
-      },
-      { type: 'checkbox', key: 'labelAsymptotes', label: 'Label asymptotes (e.g. x = 2)', default: false },
-    ],
-  },
+  asymptoteFields(),
   curvePointFields(),
   extraGraphFields(),
 ];
@@ -162,19 +151,6 @@ function parseShades(src) {
       if (parts.length !== 2) throw new Error(`Shading "${s}" should look like "1 to 2"`);
       const [a, b] = parts.map((t) => parseConstant(t.replace(/√/g, 'sqrt')).value);
       return a < b ? [a, b] : [b, a];
-    });
-}
-
-function parseAsymptotes(src) {
-  return String(src ?? '')
-    .split(/[,;]/)
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .map((s) => {
-      const m = s.match(/^([xy])\s*=\s*(.+)$/i);
-      if (!m) throw new Error(`Asymptote "${s}" should look like "x = 2" or "y = 1"`);
-      const c = parseConstant(m[2].replace(/√/g, 'sqrt'));
-      return { axis: m[1].toLowerCase(), value: c.value, latex: c.latex };
     });
 }
 
@@ -266,22 +242,8 @@ function generate(values) {
     }
   }
 
-  if (asymptotes.length) {
-    b.comment('asymptotes');
-    for (const a of asymptotes) {
-      if (a.axis === 'x') {
-        if (a.value < win.xmin || a.value > win.xmax) continue;
-        // label at the bottom of the line, clear of the axis label at the top
-        const label = values.labelAsymptotes ? ` node[pos=0, anchor=south west, inner sep=2pt] {$x = ${a.latex}$}` : '';
-        b.add(`\\draw[dashed, ${values.axisWidth || 'thin'}] ${pt(a.value, win.ymin)} -- ${pt(a.value, win.ymax)}${label};`);
-      } else {
-        if (a.value < win.ymin || a.value > win.ymax) continue;
-        // label at the left end, above the line
-        const label = values.labelAsymptotes ? ` node[pos=0, anchor=south west, inner sep=2pt] {$y = ${a.latex}$}` : '';
-        b.add(`\\draw[dashed, ${values.axisWidth || 'thin'}] ${pt(win.xmin, a.value)} -- ${pt(win.xmax, a.value)}${label};`);
-      }
-    }
-  }
+  const asym = drawAsymptotes(b, win, values, f);
+  warnings.push(...asym.warnings);
 
   warnings.push(...drawAxes(b, win, values));
 
@@ -329,8 +291,9 @@ function generate(values) {
     b.comment('endpoint labels');
     labelLines.forEach((l) => b.add(l));
   }
-  warnings.push(...drawScaleTicks(b, win, values, { skipX: labelX, skipY: labelY }));
-  warnings.push(...drawCustomTicks(b, win, values, { skipX: labelX, skipY: labelY }));
+  const skip = { skipX: [...labelX, ...asym.skipX], skipY: [...labelY, ...asym.skipY] };
+  warnings.push(...drawScaleTicks(b, win, values, skip));
+  warnings.push(...drawCustomTicks(b, win, values, skip));
 
   // ---- the pieces
   b.comment('pieces');

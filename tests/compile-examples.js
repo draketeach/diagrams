@@ -39,7 +39,7 @@ let failures = 0;
 const pwExamples = {
   'pw-pdf': {},
   'pw-hybrid': { pieces: 'x^2, x < 1\n2 - x, 1 <= x < 3\n3, x = 2\n-1, x >= 3', xCustomTicks: '' },
-  'pw-reciprocal': { pieces: '1/x + 1, x > 0\n-x/2 + 1, x <= 0', asymptotes: 'x = 0, y = 1', labelAsymptotes: true, windowMode: 'manual', xmin: -3, xmax: 4, ymin: -1, ymax: 5 },
+  'pw-reciprocal': { pieces: '1/x + 1, x > 0\n-x/2 + 1, x <= 0', asymptotes: 'x = 0, y = 1', asymptoteLabel: 'equation', windowMode: 'manual', xmin: -3, xmax: 4, ymin: -1, ymax: 5 },
   'pw-shaded': { pieces: '3x^2/8, 0 <= x <= 2\n0, otherwise', shade: '1 to 2', xCustomTicks: '1' },
   'pw-step': { pieces: '1, 0 <= x < 1\n2, 1 <= x < 2\n3, 2 <= x < 3', xCustomTicks: '', guideLines: true },
 };
