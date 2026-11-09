@@ -112,8 +112,19 @@ addEventListener('unhandledrejection',function(e){var r=e.reason;__tikzErrors.pu
       const svg = doc.querySelector('body > div svg');
       if (!pending && svg) {
         const copy = document.importNode(svg, true);
-        cleanup(job);
+        clearInterval(job.poll);
+        clearTimeout(job.timer);
+        if (active === job) active = null;
         resolve(copy);
+        // Don't remove the frame yet: Chrome shares in-progress font downloads
+        // between the frame and this page, and removing the frame aborts them,
+        // leaving the page's fonts failed (labels in a fallback font). Wait
+        // until this page has the fonts the picture uses (max 10 s).
+        const families = [...new Set([...copy.querySelectorAll('[style*="font-family"], [font-family]')].map(
+          (el) => (el.getAttribute('font-family') || (el.getAttribute('style').match(/font-family:\s*([^;]+)/) || [])[1] || '').replace(/['"]/g, '').trim()
+        ).filter(Boolean))];
+        const loaded = Promise.all(families.map((f) => document.fonts.load(`12px ${f}`).catch(() => null)));
+        Promise.race([loaded, new Promise((r) => setTimeout(r, 10000))]).then(() => iframe.remove());
       }
     }, 120);
 
