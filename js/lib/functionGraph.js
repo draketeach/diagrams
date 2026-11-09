@@ -156,8 +156,12 @@ export function gridFields() {
 }
 
 /**
- * Background grid, drawn as explicit lines at multiples of the spacing
- * (works with separate x/y scales and any TikZ version).
+ * Background grid using TikZ's grid command, e.g.
+ *   \draw[gray!50, very thin, xstep=1.0714cm, ystep=0.9cm] (0,-0.25) grid (1.5,1);
+ * TikZ draws grid lines at whole multiples of the step measured from the
+ * origin, so with the picture's x/y units the lines land on multiples of the
+ * chosen spacing (in graph units). The corners are nudged out by a hair so
+ * lines lying exactly on the range's edges aren't lost to rounding.
  */
 export function drawGrid(b, win, values) {
   if (!values.showGrid) return [];
@@ -175,19 +179,17 @@ export function drawGrid(b, win, values) {
     sx = niceStep(x1 - x0, 50);
     sy = niceStep(y1 - y0, 50);
   }
-  const lines = (lo, hi, step) => {
-    const out = [];
-    for (let k = Math.ceil(lo / step - 1e-9); k * step <= hi + 1e-9; k++) out.push(Number((k * step).toPrecision(12)));
-    return out;
-  };
-  const segs = [
-    ...lines(x0, x1, sx).map((x) => `${pt(x, y0)} -- ${pt(x, y1)}`),
-    ...lines(y0, y1, sy).map((y) => `${pt(x0, y)} -- ${pt(x1, y)}`),
-  ];
-  const rows = [];
-  for (let i = 0; i < segs.length; i += 4) rows.push('    ' + segs.slice(i, i + 4).join(' '));
-  b.comment('grid');
-  b.add(`\\draw[${values.gridShade || 'gray!50'}, very thin]\n${rows.join('\n')};`);
+  // the same (rounded) unit lengths the picture uses, so the steps line up exactly
+  const { xUnit, yUnit } = scaleOptions(win, values);
+  const xu = Number(n(xUnit, 4));
+  const yu = Number(n(yUnit, 4));
+  const ex = (x1 - x0) * 1e-4;
+  const ey = (y1 - y0) * 1e-4;
+  b.comment(`grid every ${n(sx)} by ${n(sy)} (corners nudged a hair so edge lines aren't lost to rounding)`);
+  b.add(
+    `\\draw[${values.gridShade || 'gray!50'}, very thin, xstep=${n(sx * xu, 4)}cm, ystep=${n(sy * yu, 4)}cm] ` +
+      `${pt(x0 - ex, y0 - ey)} grid ${pt(x1 + ex, y1 + ey)};`
+  );
   return warnings;
 }
 

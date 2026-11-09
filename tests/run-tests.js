@@ -186,11 +186,12 @@ test('grid and curve range', () => {
   const base = defaultValues(polynomial.schema);
   const { code } = polynomial.generate({ ...base, mode: 'expression', expression: '2x^3 - 5.3x^2 + 3.35x', domainFrom: '0', domainTo: '1.43',
     showGrid: true, gridXStep: 0.25, gridYStep: 0.25, gridXmin: 0, gridXmax: 1.5, gridYmin: -0.25, gridYmax: 1, windowMode: 'manual', xmin: -0.1, xmax: 1.65, ymin: -0.38, ymax: 1.2 });
-  assert.ok(code.includes('(1.5,-0.25) -- (1.5,1)') && code.includes('(0,-0.25) -- (1.5,-0.25)'), 'grid lines at the edges of its range');
+  const grid = code.split('\n').find((l) => l.trim().startsWith('\\draw') && l.includes(' grid '));
+  assert.ok(/xstep=[\d.]+cm, ystep=[\d.]+cm\] \(-0\.0002,-0\.2501\) grid \(1\.5002,1\.0001\);/.test(grid), grid);
   assert.ok(/plot\[domain=0:1\.43,/.test(code), 'curve limited to 0..1.43');
   assert.ok(!/\\draw\[semithick, -to\] plot|\\draw\[semithick, to-to\] plot/.test(code), 'no arrow at a chosen end');
   const pw = piecewise.generate({ ...defaultValues(piecewise.schema), showGrid: true });
-  assert.ok(pw.code.includes('% grid'), 'grid in piecewise graphs too');
+  assert.ok(pw.code.includes('% grid every'), 'grid in piecewise graphs too');
 });
 
 test('index.html versions are up to date (run: node tools/stamp-versions.mjs)', () => {

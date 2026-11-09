@@ -26,6 +26,8 @@ const examples = {
   'custom-ticks': { mode: 'roots', xCustomTicks: '3, -2, 5/2:a', yCustomTicks: '12, 20, -10:k', labelY: true },
   'curve-points': { mode: 'roots', curvePoints: '2:P, -3, 1/2:Q', curvePointLabel: 'nameCoords' },
   'curve-points-axes': { mode: 'roots', curvePoints: '2:P, -3', curvePointLabel: 'axes' },
+  'grid-range': { mode: 'expression', expression: '2x^3 - 5.3x^2 + 3.35x', domainFrom: '0', domainTo: '1.43', labelX: false, xCustomTicks: '1, 1.43:a', yCustomTicks: '1',
+    showGrid: true, gridXStep: 0.25, gridYStep: 0.25, gridXmin: 0, gridXmax: 1.5, gridYmin: -0.25, gridYmax: 1, gridShade: 'black', windowMode: 'manual', xmin: -0.1, xmax: 1.65, ymin: -0.38, ymax: 1.2, equalScale: true, width: 7.5 },
   'sketch-default': { mode: 'sketch' },
   'sketch-custom': { mode: 'sketch', points: '-3.5,-6\n-3,0,a\n-1,4\n0,3\n1.5,0,b\n2.5,-2\n3.2,4', labelY: true },
 };
