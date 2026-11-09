@@ -65,10 +65,19 @@ vendor/tikzjax/           local copy of TikZJax + fonts (own licences)
 js/diagrams/
   index.js               list of registered diagram types
   polynomial.js          the polynomial graph module
+tools/
+  stamp-versions.mjs     adds content-hash versions to JS/CSS URLs in index.html
 tests/
   run-tests.js           unit tests: node tests/run-tests.js
   compile-examples.js    compiles examples with local pdflatex (if installed)
 ```
+
+## Updating the site
+
+After changing any JS or CSS, run `node tools/stamp-versions.mjs` before
+committing. It adds a content hash to each file's URL in `index.html`, so
+browsers and GitHub's CDN never mix old and new files right after a deploy.
+`node tests/run-tests.js` fails if this has been forgotten.
 
 ## Adding a new diagram type
 
@@ -95,7 +104,7 @@ tests/
    };
    ```
 
-2. Add it to `js/diagrams/index.js`.
+2. Add it to `js/diagrams/index.js`, then run `node tools/stamp-versions.mjs`.
 
 That's it. The options panel, code box, preview and all exports work automatically.
 For function graphs (trig, exponential, log, hyperbola…), reuse the schema

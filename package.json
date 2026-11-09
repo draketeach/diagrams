@@ -8,6 +8,7 @@
   "type": "module",
   "scripts": {
     "test": "node tests/run-tests.js",
+    "stamp": "node tools/stamp-versions.mjs",
     "compile-examples": "node tests/compile-examples.js"
   }
 }

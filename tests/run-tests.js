@@ -8,6 +8,8 @@ import { monotoneSlopes, hermiteFunction } from '../js/lib/hermite.js';
 import { toTikzJaxSource, toStandaloneDocument, toPictureOnly } from '../js/core/tikzDocument.js';
 import { defaultValues } from '../js/core/formBuilder.js';
 import polynomial, { _internal } from '../js/diagrams/polynomial.js';
+import { readFileSync } from 'node:fs';
+import { buildIndex } from '../tools/stamp-versions.mjs';
 
 let passed = 0;
 function test(name, fn) {
@@ -114,6 +116,11 @@ test('every mode generates code', () => {
     assert.ok(code.includes('\\begin{tikzpicture}'), mode);
     assert.ok(!/NaN|Infinity|undefined/.test(code), `${mode} has bad values`);
   }
+});
+
+test('index.html versions are up to date (run: node tools/stamp-versions.mjs)', () => {
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  assert.equal(html, buildIndex(html));
 });
 
 console.log(`${passed} tests passed${process.exitCode ? ', some FAILED' : ''}`);
