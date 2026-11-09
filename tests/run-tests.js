@@ -14,6 +14,7 @@ import { TIKZJAX } from '../js/config.js';
 import { buildIndex } from '../tools/stamp-versions.mjs';
 import { parsePiecewise, piecewiseFunction } from '../js/lib/piecewiseParser.js';
 import piecewise from '../js/diagrams/piecewise.js';
+import blank from '../js/diagrams/blank.js';
 import normal, { normalProbability } from '../js/diagrams/normal.js';
 import { parseExtraGraphs } from '../js/lib/extraGraphs.js';
 import { encodeShareHash, decodeShareHash, changedValues } from '../js/core/shareLink.js';
@@ -143,7 +144,7 @@ test('piecewise diagram: dots and exact labels for the PDF example', () => {
   assert.ok(code.includes('\\fill (0,0) circle'), 'filled dot at O');
   assert.ok(/fill=white\] \(2\.8284,0\) circle/.test(code), 'open dot at (2√2, 0)');
   assert.ok(code.includes('\\fill (2.8284,0.7071) circle'), 'filled dot at top');
-  assert.ok(code.includes('{$2\\sqrt{2}$}') && code.includes('{$\\frac{\\sqrt{2}}{2}$}'), 'exact labels');
+  assert.ok(code.includes('{$2\\sqrt{2}$}') && code.includes('{$\\displaystyle \\frac{\\sqrt{2}}{2}$}'), 'exact labels');
   const noJoin = piecewise.generate({ ...base, joinDots: false }).code;
   assert.ok(!noJoin.includes('\\fill (0,0) circle'), 'no dot at a continuous join');
 });
@@ -277,6 +278,19 @@ test('sketch with a plain start, asymptote and turning-point dot (exam image)', 
   assert.ok(code.includes('\\draw[semithick, -to] (0,-1.24)'), 'arrow at the right end only');
   assert.ok(code.includes('\\fill (2,-2.35) circle'), 'dot at the minimum');
   assert.ok(code.includes('\\draw[dashed, thin] (0,5) -- (10.6,5);'), 'dashed asymptote');
+});
+
+test('blank axes: ticks, trig presets and full-size fractions', () => {
+  const base = defaultValues(blank.schema);
+  const a = blank.generate(base);
+  assert.deepEqual(a.warnings, []);
+  assert.ok(a.code.includes('{$2$}') && a.code.includes('{$5$}'), 'ticks at 2 and 5');
+  assert.ok(!a.code.includes('{$O$}') && !a.code.includes('plot'), 'no origin label, no curve');
+  const r = blank.generate({ ...base, xPreset: 'radians', xCustomTicks: '', originLabel: true });
+  assert.ok(r.code.includes('{$\\displaystyle \\frac{\\pi}{2}$}') && r.code.includes('{$2\\pi$}'), 'radian ticks');
+  assert.ok(r.code.includes('{$O$}'), 'origin label');
+  const d = blank.generate({ ...base, xPreset: 'degrees', xCustomTicks: '' });
+  assert.ok(d.code.includes('{$360^{\\circ}$}'), 'degree ticks');
 });
 
 test('index.html versions are up to date (run: node tools/stamp-versions.mjs)', () => {

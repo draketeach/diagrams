@@ -26,6 +26,12 @@ papers (`patterns.meta` dots in three densities), crosshatched or grey;
 labels as z-scores, real values (from μ and σ) or μ ± kσ; dashed boundary
 lines; calculated or typed area labels; and the 68–95–99.7% empirical rule.
 
+The **Blank axes** type draws labelled axes with tick marks and no curve, for
+"sketch the graph" questions: type the ticks (`2, 5`, `pi/3, 2pi/3`, `3:a`) or
+use a trig preset (π/2 … 2π, or 90° … 360°), with an optional grid.
+
+Fractions in labels are drawn full size (`\displaystyle`), as on exam papers.
+
 Function graphs (polynomial and piecewise) can show dashed **asymptotes**, e.g.
 `y = 5, x = -2`, optionally shortened with a range (`y = 5 from 0 to 10`),
 labelled by their value on the axis, by their equation, both, or not at all.
@@ -96,6 +102,7 @@ js/diagrams/
   polynomial.js          the polynomial graph module
   piecewise.js           the piecewise function module
   normal.js              the normal distribution module
+  blank.js               blank axes
 tools/
   stamp-versions.mjs     adds content-hash versions to JS/CSS URLs in index.html
 tests/

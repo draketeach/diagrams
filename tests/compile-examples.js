@@ -9,6 +9,7 @@ import { toStandaloneDocument } from '../js/core/tikzDocument.js';
 import polynomial from '../js/diagrams/polynomial.js';
 import piecewise from '../js/diagrams/piecewise.js';
 import normal from '../js/diagrams/normal.js';
+import blank from '../js/diagrams/blank.js';
 
 const base = defaultValues(polynomial.schema);
 const pbase = defaultValues(piecewise.schema);
@@ -49,6 +50,8 @@ const jobs = [
   ['normal-tails', normal.generate(nbase)],
   ['normal-real', normal.generate({ ...nbase, labelMode: 'real', mean: '50', sd: '10', regions: 'x > 62\n35 < x < 45', areaLabels: 'prob', shadeStyle: 'gray!20' })],
   ['normal-empirical', normal.generate({ ...nbase, labelMode: 'symbolic', regions: '-1 < z < 1', areaLabels: 'percent', empirical: 'both' })],
+  ['blank-trig', blank.generate({ ...defaultValues(blank.schema), xPreset: 'radians', xCustomTicks: '', originLabel: true })],
+  ['blank-degrees-grid', blank.generate({ ...defaultValues(blank.schema), xPreset: 'degrees', yCustomTicks: '1, -1', showGrid: true })],
 ];
 for (const [name, { code, warnings }] of jobs) {
   const texPath = new URL(`./out/${name}.tex`, import.meta.url).pathname;

@@ -41,11 +41,16 @@ export function escapeText(s) {
   return String(s).replace(/([#$%&_{}])/g, '\\$1');
 }
 
-/** Wrap user label text in math mode unless it already contains $. */
+/**
+ * Wrap user label text in math mode unless it already contains $.
+ * Fractions are shown full size (\displaystyle), as on exam papers;
+ * \displaystyle works without amsmath, unlike \dfrac.
+ */
 export function mathLabel(s) {
   const t = String(s).trim();
   if (t === '') return '';
-  return t.includes('$') ? t : `$${t}$`;
+  if (t.includes('$')) return t;
+  return t.includes('\\frac') && !t.includes('\\displaystyle') ? `$\\displaystyle ${t}$` : `$${t}$`;
 }
 
 export const LINE_WIDTHS = [
