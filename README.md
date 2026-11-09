@@ -20,6 +20,10 @@ The first diagram type is the **Polynomial graph**, which can be defined in four
 | Coefficients | `1, 0, -13, 12` | Same as typed equation |
 | Sketch through points | `x, y [, label]` per line | Uses your values or custom labels such as `a`; optional dots at the curve ends |
 
+Function graphs can have a background grid (its own range, x/y spacing and line
+shade), and in the equation-based modes the curve can be limited to a range
+(e.g. from x = 0 to 1.43) so it stops there instead of running to the edge.
+
 You can toggle x-/y-intercept labels, tick marks at the intercepts, evenly spaced
 scale ticks (optionally numbered) on either axis, custom ticks at chosen values
 (e.g. `3`, `5/2`, `pi`, or `3:a` for a custom label), points on the curve at chosen

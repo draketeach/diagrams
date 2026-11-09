@@ -125,6 +125,72 @@ export function axesFields() {
   };
 }
 
+export function gridFields() {
+  const on = (v) => v.showGrid;
+  return {
+    type: 'group',
+    label: 'Grid',
+    collapsed: true,
+    fields: [
+      { type: 'checkbox', key: 'showGrid', label: 'Background grid', default: false },
+      { type: 'number', key: 'gridXStep', label: 'x spacing', default: null, step: 0.25, min: 0, help: 'Blank = automatic.', showIf: on },
+      { type: 'number', key: 'gridYStep', label: 'y spacing', default: null, step: 0.25, min: 0, help: 'Blank = automatic.', showIf: on },
+      { type: 'number', key: 'gridXmin', label: 'Grid from x', default: null, step: 0.25, help: 'Leave the range blank to fill the axes.', showIf: on },
+      { type: 'number', key: 'gridXmax', label: 'Grid to x', default: null, step: 0.25, showIf: on },
+      { type: 'number', key: 'gridYmin', label: 'Grid from y', default: null, step: 0.25, showIf: on },
+      { type: 'number', key: 'gridYmax', label: 'Grid to y', default: null, step: 0.25, showIf: on },
+      {
+        type: 'select',
+        key: 'gridShade',
+        label: 'Grid lines',
+        default: 'gray!50',
+        options: [
+          { value: 'gray!30', label: 'Light grey' },
+          { value: 'gray!50', label: 'Grey' },
+          { value: 'black', label: 'Black' },
+        ],
+        showIf: on,
+      },
+    ],
+  };
+}
+
+/**
+ * Background grid, drawn as explicit lines at multiples of the spacing
+ * (works with separate x/y scales and any TikZ version).
+ */
+export function drawGrid(b, win, values) {
+  if (!values.showGrid) return [];
+  const warnings = [];
+  const pick = (v, d) => (v === null || v === undefined || v === '' || !isFinite(v) ? d : v);
+  const x0 = pick(values.gridXmin, win.xmin);
+  const x1 = pick(values.gridXmax, win.xmax);
+  const y0 = pick(values.gridYmin, win.ymin);
+  const y1 = pick(values.gridYmax, win.ymax);
+  if (!(x1 > x0) || !(y1 > y0)) return ['The grid range is empty.'];
+  let sx = pick(values.gridXStep, 0) > 0 ? values.gridXStep : niceStep(x1 - x0, 10);
+  let sy = pick(values.gridYStep, 0) > 0 ? values.gridYStep : niceStep(y1 - y0, 10);
+  if ((x1 - x0) / sx > 200 || (y1 - y0) / sy > 200) {
+    warnings.push('Grid spacing is very small, so it was increased.');
+    sx = niceStep(x1 - x0, 50);
+    sy = niceStep(y1 - y0, 50);
+  }
+  const lines = (lo, hi, step) => {
+    const out = [];
+    for (let k = Math.ceil(lo / step - 1e-9); k * step <= hi + 1e-9; k++) out.push(Number((k * step).toPrecision(12)));
+    return out;
+  };
+  const segs = [
+    ...lines(x0, x1, sx).map((x) => `${pt(x, y0)} -- ${pt(x, y1)}`),
+    ...lines(y0, y1, sy).map((y) => `${pt(x0, y)} -- ${pt(x1, y)}`),
+  ];
+  const rows = [];
+  for (let i = 0; i < segs.length; i += 4) rows.push('    ' + segs.slice(i, i + 4).join(' '));
+  b.comment('grid');
+  b.add(`\\draw[${values.gridShade || 'gray!50'}, very thin]\n${rows.join('\n')};`);
+  return warnings;
+}
+
 export function curveStyleFields({ includeMethod = true } = {}) {
   const fields = [
     { type: 'select', key: 'curveWidth', label: 'Curve line width', default: 'semithick', options: LINE_WIDTHS },

@@ -164,6 +164,7 @@ test('share links round-trip options and code', () => {
   const values = { ...defaults, pieces: 'x/4, 0 ≤ x ≤ 2√2\n0, otherwise', shade: '1 to 2', joinDots: false };
   const changed = changedValues(values, defaults);
   assert.deepEqual(Object.keys(changed).sort(), ['joinDots', 'pieces', 'shade']);
+  assert.deepEqual(changedValues({ a: null, b: '' }, { a: '', b: null }), {}, 'blank number boxes are not changes');
   const hash = encodeShareHash({ type: 'piecewise', values: changed, code: '\\begin{tikzpicture}% π\n\\end{tikzpicture}' });
   assert.ok(/^#type=piecewise&o=[\w-]+&c=[\w-]+$/.test(hash), hash);
   const back = decodeShareHash(hash);
@@ -179,6 +180,17 @@ test('sketch mode: dots at curve ends replace arrows', () => {
   const { code } = polynomial.generate({ ...base, mode: 'sketch', points: '0,-2\n4,-1\n8,-2.8', endDots: 'right', curveArrow: 'to', dotSize: '2pt' });
   assert.ok(code.includes('\\fill (8,-2.8) circle[radius=2pt]'), 'dot at right end');
   assert.ok(/\\draw\[semithick, to-\]/.test(code), 'arrow only at the left end');
+});
+
+test('grid and curve range', () => {
+  const base = defaultValues(polynomial.schema);
+  const { code } = polynomial.generate({ ...base, mode: 'expression', expression: '2x^3 - 5.3x^2 + 3.35x', domainFrom: '0', domainTo: '1.43',
+    showGrid: true, gridXStep: 0.25, gridYStep: 0.25, gridXmin: 0, gridXmax: 1.5, gridYmin: -0.25, gridYmax: 1, windowMode: 'manual', xmin: -0.1, xmax: 1.65, ymin: -0.38, ymax: 1.2 });
+  assert.ok(code.includes('(1.5,-0.25) -- (1.5,1)') && code.includes('(0,-0.25) -- (1.5,-0.25)'), 'grid lines at the edges of its range');
+  assert.ok(/plot\[domain=0:1\.43,/.test(code), 'curve limited to 0..1.43');
+  assert.ok(!/\\draw\[semithick, -to\] plot|\\draw\[semithick, to-to\] plot/.test(code), 'no arrow at a chosen end');
+  const pw = piecewise.generate({ ...defaultValues(piecewise.schema), showGrid: true });
+  assert.ok(pw.code.includes('% grid'), 'grid in piecewise graphs too');
 });
 
 test('index.html versions are up to date (run: node tools/stamp-versions.mjs)', () => {

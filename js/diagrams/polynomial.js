@@ -31,6 +31,8 @@ import {
   drawScaleTicks,
   drawCustomTicks,
   dotRadius,
+  gridFields,
+  drawGrid,
   curvePointFields,
   drawCurvePoints,
 } from '../lib/functionGraph.js';
@@ -105,12 +107,29 @@ const schema = [
           { value: 'both', label: 'Both ends' },
         ],
         help: 'A dot replaces the arrow at that end.',
-        showIf: isMode('sketch'),
+      },
+      {
+        type: 'text',
+        key: 'domainFrom',
+        label: 'Draw the curve from x =',
+        default: '',
+        placeholder: 'blank = left edge',
+        showIf: isMode('roots', 'expression', 'coefficients'),
+      },
+      {
+        type: 'text',
+        key: 'domainTo',
+        label: 'to x =',
+        default: '',
+        placeholder: 'blank = right edge',
+        help: 'The curve stops here with no arrow, e.g. 0 to 1.43.',
+        showIf: isMode('roots', 'expression', 'coefficients'),
       },
     ],
   },
   windowFields(),
   axesFields(),
+  gridFields(),
   curveStyleFields(),
   labelFields(),
   curvePointFields(),
@@ -278,11 +297,41 @@ function generateFormula(values) {
     })
   );
 
-  const roots = (model.roots ?? findRoots(f, win.xmin, win.xmax).map((x) => ({ x }))).filter(
-    (r) => r.x >= win.xmin && r.x <= win.xmax
-  );
-  const tps = findTurningPoints(f, win.xmin, win.xmax);
-  const pieces = findPieces(f, win);
+  // optional range for the curve ("Draw the curve from x = … to …")
+  const bound = (text, name) => {
+    if (String(text ?? '').trim() === '') return null;
+    try {
+      return parseConstant(String(text).replace(/√/g, 'sqrt')).value;
+    } catch (e) {
+      throw new Error(`Could not read "${text}" for the curve's ${name}: ${e.message}`);
+    }
+  };
+  const from = bound(values.domainFrom, 'start');
+  const to = bound(values.domainTo, 'end');
+  if (from !== null && to !== null && from >= to) throw new Error('The curve must start before it ends.');
+  const lo = Math.max(win.xmin, from ?? -Infinity);
+  const hi = Math.min(win.xmax, to ?? Infinity);
+  const inRange = (x) => x >= lo && x <= hi;
+
+  const roots = (model.roots ?? findRoots(f, win.xmin, win.xmax).map((x) => ({ x }))).filter((r) => inRange(r.x));
+  const tps = hi > lo ? findTurningPoints(f, lo, hi) : [];
+  const pieces = hi > lo ? findPieces(f, { ...win, xmin: lo, xmax: hi }) : [];
+  for (const p of pieces) {
+    // the curve deliberately stops at a chosen end: no arrow there
+    if (from !== null && Math.abs(p.a - from) < 1e-9) p.startArrow = false;
+    if (to !== null && Math.abs(p.b - to) < 1e-9) p.endArrow = false;
+  }
+  const endDots = [];
+  if (pieces.length) {
+    if (values.endDots === 'left' || values.endDots === 'both') {
+      pieces[0].startArrow = false;
+      endDots.push(pieces[0].a);
+    }
+    if (values.endDots === 'right' || values.endDots === 'both') {
+      pieces[pieces.length - 1].endArrow = false;
+      endDots.push(pieces[pieces.length - 1].b);
+    }
+  }
   if (!pieces.length) warnings.push('The curve is not visible in this window.');
 
   const maxAbs = Math.max(Math.abs(win.ymin), Math.abs(win.ymax));
@@ -294,6 +343,7 @@ function generateFormula(values) {
   const { options, xUnit, yUnit } = scaleOptions(win, values);
   const b = new TikzBuilder();
   b.comment(`y = ${model.latex}`);
+  warnings.push(...drawGrid(b, win, values));
   warnings.push(...drawAxes(b, win, values));
   warnings.push(
     ...drawScaleTicks(b, win, values, {
@@ -308,8 +358,12 @@ function generateFormula(values) {
     })
   );
   drawCurve(b, pieces, values, { pgfExpr: model.pgf, f, method });
+  if (endDots.length) {
+    b.comment('dots at curve ends');
+    for (const x of endDots) b.add(`\\fill ${pt(x, f(x))} circle[radius=${dotRadius(values)}];`);
+  }
   drawXIntercepts(b, roots, f, values, win);
-  drawYIntercept(b, f, values, win);
+  if (inRange(0)) drawYIntercept(b, f, values, win);
   drawTurningPoints(b, tps, values, win, { xUnit, yUnit });
   warnings.push(...drawCurvePoints(b, f, win, values, { xUnit, yUnit }));
   drawEquation(b, model.latex, f, pieces, values);
@@ -381,6 +435,7 @@ function generateSketch(values) {
 
   const { options, xUnit, yUnit } = scaleOptions(win, values);
   const b = new TikzBuilder();
+  warnings.push(...drawGrid(b, win, values));
   warnings.push(...drawAxes(b, win, values));
   warnings.push(
     ...drawScaleTicks(b, win, values, {

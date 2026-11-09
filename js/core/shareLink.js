@@ -25,7 +25,8 @@ function fromBase64Url(s) {
 export function changedValues(values, defaults) {
   const out = {};
   for (const [k, v] of Object.entries(values)) {
-    if (v !== defaults[k] && !(v === '' && defaults[k] == null)) out[k] = v;
+    const blank = (x) => x === '' || x === null || x === undefined;
+    if (v !== defaults[k] && !(blank(v) && blank(defaults[k]))) out[k] = v;
   }
   return out;
 }

@@ -26,6 +26,8 @@ import {
   drawScaleTicks,
   drawCustomTicks,
   drawCurvePoints,
+  gridFields,
+  drawGrid,
 } from '../lib/functionGraph.js';
 
 /** Copy a schema group with some field defaults changed. */
@@ -55,6 +57,7 @@ const schema = [
   },
   withDefaults(windowFields(), { width: 9, height: 4 }),
   withDefaults(axesFields(), { xCustomTicks: '2' }),
+  gridFields(),
   withDefaults(curveStyleFields(), { curveWidth: 'thick' }),
   {
     type: 'group',
@@ -233,6 +236,7 @@ function generate(values) {
   // ---- build the picture
   const { options, xUnit, yUnit } = scaleOptions(win, values);
   const b = new TikzBuilder();
+  warnings.push(...drawGrid(b, win, values));
 
   if (shades.length) {
     b.comment('shading');
