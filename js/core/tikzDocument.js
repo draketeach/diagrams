@@ -106,7 +106,7 @@ export function rewriteMathMinus(src) {
 }
 
 /** Code suitable for TikZJax (tikz is preloaded; no \documentclass). */
-export function toTikzJaxSource(code, { supportsLibraries = false, glyphFixes = true } = {}) {
+export function toTikzJaxSource(code, { supportsLibraries = false, glyphFixes = true, preamble: extraPreamble = '' } = {}) {
   const warnings = [];
   const { preamble, body } = splitCode(code);
   const pre = cleanPreamble(preamble);
@@ -120,7 +120,7 @@ export function toTikzJaxSource(code, { supportsLibraries = false, glyphFixes = 
   }
   // Blank lines become \par, which can upset TikZ inside a picture.
   const strip = (s) => s.split('\n').filter((l) => l.trim() !== '').join('\n');
-  const fixes = glyphFixes ? `${TIKZJAX_FIXES}\n` : '';
+  const fixes = (glyphFixes ? `${TIKZJAX_FIXES}\n` : '') + (extraPreamble ? `${extraPreamble}\n` : '');
   const content = glyphFixes ? rewriteMathMinus(strip(body)) : strip(body);
   const source = `${fixes}${strip(pre)}\n\\begin{document}\n${content}\n\\end{document}\n`.replace(/^\n/, '').replace(/\n\n/, '\n');
   return { source, warnings };

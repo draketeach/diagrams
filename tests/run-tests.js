@@ -152,12 +152,17 @@ test('patched local TikZJax gets the code unchanged', () => {
   assert.ok(!source.includes('mathcode') && source.includes('{$-1.5$}'));
 });
 
-test('TikZJax script name matches its contents', () => {
-  const url = TIKZJAX.sources[0].script;
-  const file = new URL(url);
-  const hash = createHash('sha1').update(readFileSync(file)).digest('hex').slice(0, 10);
-  assert.ok(file.pathname.endsWith(`tikzjax-${hash}.js`), `rename the script to tikzjax-${hash}.js`);
+test('TikZJax files are named after their contents', () => {
+  for (const src of TIKZJAX.sources.filter((x) => x.script.startsWith('file:'))) {
+    for (const url of [src.script, src.fonts]) {
+      const m = url.match(/-([0-9a-f]{10})\.(js|css)$/);
+      if (!m) continue; // the v1 fonts.css is not hashed (it never changes)
+      const hash = createHash('sha1').update(readFileSync(new URL(url))).digest('hex').slice(0, 10);
+      assert.equal(m[1], hash, `rename ${url} to end in -${hash}`);
+    }
+  }
   for (const f of TIKZJAX.engineFiles) assert.equal(readFileSync(new URL(f.url)).length, f.bytes, `byte size in config for ${f.url}`);
+  assert.ok(readFileSync(new URL('../index.html', import.meta.url), 'utf8').includes(TIKZJAX.fonts.split('/vendor/')[1]), 'index.html uses the same fonts file');
 });
 
 test('share links round-trip options and code', () => {
@@ -206,7 +211,8 @@ test('normal distribution: default diagram like the exam image', () => {
   const base = defaultValues(normal.schema);
   const { code, warnings } = normal.generate(base);
   assert.deepEqual(warnings, []);
-  assert.equal((code.match(/\\clip/g) || []).length, 2, 'two dotted regions');
+  assert.equal((code.match(/pattern=\{Dots/g) || []).length, 2, 'two dotted regions');
+  assert.ok(code.startsWith('\\usetikzlibrary{patterns.meta}'), 'loads patterns.meta');
   assert.ok(code.includes('{$-1.5$}') && code.includes('{$0$}') && code.includes('{$1.2$}'), 'labels at -1.5, 0, 1.2');
   assert.ok(code.includes('\\draw[dashed, thin] (-1.5,0) --') && code.includes('\\draw[dashed, thin] (1.2,0) --'), 'dashed boundaries');
   const r = normal.generate({ ...base, labelMode: 'real', mean: '50', sd: '10', regions: 'x > 62 : P(X>62)', areaLabels: 'prob', shadeStyle: 'gray!20' });

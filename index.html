@@ -10,17 +10,17 @@
   {
     "imports": {
       "./js/app.js": "./js/app.js?v=662892141c",
-      "./js/config.js": "./js/config.js?v=81b535194e",
+      "./js/config.js": "./js/config.js?v=a253ed8f12",
       "./js/core/codeEditor.js": "./js/core/codeEditor.js?v=8ebeb77b15",
-      "./js/core/exporter.js": "./js/core/exporter.js?v=0566f60feb",
+      "./js/core/exporter.js": "./js/core/exporter.js?v=149c75aa96",
       "./js/core/formBuilder.js": "./js/core/formBuilder.js?v=6cb747ea6a",
       "./js/core/registry.js": "./js/core/registry.js?v=869bc7b880",
       "./js/core/shareLink.js": "./js/core/shareLink.js?v=10e433fc69",
-      "./js/core/tikzDocument.js": "./js/core/tikzDocument.js?v=399c249f91",
-      "./js/core/tikzRenderer.js": "./js/core/tikzRenderer.js?v=268adc4c5b",
+      "./js/core/tikzDocument.js": "./js/core/tikzDocument.js?v=6becf9f9e7",
+      "./js/core/tikzRenderer.js": "./js/core/tikzRenderer.js?v=af93136c64",
       "./js/core/tikzjaxLoader.js": "./js/core/tikzjaxLoader.js?v=3d0ed0e0f3",
       "./js/diagrams/index.js": "./js/diagrams/index.js?v=f959f0f573",
-      "./js/diagrams/normal.js": "./js/diagrams/normal.js?v=3339f4ce95",
+      "./js/diagrams/normal.js": "./js/diagrams/normal.js?v=bbff7e5d62",
       "./js/diagrams/piecewise.js": "./js/diagrams/piecewise.js?v=14dab902d6",
       "./js/diagrams/polynomial.js": "./js/diagrams/polynomial.js?v=0edd344ef5",
       "./js/lib/functionGraph.js": "./js/lib/functionGraph.js?v=b70f6055db",
@@ -33,7 +33,8 @@
   }
   </script>
   <!-- importmap:end -->
-  <link rel="stylesheet" href="vendor/tikzjax/v1/fonts.css">
+  <!-- TeX fonts for the preview (4.6 MB, fonts embedded); loaded without blocking the page -->
+  <link rel="stylesheet" href="vendor/tikzjax-benrbray/fonts-a7d4964e6d.css" media="print" onload="this.media='all'">
   <link rel="stylesheet" href="css/style.css?v=051ff5459d">
 </head>
 <body>
@@ -111,7 +112,7 @@
     Made by <a href="https://mrdrake.com" target="_blank" rel="noopener author">MrDrake</a>
     with <a href="https://www.anthropic.com/claude" target="_blank" rel="noopener">Claude</a> (Anthropic).
     <br>
-    Rendering by <a href="https://tikzjax.com" target="_blank" rel="noopener">TikZJax</a> (served from this site). The first visit downloads TeX (~11 MB) once; after that it is kept on this computer.
+    Rendering by <a href="https://tikzjax.com" target="_blank" rel="noopener">TikZJax</a> (served from this site). The first visit downloads TeX (~9 MB) once; after that it is kept on this computer.
     <br>
     Site code and generated diagrams are dedicated to the public domain under
     <a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener license">CC0 1.0 Universal</a>

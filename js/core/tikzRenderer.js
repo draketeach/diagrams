@@ -44,7 +44,7 @@ export async function renderTikz(code, options = {}) {
   let warnings = [];
   for (let i = 0; i < cfg.sources.length; i++) {
     const src = cfg.sources[i];
-    const prepared = toTikzJaxSource(code, { ...cfg, glyphFixes: src.glyphFixes });
+    const prepared = toTikzJaxSource(code, { supportsLibraries: src.supportsLibraries, glyphFixes: src.glyphFixes, preamble: src.preamble });
     warnings = prepared.warnings;
     try {
       const svg = await renderWith(prepared.source, src, cfg.timeoutMs);
@@ -76,7 +76,7 @@ function renderWith(source, src, timeoutMs) {
 <script>window.__tikzErrors=[];
 addEventListener('error',function(e){__tikzErrors.push(String(e.message||e));});
 addEventListener('unhandledrejection',function(e){var r=e.reason;__tikzErrors.push(String(r&&r.message||r));});<\/script>
-</head><body><script type="text/tikz">${safe}<\/script>
+</head><body><div id="tikz"><script type="text/tikz">${safe}<\/script></div>
 <script src="${src.script}" onerror="__tikzErrors.push('TIKZJAX_LOAD_FAILED')"><\/script></body></html>`;
 
     const job = { iframe, reject };
@@ -108,8 +108,21 @@ addEventListener('unhandledrejection',function(e){var r=e.reason;__tikzErrors.pu
         reject(new Error(hint));
         return;
       }
-      const pending = doc.querySelector('script[type="text/tikz"]');
-      const svg = doc.querySelector('body > div svg');
+      const box = doc.getElementById('tikz');
+      if (!box) return;
+      // The benrbray build shows an error image when TeX fails.
+      if (box.querySelector('img')) {
+        cleanup(job);
+        reject(
+          new Error(
+            'TeX could not compile the code. Check for typos, a missing \\usetikzlibrary, or numbers too large for TikZ.'
+          )
+        );
+        return;
+      }
+      const pending = box.querySelector('script[type="text/tikz"]');
+      // Ignore TikZJax's loading spinner (a small rounded rectangle).
+      const svg = [...box.querySelectorAll('svg')].find((el) => !el.querySelector(':scope > rect[rx]'));
       if (!pending && svg) {
         const copy = document.importNode(svg, true);
         clearInterval(job.poll);

@@ -21,7 +21,8 @@ The first diagram type is the **Polynomial graph**, which can be defined in four
 | Sketch through points | `x, y [, label]` per line | Uses your values or custom labels such as `a`; optional dots at the curve ends |
 
 The **Normal distribution** type draws a bell curve with regions shaded by
-inequality (`z < -1.5`, `-1 < z < 2`, `x > 62 : 0.1151`), dotted or grey;
+inequality (`z < -1.5`, `-1 < z < 2`, `x > 62 : 0.1151`), dotted like exam
+papers (`patterns.meta` dots in three densities), crosshatched or grey;
 labels as z-scores, real values (from μ and σ) or μ ± kσ; dashed boundary
 lines; calculated or typed area labels; and the 68–95–99.7% empirical rule.
 
@@ -76,7 +77,8 @@ js/lib/                  helpers for diagram modules
   functionGraph.js       window, axes, curve pieces, intercept/turning-point labels
   hermite.js             smooth sketch curves through points
   tikz.js                TikZ writing helpers
-vendor/tikzjax/           local copy of TikZJax + fonts (own licences)
+vendor/tikzjax-benrbray/  TikZJax build used by the site (own licence)
+vendor/tikzjax/           older TikZJax v1 copy, used as a fallback (own licences)
 js/diagrams/
   index.js               list of registered diagram types
   polynomial.js          the polynomial graph module
@@ -133,40 +135,45 @@ The schema field types are `group`, `select`, `number`, `text`, `textarea` and
 
 ## TikZJax
 
-TikZJax is served from this site, in `vendor/tikzjax/`, so the site never
-contacts tikzjax.com or Amazon S3. Some school and network filters block those.
-If the local copy fails to load, the site falls back to tikzjax.com and says so.
+TikZJax is served from this site, so the site never contacts tikzjax.com or
+Amazon S3. Some school and network filters block those. It tries, in order:
 
-The first visit downloads the TeX engine (~11 MB) with a progress bar. A service
-worker (`sw.js`) keeps those files on the computer, so later visits load
-instantly. It also fetches the site's own code fresh on every visit, so updates
-appear without a hard refresh. A note in the footer says whether the current
-computer has the TeX engine saved for offline use. If the TikZJax files are ever replaced, change
-`ENGINE_CACHE` in `sw.js` and `engineCache` in `js/config.js`.
-See `vendor/tikzjax/README.md` for where the files came from and their licences.
+1. `vendor/tikzjax-benrbray/`: a build of [benrbray/tikzjax](https://github.com/benrbray/tikzjax),
+   with TikZ libraries (such as `patterns.meta`) and packages. TeX runs in a
+   background worker, and finished pictures are cached in the browser.
+2. `vendor/tikzjax/`: the older TikZJax v1 copy (core TikZ only).
+3. tikzjax.com, with a message saying so.
+
+The site moves to the next one only if a file fails to load.
+
+The first visit downloads the TeX engine and fonts (~9 MB) with a progress bar.
+A service worker (`sw.js`) keeps those files on the computer, so later visits
+load instantly. It also fetches the site's own code fresh on every visit, so
+updates appear without a hard refresh. A note in the footer says whether the
+current computer has the TeX engine saved for offline use. The TikZJax files
+are named after their contents (tests check this), so a replaced file is never
+served from an old cache.
+See the README in each `vendor/` folder for where the files came from and their licences.
 
 ### Limitations
 
-- The TikZJax v1 build has TikZ preloaded but **no `\usetikzlibrary` libraries
-  and no extra packages** (no `arrows.meta`, `calc`, `pgfplots`…). The generated
-  code uses core TikZ only (`stealth`, `latex` and `to` arrow tips). If a future
-  diagram needs libraries, switch `js/config.js` to a build that includes them
-  (e.g. [drgrice1/tikzjax](https://github.com/drgrice1/tikzjax)) and set
-  `supportsLibraries: true`.
-- TikZJax can't report TeX errors, so a broken edit shows as a timeout.
+- PGF's SVG output has two bugs with `pattern=` fills: the pattern definitions
+  are never written, and each tile is cut to its positive corner, so a dot
+  shows as a quarter. `js/config.js` adds a small TeX fix for both, sent only
+  to TikZJax. The code you copy is unchanged and compiles normally in LaTeX.
+- If TeX can't compile an edit, the preview says so. It can't say which line.
 - TikZ maths overflows above about ±16000. For steep functions, choose
   **Plot method → Pre-computed coordinates**.
-- PNG/SVG export embeds the Computer Modern fonts from the local copy.
-- The original TikZJax shows some maths symbols wrongly (`-` `.` `,` `/` `√`)
-  because it looks characters up in its fonts by the wrong code. The copy in
-  `vendor/tikzjax/` is patched to fix this. If the site ever falls back to
-  tikzjax.com, it applies TeX workarounds for `-` `.` `,` `/` instead.
+- PNG/SVG export embeds the Computer Modern fonts.
+- The original TikZJax v1 shows some maths symbols wrongly (`-` `.` `,` `/` `√`).
+  The fallback copy in `vendor/tikzjax/` is patched to fix this. If the site
+  ever falls back to tikzjax.com, it applies TeX workarounds for `-` `.` `,` `/` instead.
 - PNGs carry their dpi, so Word/Google Docs insert them at the correct physical size.
 
 ## Credits
 
 Made by [MrDrake](https://mrdrake.com) with [Claude](https://www.anthropic.com/claude) (Anthropic).
-Rendering by [TikZJax](https://tikzjax.com).
+Rendering by [TikZJax](https://tikzjax.com) ([benrbray's build](https://github.com/benrbray/tikzjax)).
 
 ## License
 
@@ -175,6 +182,6 @@ waived all copyright and related rights to this work. Every source file has an
 `SPDX-License-Identifier: CC0-1.0` header. The TikZ code and images this site
 generates are also yours to use without restriction.
 
-The exception is `vendor/tikzjax/`, a copy of TikZJax and the BaKoMa fonts. Those
-files keep their own licences (GPL-3.0 or LPPL-1.3c for TikZJax). See
-`vendor/tikzjax/README.md`.
+The exceptions are `vendor/tikzjax-benrbray/` and `vendor/tikzjax/`, copies of
+TikZJax and its fonts. Those files keep their own licences (GPL-3.0 for the
+benrbray build; GPL-3.0 or LPPL-1.3c for TikZJax v1). See the README in each folder.

@@ -2,7 +2,8 @@
 // Normal distribution diagram module.
 //
 // A bell curve over an x-axis, with regions given as inequalities
-// ("z < -1.5", "-1 < z < 2", "x > 65 : 0.1151"), shaded with dots or grey,
+// ("z < -1.5", "-1 < z < 2", "x > 65 : 0.1151"), shaded with dots,
+// crosshatching (TikZ patterns.meta) or grey,
 // dashed lines at the boundaries, labels as z-scores, real values or
 // μ ± kσ, optional area labels and the empirical-rule (68–95–99.7) layout.
 //
@@ -52,9 +53,10 @@ const schema = [
         label: 'Shading',
         default: 'dots',
         options: [
-          { value: 'dots', label: 'Dots' },
-          { value: 'dots-dense', label: 'Dots (dense)' },
-          { value: 'dots-light', label: 'Dots (sparse)' },
+          { value: 'dots', label: 'Dots (like exam papers)' },
+          { value: 'dots-medium', label: 'Dots (medium)' },
+          { value: 'dots-sparse', label: 'Dots (sparse)' },
+          { value: 'crosshatch', label: 'Crosshatch' },
           { value: 'gray!20', label: 'Light grey' },
           { value: 'gray!40', label: 'Mid grey' },
         ],
@@ -205,9 +207,17 @@ function generate(values) {
 
   const b = new TikzBuilder();
 
-  // ---- shading
+  // ---- shading (patterns come from TikZ's patterns.meta library)
   const style = values.shadeStyle || 'dots';
-  const spacing = { 'dots-dense': 0.065, dots: 0.085, 'dots-light': 0.12 }[style];
+  const PATTERNS = {
+    // staggered (45°) like printed exam papers; ink coverage ≈ π r² / d²
+    dots: 'Dots[radius=0.33pt, distance=1.5pt, angle=45]', // ≈ 15%, matches the HSC-style stipple
+    'dots-medium': 'Dots[radius=0.38pt, distance=2.2pt, angle=45]', // ≈ 9%
+    'dots-sparse': 'Dots[radius=0.42pt, distance=3pt, angle=45]', // ≈ 6%
+    crosshatch: 'Hatch[angle=45, distance=3pt, line width=0.3pt]',
+  };
+  const pattern = PATTERNS[style];
+  if (pattern) b.usePreamble('\\usetikzlibrary{patterns.meta}');
   const visible = [];
   for (const r of regions) {
     const a = Math.max(r.a, -T);
@@ -218,29 +228,8 @@ function generate(values) {
     }
     visible.push({ ...r, lo: a, hi: c });
     const region = `${pt(a, 0)} -- plot[domain=${n(a)}:${n(c)}, samples=60, smooth] (\\x,${CURVE}) -- ${pt(c, 0)} -- cycle`;
-    if (!spacing) {
-      b.comment(`shaded region ${fmt(a, 2)} to ${fmt(c, 2)}`);
-      b.add(`\\fill[${style}] ${region};`);
-      continue;
-    }
-    // Dots on a staggered lattice. Each column only goes up to the curve
-    // (\\ytop = curve height there), so TeX doesn't draw dots that the clip
-    // would hide: ~3x fewer dots, about twice as fast in TikZJax.
-    let s = spacing;
-    const area = (c - a) * xu * yu * 0.5; // rough area (cm²) under the curve here
-    if (area / (s * s) > 2500) s *= Math.sqrt(area / (s * s) / 2500);
-    const dx = s / xu;
-    const dy = s / yu;
-    const f5 = (v) => n(v, 5);
-    const column = (x0, y0) =>
-      `  \\foreach \\x in {${f5(x0)},${f5(x0 + 2 * dx)},...,${f5(c)}} ` +
-      `{\\pgfmathsetmacro\\ytop{exp(-0.5*\\x*\\x)} \\foreach \\y in {${f5(y0)},${f5(y0 + dy)},...,\\ytop} \\fill (\\x,\\y) circle[radius=0.3pt];}`;
-    b.comment(`dotted region ${fmt(a, 2)} to ${fmt(c, 2)}`);
-    b.add('\\begin{scope}');
-    b.add(`  \\clip ${region};`);
-    b.add(column(a + dx / 2, dy / 4));
-    b.add(column(a + (3 * dx) / 2, (3 * dy) / 4));
-    b.add('\\end{scope}');
+    b.comment(`shaded region ${fmt(a, 2)} to ${fmt(c, 2)}`);
+    b.add(pattern ? `\\fill[pattern={${pattern}}] ${region};` : `\\fill[${style}] ${region};`);
   }
 
   // ---- dashed lines

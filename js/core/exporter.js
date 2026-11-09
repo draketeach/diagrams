@@ -72,6 +72,10 @@ export async function embeddedFontCss(svg) {
       const url = rules.get(fam);
       if (!url) {
         fontCache.set(fam, null);
+      } else if (url.startsWith('data:')) {
+        // already embedded in fonts.css (benrbray build)
+        const fmt = /woff2/.test(url) ? 'woff2' : /woff/.test(url) ? 'woff' : 'truetype';
+        fontCache.set(fam, `@font-face{font-family:${fam};src:url(${url}) format('${fmt}');}`);
       } else {
         try {
           const res = await fetch(url);

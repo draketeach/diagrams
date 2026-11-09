@@ -11,7 +11,7 @@
 // If the TikZJax files are ever replaced, change ENGINE_CACHE (and the same
 // name in js/config.js) so browsers download the new copy.
 
-const ENGINE_CACHE = 'tikzjax-engine-v3';
+const ENGINE_CACHE = 'tikzjax-engine-v4';
 const SITE_CACHE = 'site-v1';
 const KEEP = [ENGINE_CACHE, SITE_CACHE];
 
@@ -29,7 +29,7 @@ self.addEventListener('activate', (event) => {
           const next = await caches.open(ENGINE_CACHE);
           for (const req of await old.keys()) {
             const path = new URL(req.url).pathname;
-            const immutable = /\.(wasm|gz|ttf)$/.test(path) || /-[0-9a-f]{10}\.js$/.test(path);
+            const immutable = /\.(wasm|gz|ttf)$/.test(path) || /-[0-9a-f]{10}\.(js|css)$/.test(path);
             if (immutable && !(await next.match(req))) {
               const res = await old.match(req);
               if (res) await next.put(req, res);
