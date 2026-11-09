@@ -9,19 +9,20 @@
   <script type="importmap">
   {
     "imports": {
-      "./js/app.js": "./js/app.js?v=203514a2f7",
+      "./js/app.js": "./js/app.js?v=662892141c",
       "./js/config.js": "./js/config.js?v=81b535194e",
       "./js/core/codeEditor.js": "./js/core/codeEditor.js?v=8ebeb77b15",
       "./js/core/exporter.js": "./js/core/exporter.js?v=0566f60feb",
       "./js/core/formBuilder.js": "./js/core/formBuilder.js?v=6cb747ea6a",
       "./js/core/registry.js": "./js/core/registry.js?v=869bc7b880",
+      "./js/core/shareLink.js": "./js/core/shareLink.js?v=42ec867222",
       "./js/core/tikzDocument.js": "./js/core/tikzDocument.js?v=399c249f91",
       "./js/core/tikzRenderer.js": "./js/core/tikzRenderer.js?v=268adc4c5b",
       "./js/core/tikzjaxLoader.js": "./js/core/tikzjaxLoader.js?v=3d0ed0e0f3",
       "./js/diagrams/index.js": "./js/diagrams/index.js?v=78378342fe",
       "./js/diagrams/piecewise.js": "./js/diagrams/piecewise.js?v=2c96aef04f",
-      "./js/diagrams/polynomial.js": "./js/diagrams/polynomial.js?v=81a208e4f8",
-      "./js/lib/functionGraph.js": "./js/lib/functionGraph.js?v=6361b75550",
+      "./js/diagrams/polynomial.js": "./js/diagrams/polynomial.js?v=6d35a9c34f",
+      "./js/lib/functionGraph.js": "./js/lib/functionGraph.js?v=bd388a6e40",
       "./js/lib/hermite.js": "./js/lib/hermite.js?v=4bd11a7313",
       "./js/lib/mathParser.js": "./js/lib/mathParser.js?v=1d769259a6",
       "./js/lib/numeric.js": "./js/lib/numeric.js?v=d814a2f03f",
@@ -53,6 +54,7 @@
       <div class="panel-foot">
         <button id="btn-generate" class="primary" type="button">Generate &amp; render</button>
         <button id="btn-reset" type="button">Reset</button>
+        <button id="btn-copy-link" type="button" title="Copy a link that rebuilds this diagram with these settings">Copy link</button>
       </div>
     </section>
 
@@ -115,6 +117,6 @@
     · <a href="https://github.com/draketeach/diagrams" target="_blank" rel="noopener">Source on GitHub</a>
   </footer>
 
-  <script type="module" src="js/app.js?v=203514a2f7"></script>
+  <script type="module" src="js/app.js?v=662892141c"></script>
 </body>
 </html>

@@ -14,6 +14,7 @@ import { TIKZJAX } from '../js/config.js';
 import { buildIndex } from '../tools/stamp-versions.mjs';
 import { parsePiecewise, piecewiseFunction } from '../js/lib/piecewiseParser.js';
 import piecewise from '../js/diagrams/piecewise.js';
+import { encodeShareHash, decodeShareHash, changedValues } from '../js/core/shareLink.js';
 
 let passed = 0;
 function test(name, fn) {
@@ -156,6 +157,28 @@ test('TikZJax script name matches its contents', () => {
   const hash = createHash('sha1').update(readFileSync(file)).digest('hex').slice(0, 10);
   assert.ok(file.pathname.endsWith(`tikzjax-${hash}.js`), `rename the script to tikzjax-${hash}.js`);
   for (const f of TIKZJAX.engineFiles) assert.equal(readFileSync(new URL(f.url)).length, f.bytes, `byte size in config for ${f.url}`);
+});
+
+test('share links round-trip options and code', () => {
+  const defaults = defaultValues(piecewise.schema);
+  const values = { ...defaults, pieces: 'x/4, 0 ≤ x ≤ 2√2\n0, otherwise', shade: '1 to 2', joinDots: false };
+  const changed = changedValues(values, defaults);
+  assert.deepEqual(Object.keys(changed).sort(), ['joinDots', 'pieces', 'shade']);
+  const hash = encodeShareHash({ type: 'piecewise', values: changed, code: '\\begin{tikzpicture}% π\n\\end{tikzpicture}' });
+  assert.ok(/^#type=piecewise&o=[\w-]+&c=[\w-]+$/.test(hash), hash);
+  const back = decodeShareHash(hash);
+  assert.equal(back.type, 'piecewise');
+  assert.deepEqual(back.values, changed);
+  assert.equal(back.code, '\\begin{tikzpicture}% π\n\\end{tikzpicture}');
+  assert.equal(decodeShareHash(''), null);
+  assert.throws(() => decodeShareHash('#type=x&o=!!!'), /damaged/);
+});
+
+test('sketch mode: dots at curve ends replace arrows', () => {
+  const base = defaultValues(polynomial.schema);
+  const { code } = polynomial.generate({ ...base, mode: 'sketch', points: '0,-2\n4,-1\n8,-2.8', endDots: 'right', curveArrow: 'to', dotSize: '2pt' });
+  assert.ok(code.includes('\\fill (8,-2.8) circle[radius=2pt]'), 'dot at right end');
+  assert.ok(/\\draw\[semithick, to-\]/.test(code), 'arrow only at the left end');
 });
 
 test('index.html versions are up to date (run: node tools/stamp-versions.mjs)', () => {

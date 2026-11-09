@@ -10,6 +10,11 @@ import { bisect, derivative, niceLatex, niceRound } from './numeric.js';
 import { n, pt, arrowSpec, mathLabel, LINE_WIDTHS, ARROW_TIPS, FONT_SIZES } from './tikz.js';
 import { parseConstant } from './mathParser.js';
 
+/** Radius for dots (filled points), from the "Dot size" option. */
+export function dotRadius(values) {
+  return values.dotSize || '1.3pt';
+}
+
 // ---------------------------------------------------------------- schema
 
 export function windowFields() {
@@ -228,6 +233,17 @@ export function labelFields() {
         ],
       },
       { type: 'checkbox', key: 'tpDots', label: 'Dots on turning points', default: false },
+      {
+        type: 'select',
+        key: 'dotSize',
+        label: 'Dot size',
+        default: '1.3pt',
+        options: [
+          { value: '1.3pt', label: 'Small' },
+          { value: '2pt', label: 'Medium' },
+          { value: '2.5pt', label: 'Large' },
+        ],
+      },
       { type: 'number', key: 'dp', label: 'Decimal places', default: 2, min: 0, max: 6, step: 1 },
       {
         type: 'checkbox',
@@ -398,9 +414,10 @@ export function drawCurve(b, pieces, values, opts) {
 }
 
 /** Draw a smooth Bézier path through points with given slopes (cubic Hermite). */
-export function drawHermite(b, points, slopes, values) {
+export function drawHermite(b, points, slopes, values, { startDot = false, endDot = false } = {}) {
   if (points.length < 2) return;
-  const arrows = arrowSpec(values.curveArrow, true, true);
+  // an end with a dot gets no arrow
+  const arrows = arrowSpec(values.curveArrow, !startDot, !endDot);
   const style = [values.curveWidth, arrows].filter(Boolean).join(', ');
   let path = pt(points[0].x, points[0].y);
   for (let i = 0; i < points.length - 1; i++) {
@@ -413,6 +430,11 @@ export function drawHermite(b, points, slopes, values) {
   }
   b.comment('curve (smooth through the given points)');
   b.add(`\\draw[${style}] ${path};`);
+  const ends = [startDot && points[0], endDot && points[points.length - 1]].filter(Boolean);
+  if (ends.length) {
+    b.comment('dots at curve ends');
+    for (const p of ends) b.add(`\\fill ${pt(p.x, p.y)} circle[radius=${dotRadius(values)}];`);
+  }
 }
 
 /**
@@ -427,7 +449,7 @@ export function drawXIntercepts(b, roots, f, values, win) {
   for (const r of roots) {
     if (r.x < win.xmin || r.x > win.xmax) continue;
     const atOrigin = Math.abs(r.x) < 1e-9;
-    if (values.interceptDots) lines.push(`\\fill ${pt(r.x, 0)} circle[radius=1.3pt];`);
+    if (values.interceptDots) lines.push(`\\fill ${pt(r.x, 0)} circle[radius=${dotRadius(values)}];`);
     if (!values.labelX || (atOrigin && values.originLabel)) continue;
     const d = 1e-3 * span;
     const yl = f(r.x - d);
@@ -462,7 +484,7 @@ export function drawYIntercept(b, f, values, win, { latex, slope } = {}) {
   if (Math.abs(c) < 1e-9) return; // that's the origin
   b.comment('y-intercept');
   if (values.yTick) b.add(`\\draw[${values.axisWidth || 'thin'}] ${pt(0, c)} -- ++(-3pt,0);`);
-  if (values.interceptDots) b.add(`\\fill ${pt(0, c)} circle[radius=1.3pt];`);
+  if (values.interceptDots) b.add(`\\fill ${pt(0, c)} circle[radius=${dotRadius(values)}];`);
   if (!values.labelY) return;
   const s = slope ?? derivative(f, 0);
   let anchor;
@@ -504,7 +526,7 @@ export function drawTurningPoints(b, tps, values, win, { xUnit = 1, yUnit = 1 } 
         lines.push(`\\node[anchor=${anchor}, inner sep=2pt] at ${pt(0, p.y)} {${mathLabel(ys)}};`);
       }
     }
-    if (values.tpDots) lines.push(`\\fill ${pt(p.x, p.y)} circle[radius=1.3pt];`);
+    if (values.tpDots) lines.push(`\\fill ${pt(p.x, p.y)} circle[radius=${dotRadius(values)}];`);
     if (style === 'coords' && !onAxis) {
       const anchor = p.kind === 'max' ? 'south' : 'north';
       lines.push(`\\node[anchor=${anchor}, inner sep=3pt] at ${pt(p.x, p.y)} {${mathLabel(`(${xs}, ${ys})`)}};`);
@@ -720,7 +742,7 @@ export function drawCurvePoints(b, f, win, values, { xUnit = 1, yUnit = 1 } = {}
         lines.push(`\\node[anchor=${yAnchor}, inner sep=2pt] at ${pt(0, y)} {${mathLabel(yLatex)}};`);
       }
     }
-    if (values.curvePointDots) lines.push(`\\fill ${pt(p.x, y)} circle[radius=1.3pt];`);
+    if (values.curvePointDots) lines.push(`\\fill ${pt(p.x, y)} circle[radius=${dotRadius(values)}];`);
     let text = '';
     const coords = `(${p.xLatex}, ${yLatex})`;
     if (style === 'coords') text = coords;

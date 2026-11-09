@@ -18,7 +18,7 @@ The first diagram type is the **Polynomial graph**, which can be defined in four
 | Roots + leading coefficient | `-4, 1, 3` and `a = 1` | Exact, as typed (`1/2` → ½, `sqrt(3)` → √3) |
 | Typed equation | `x^3 - 7x + 6`, `2sin(x)` | Exact where possible (fractions, π, surds) |
 | Coefficients | `1, 0, -13, 12` | Same as typed equation |
-| Sketch through points | `x, y [, label]` per line | Uses your values or custom labels such as `a` |
+| Sketch through points | `x, y [, label]` per line | Uses your values or custom labels such as `a`; optional dots at the curve ends |
 
 You can toggle x-/y-intercept labels, tick marks at the intercepts, evenly spaced
 scale ticks (optionally numbered) on either axis, custom ticks at chosen values
@@ -39,6 +39,11 @@ Use either:
 
 You can open a diagram type directly with `?type=polynomial`.
 
+**Copy link** (under the options) saves the diagram type, every option you've
+changed, and any hand edits to the code in the page address after `#`. Opening
+the link rebuilds the same diagram, so you can bookmark diagrams or share them.
+Nothing is stored on a server.
+
 ## Project layout
 
 ```
@@ -54,6 +59,7 @@ js/core/                 shared by every diagram type
   tikzDocument.js        TikZJax input, standalone .tex, picture-only
   tikzRenderer.js        renders code to <svg> with TikZJax
   tikzjaxLoader.js       first-time TeX download with progress; registers sw.js
+  shareLink.js           saves/restores a diagram in the page address (#type=…&o=…)
   exporter.js            SVG/PNG download, clipboard, font embedding, PNG dpi
 js/lib/                  helpers for diagram modules
   mathParser.js          expression → value / pgfmath / LaTeX

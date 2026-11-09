@@ -4,7 +4,8 @@
 
 import './diagrams/index.js';
 import { diagramsByCategory, getDiagram, listDiagrams } from './core/registry.js';
-import { buildForm } from './core/formBuilder.js';
+import { buildForm, defaultValues } from './core/formBuilder.js';
+import { encodeShareHash, decodeShareHash, changedValues } from './core/shareLink.js';
 import { createCodeEditor } from './core/codeEditor.js';
 import { renderTikz } from './core/tikzRenderer.js';
 import { ensureTikzJax, registerServiceWorker, engineCacheStatus } from './core/tikzjaxLoader.js';
@@ -27,6 +28,7 @@ const els = {
   form: $('options-form'),
   generate: $('btn-generate'),
   reset: $('btn-reset'),
+  copyLink: $('btn-copy-link'),
   code: $('code'),
   render: $('btn-render'),
   copyPicture: $('btn-copy-picture'),
@@ -95,13 +97,54 @@ function populateTypes() {
   }
 }
 
-function selectType(id) {
+/**
+ * Show a diagram type. `restore` (from a share link) sets the options and,
+ * if the link included hand-edited code, puts that code in the code box.
+ */
+function selectType(id, restore = null) {
   current = getDiagram(id) ?? listDiagrams()[0];
   els.type.value = current.id;
   els.typeHelp.textContent = current.description || '';
   form = buildForm(els.form, current.schema);
   els.filename.value = current.id;
-  generate();
+  if (restore?.values) form.setValues(restore.values);
+  if (restore?.code) {
+    editor.setValue(restore.code);
+    codeDirty = true;
+    showMessages(['This link includes hand-edited TikZ code. "Generate & render" would replace it with code from the options.']);
+    render();
+  } else {
+    codeDirty = false;
+    generate();
+  }
+}
+
+/** Rebuild the diagram described by the page address (#type=…&o=…). */
+function restoreFromAddress() {
+  let restore = null;
+  try {
+    restore = decodeShareHash(location.hash);
+  } catch (e) {
+    showMessages([e.message], 'error');
+  }
+  if (restore && !getDiagram(restore.type)) {
+    showMessages([`This link is for a diagram type ("${restore.type}") this site doesn't have.`], 'error');
+    restore = null;
+  }
+  selectType(restore?.type ?? new URLSearchParams(location.search).get('type'), restore);
+}
+
+async function copyShareLink() {
+  const values = changedValues(form.getValues(), defaultValues(current.schema));
+  const hash = encodeShareHash({ type: current.id, values, code: codeDirty ? editor.getValue() : null });
+  const url = `${location.origin}${location.pathname}${hash}`;
+  history.replaceState(null, '', hash); // the address bar now matches the link
+  try {
+    await copyText(url);
+    toast(codeDirty ? 'Link copied (includes your edited code)' : 'Link copied');
+  } catch (e) {
+    showMessages([`Couldn't copy automatically. Here is the link: ${url}`]);
+  }
 }
 
 // ---------------------------------------------------------------- generate / render
@@ -272,6 +315,8 @@ els.type.addEventListener('change', () => {
   selectType(els.type.value);
 });
 els.generate.addEventListener('click', generate);
+els.copyLink.addEventListener('click', copyShareLink);
+window.addEventListener('hashchange', restoreFromAddress);
 els.reset.addEventListener('click', () => {
   form.reset();
   codeDirty = false;
@@ -299,4 +344,4 @@ els.transparent.checked = EXPORT_DEFAULTS.transparent;
 registerServiceWorker();
 updateOfflineNote();
 populateTypes();
-selectType(new URLSearchParams(location.search).get('type'));
+restoreFromAddress();

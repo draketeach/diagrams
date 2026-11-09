@@ -30,6 +30,7 @@ import {
   drawEquation,
   drawScaleTicks,
   drawCustomTicks,
+  dotRadius,
   curvePointFields,
   drawCurvePoints,
 } from '../lib/functionGraph.js';
@@ -90,6 +91,20 @@ const schema = [
         help:
           'Include the two curve ends and every turning point. A point higher/lower than both neighbours becomes a turning point. ' +
           'Points with y = 0 are labelled as x-intercepts; x = 0 as the y-intercept. Add a third value to set a custom label, e.g. 2, 0, a.',
+        showIf: isMode('sketch'),
+      },
+      {
+        type: 'select',
+        key: 'endDots',
+        label: 'Dots at curve ends',
+        default: 'none',
+        options: [
+          { value: 'none', label: 'None (arrows, if turned on)' },
+          { value: 'right', label: 'Right end' },
+          { value: 'left', label: 'Left end' },
+          { value: 'both', label: 'Both ends' },
+        ],
+        help: 'A dot replaces the arrow at that end.',
         showIf: isMode('sketch'),
       },
     ],
@@ -379,7 +394,10 @@ function generateSketch(values) {
       skipY: yPoint && values.labelY ? [yPoint.y] : [],
     })
   );
-  drawHermite(b, pts, slopes, values);
+  drawHermite(b, pts, slopes, values, {
+    startDot: values.endDots === 'left' || values.endDots === 'both',
+    endDot: values.endDots === 'right' || values.endDots === 'both',
+  });
   drawXIntercepts(b, roots, f, values, win);
   if (yPoint) drawYIntercept(b, f, values, win, { latex: yPoint.yLatex, slope: slopes[pts.indexOf(yPoint)] });
   drawTurningPoints(b, tps, values, win, { xUnit, yUnit });
@@ -395,7 +413,7 @@ function generateSketch(values) {
       else if (Math.abs(p.x) < 1e-12) anchor = p.slope < 0 ? 'south west' : 'south east';
       else anchor = p.slope >= 0 ? 'south east' : 'south west';
       if (Math.abs(p.y) < 1e-12 && values.ticks) b.add(`\\draw[${values.axisWidth || 'thin'}] ${pt(p.x, 0)} -- ++(0,-3pt);`);
-      if (values.interceptDots || values.tpDots) b.add(`\\fill ${pt(p.x, p.y)} circle[radius=1.3pt];`);
+      if (values.interceptDots || values.tpDots) b.add(`\\fill ${pt(p.x, p.y)} circle[radius=${dotRadius(values)}];`);
       b.add(`\\node[anchor=${anchor}, inner sep=2pt] at ${pt(p.x, p.y)} {${mathLabel(p.label)}};`);
     }
   }
