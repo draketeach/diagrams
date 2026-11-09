@@ -36,6 +36,7 @@ import {
   curvePointFields,
   drawCurvePoints,
 } from '../lib/functionGraph.js';
+import { extraGraphFields, drawExtraGraphs, extraGraphFeatures } from '../lib/extraGraphs.js';
 
 const MODES = [
   { value: 'roots', label: 'Roots and leading coefficient' },
@@ -133,6 +134,7 @@ const schema = [
   curveStyleFields(),
   labelFields(),
   curvePointFields(),
+  extraGraphFields(),
 ];
 
 // ------------------------------------------------------------------ helpers
@@ -288,11 +290,12 @@ function generateFormula(values) {
     return { roots, tps, xs: [...xs, ...tps.map((t) => t.x)] };
   };
   const pre = probe();
+  const extra = extraGraphFeatures(values, f);
 
   const win = resolveWindow(values, () =>
     autoWindow({
-      xs: pre.xs,
-      ys: [...pre.tps.map((t) => t.y), f(0)].filter(isFinite),
+      xs: [...pre.xs, ...extra.xs],
+      ys: [...pre.tps.map((t) => t.y), f(0), ...extra.ys].filter(isFinite),
       f: pre.tps.length ? null : f,
     })
   );
@@ -367,6 +370,7 @@ function generateFormula(values) {
   drawTurningPoints(b, tps, values, win, { xUnit, yUnit });
   warnings.push(...drawCurvePoints(b, f, win, values, { xUnit, yUnit }));
   drawEquation(b, model.latex, f, pieces, values);
+  warnings.push(...drawExtraGraphs(b, win, values, { main: { f, lo, hi }, xUnit, yUnit }));
 
   return { code: b.toString([...options, fontOption(values)]), warnings };
 }
@@ -457,6 +461,9 @@ function generateSketch(values) {
   if (yPoint) drawYIntercept(b, f, values, win, { latex: yPoint.yLatex, slope: slopes[pts.indexOf(yPoint)] });
   drawTurningPoints(b, tps, values, win, { xUnit, yUnit });
   warnings.push(...drawCurvePoints(b, f, win, values, { xUnit, yUnit }));
+  warnings.push(
+    ...drawExtraGraphs(b, win, values, { main: { f, lo: pts[0].x, hi: pts[pts.length - 1].x }, xUnit, yUnit })
+  );
 
   if (custom.length) {
     b.comment('custom labels');

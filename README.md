@@ -26,6 +26,13 @@ papers (`patterns.meta` dots in three densities), crosshatched or grey;
 labels as z-scores, real values (from μ and σ) or μ ± kσ; dashed boundary
 lines; calculated or typed area labels; and the 68–95–99.7% empirical rule.
 
+Function graphs (polynomial and piecewise) can also have **extra graphs**, such
+as a straight line crossing a parabola. Each line of the box is an equation with
+optional settings after semicolons, e.g. `y = 6 - 3x; dashed; thick; no arrows;
+from -2 to 6; label` (or `label: text`); `x = 3` draws a vertical line. Optional
+dots and coordinates where graphs cross, and labels for the extra graphs' axis
+intercepts, are placed where they cover the least of the lines.
+
 Function graphs can have a background grid (its own range, x/y spacing and line
 shade), and in the equation-based modes the curve can be limited to a range
 (e.g. from x = 0 to 1.43) so it stops there instead of running to the edge.
@@ -75,6 +82,7 @@ js/lib/                  helpers for diagram modules
   mathParser.js          expression → value / pgfmath / LaTeX
   numeric.js             roots, turning points, exact-value labels
   functionGraph.js       window, axes, curve pieces, intercept/turning-point labels
+  extraGraphs.js         extra lines/curves on a function graph, crossings
   hermite.js             smooth sketch curves through points
   tikz.js                TikZ writing helpers
 vendor/tikzjax-benrbray/  TikZJax build used by the site (own licence)

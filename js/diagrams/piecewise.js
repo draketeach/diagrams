@@ -10,6 +10,7 @@
 import { parsePiecewise, piecewiseFunction } from '../lib/piecewiseParser.js';
 import { parseConstant } from '../lib/mathParser.js';
 import { findTurningPoints, niceLatex } from '../lib/numeric.js';
+import { extraGraphFields, drawExtraGraphs, extraGraphFeatures } from '../lib/extraGraphs.js';
 import { TikzBuilder, n, pt, mathLabel, arrowSpec, FONT_SIZES } from '../lib/tikz.js';
 import {
   windowFields,
@@ -133,6 +134,7 @@ const schema = [
     ],
   },
   curvePointFields(),
+  extraGraphFields(),
 ];
 
 // ------------------------------------------------------------------ helpers
@@ -200,6 +202,9 @@ function generate(values) {
     const hi = Math.min(p.b, 50);
     if (hi > lo) ys.push(...findTurningPoints(p.expr.evaluate, lo, hi, 1000).map((t) => t.y));
   }
+  const extra = extraGraphFeatures(values, f);
+  xs.push(...extra.xs);
+  ys.push(...extra.ys);
   const win = resolveWindow(values, () => autoWindow({ xs, ys, f: ys.length < 3 ? f : null }));
   const inWin = (x, y) => x >= win.xmin && x <= win.xmax && y >= win.ymin && y <= win.ymax;
 
@@ -367,6 +372,7 @@ function generate(values) {
   }
 
   warnings.push(...drawCurvePoints(b, f, win, values, { xUnit, yUnit }));
+  warnings.push(...drawExtraGraphs(b, win, values, { main: { f, lo: -Infinity, hi: Infinity }, xUnit, yUnit }));
 
   return { code: b.toString([...options, fontOption(values)]), warnings };
 }

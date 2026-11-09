@@ -456,11 +456,11 @@ export function drawAxes(b, win, values) {
 
 /**
  * Draw f over the pieces.
- * opts: { pgfExpr (uses \x), f, method: 'pgf'|'coordinates', samples }
+ * opts: { pgfExpr (uses \x), f, method: 'pgf'|'coordinates', comment? }
  */
 export function drawCurve(b, pieces, values, opts) {
   const warnings = [];
-  b.comment('curve');
+  if (opts.comment !== false) b.comment(opts.comment ?? 'curve');
   for (const p of pieces) {
     const arrows = arrowSpec(values.curveArrow, p.startArrow, p.endArrow);
     const style = [values.curveWidth, arrows].filter(Boolean).join(', ');

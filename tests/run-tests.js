@@ -15,6 +15,7 @@ import { buildIndex } from '../tools/stamp-versions.mjs';
 import { parsePiecewise, piecewiseFunction } from '../js/lib/piecewiseParser.js';
 import piecewise from '../js/diagrams/piecewise.js';
 import normal, { normalProbability } from '../js/diagrams/normal.js';
+import { parseExtraGraphs } from '../js/lib/extraGraphs.js';
 import { encodeShareHash, decodeShareHash, changedValues } from '../js/core/shareLink.js';
 
 let passed = 0;
@@ -221,6 +222,40 @@ test('normal distribution: default diagram like the exam image', () => {
   const s = normal.generate({ ...base, labelMode: 'symbolic', regions: '-1 < z < 1', areaLabels: 'percent', empirical: 'both' });
   assert.ok(s.code.includes('{$\\mu - \\sigma$}') && s.code.includes('{$\\mu + 2\\sigma$}'), 'symbolic labels');
   assert.ok(s.code.includes('68.27\\%') && s.code.includes('99.7\\%'), 'area percent and empirical brackets');
+});
+
+test('extra graphs: parsing options', () => {
+  const [a, v] = parseExtraGraphs('y = 6 - 3x; dashed; thick; no arrows; from -2 to 6.5; label\nx = 1/2; label: x = a');
+  close(a.f(1), 3);
+  assert.equal(a.dash, 'dashed');
+  assert.equal(a.width, 'thick');
+  assert.equal(a.arrows, false);
+  assert.deepEqual([a.from, a.to], [-2, 6.5]);
+  assert.equal(a.label, 'y = 6 - 3x');
+  assert.ok(v.vertical && v.value === 0.5 && v.label === 'x = a');
+  assert.equal(parseExtraGraphs('2x + 1')[0].f(1), 3, 'y = is optional');
+  assert.throws(() => parseExtraGraphs('y = x; wobbly'), /didn't understand "wobbly"/);
+});
+
+test('extra graphs: line crossing a parabola like the exam image', () => {
+  const base = { ...defaultValues(polynomial.schema), roots: '-3, 4', leading: '-1' };
+  const plain = polynomial.generate({ ...base, extraGraphs: 'y = 6 - 3x; from -2.3 to 6.4' });
+  assert.deepEqual(plain.warnings, []);
+  assert.ok(plain.code.includes('\\draw[semithick, to-to] (-2.3,12.9) -- (6.4,-13.2);'), 'straight line with arrows');
+  const { code } = polynomial.generate({
+    ...base,
+    extraGraphs: 'y = 6 - 3x; dashed; label',
+    extraDots: true,
+    extraCrossCoords: true,
+    extraIntercepts: true,
+  });
+  assert.ok(code.includes('dashed, to-to'), 'own style');
+  assert.ok(code.includes('{$y = 6 - 3x$}'), 'equation label');
+  assert.equal((code.match(/circle\[radius=1\.3pt\]/g) || []).length, 2, 'two crossing dots');
+  assert.ok(code.includes('{$(-1.16, 9.49)$}') && code.includes('{$(5.16, -9.49)$}'), 'crossing coordinates');
+  assert.ok(code.includes('{$2$}') && code.includes('{$6$}'), 'line intercepts');
+  const pw = piecewise.generate({ ...defaultValues(piecewise.schema), extraGraphs: 'y = 1/2', extraDots: true });
+  assert.ok(pw.code.includes('% where the graphs cross\n  \\fill (2,0.5) circle'), 'crosses a piecewise graph at (2, 0.5)');
 });
 
 test('index.html versions are up to date (run: node tools/stamp-versions.mjs)', () => {
