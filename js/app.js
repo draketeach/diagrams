@@ -7,7 +7,7 @@ import { diagramsByCategory, getDiagram, listDiagrams } from './core/registry.js
 import { buildForm } from './core/formBuilder.js';
 import { createCodeEditor } from './core/codeEditor.js';
 import { renderTikz } from './core/tikzRenderer.js';
-import { ensureTikzJax, registerServiceWorker } from './core/tikzjaxLoader.js';
+import { ensureTikzJax, registerServiceWorker, engineCacheStatus } from './core/tikzjaxLoader.js';
 import { toStandaloneDocument, toPictureOnly } from './core/tikzDocument.js';
 import {
   svgToPngBlob,
@@ -43,6 +43,7 @@ const els = {
   downloadSvg: $('btn-download-svg'),
   filename: $('filename'),
   progress: $('load-progress'),
+  offlineNote: $('offline-note'),
 };
 
 let current = null; // current diagram module
@@ -151,6 +152,7 @@ async function render() {
     setExportEnabled(true);
     setStatus(`Rendered in ${(ms / 1000).toFixed(1)} s`, 'ok');
     if (warnings.length) showMessages(warnings);
+    updateOfflineNote();
   } catch (e) {
     if (e.cancelled || seq !== renderSeq) return;
     setStatus('Render failed', 'error');
@@ -175,6 +177,25 @@ function applyZoom() {
     currentSvg.style.height = `${(h * 4 * Number(z)) / 3}px`;
     currentSvg.style.maxHeight = '';
   }
+}
+
+// ---------------------------------------------------------------- offline note
+
+const OFFLINE_TEXT = {
+  saved: '✓ Saved for offline use on this computer',
+  missing: 'TeX engine not saved on this computer yet (downloads on first render)',
+  unsupported: "Can't save for offline use in this browser (it may be blocked by settings or private browsing)",
+};
+
+async function updateOfflineNote() {
+  const state = await engineCacheStatus();
+  els.offlineNote.textContent = OFFLINE_TEXT[state];
+  els.offlineNote.className = `offline-note ${state}`;
+  els.offlineNote.hidden = false;
+  els.offlineNote.title =
+    state === 'saved'
+      ? 'The TeX engine and this site are kept by the browser, so diagrams render without an internet connection.'
+      : '';
 }
 
 // ---------------------------------------------------------------- export
@@ -276,5 +297,6 @@ els.downloadSvg.addEventListener('click', exportSvg);
 els.dpi.value = String(EXPORT_DEFAULTS.dpi);
 els.transparent.checked = EXPORT_DEFAULTS.transparent;
 registerServiceWorker();
+updateOfflineNote();
 populateTypes();
 selectType(new URLSearchParams(location.search).get('type'));

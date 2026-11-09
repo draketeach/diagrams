@@ -184,3 +184,6 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .footer { padding: 6px 16px 12px; color: var(--muted); font-size: 12px; }
 .footer a { color: var(--accent); }
+.offline-note { display: inline-block; margin-bottom: 4px; padding: 1px 8px; border-radius: 10px; font-size: 12px; }
+.offline-note.saved { background: #e6f4ec; color: var(--ok); }
+.offline-note.missing, .offline-note.unsupported { background: #f0f1f3; color: var(--muted); }

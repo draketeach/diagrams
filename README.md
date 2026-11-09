@@ -114,7 +114,8 @@ If the local copy fails to load, the site falls back to tikzjax.com and says so.
 The first visit downloads the TeX engine (~11 MB) with a progress bar. A service
 worker (`sw.js`) keeps those files on the computer, so later visits load
 instantly. It also fetches the site's own code fresh on every visit, so updates
-appear without a hard refresh. If the TikZJax files are ever replaced, change
+appear without a hard refresh. A note in the footer says whether the current
+computer has the TeX engine saved for offline use. If the TikZJax files are ever replaced, change
 `ENGINE_CACHE` in `sw.js` and `engineCache` in `js/config.js`.
 See `vendor/tikzjax/README.md` for where the files came from and their licences.
 

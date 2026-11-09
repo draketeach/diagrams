@@ -11,11 +11,18 @@ import { TIKZJAX } from '../config.js';
 
 let ready = null; // Promise once loaded (or loading)
 
+let swRegistration = null; // Promise<ServiceWorkerRegistration | null>
+
 /** Register the service worker (safe to call more than once). */
 export function registerServiceWorker() {
-  if (!('serviceWorker' in navigator)) return;
-  const url = new URL('../../sw.js', import.meta.url);
-  navigator.serviceWorker.register(url, { scope: new URL('../../', import.meta.url).pathname }).catch(() => {});
+  if (!swRegistration) {
+    swRegistration = !('serviceWorker' in navigator)
+      ? Promise.resolve(null)
+      : navigator.serviceWorker
+          .register(new URL('../../sw.js', import.meta.url), { scope: new URL('../../', import.meta.url).pathname })
+          .catch(() => null); // blocked (e.g. by policy or private browsing)
+  }
+  return swRegistration;
 }
 
 async function cachedOrNull(url) {
@@ -79,4 +86,21 @@ export function ensureTikzJax(onProgress = () => {}) {
     });
   }
   return ready;
+}
+
+/**
+ * Is the TeX engine saved on this computer?
+ * @returns {Promise<'saved'|'missing'|'unsupported'>}
+ */
+export async function engineCacheStatus() {
+  if (!('caches' in window)) return 'unsupported';
+  // Without a working service worker the saved files can't be used offline.
+  const reg = await registerServiceWorker();
+  if (!reg) return 'unsupported';
+  try {
+    for (const a of TIKZJAX.engineFiles) if (!(await cachedOrNull(a.url))) return 'missing';
+    return 'saved';
+  } catch (e) {
+    return 'unsupported';
+  }
 }
