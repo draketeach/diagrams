@@ -15,9 +15,17 @@ school and network filters block).
 The `.wasm` and `.gz` file names are their SHA-1 hashes, which were checked
 when they were copied.
 
-**One change:** `v1/tikzjax.js` has a short header added so it loads the
-`.wasm` and `.gz` files from the folder it is served from, instead of the
-Amazon S3 address. Nothing else was modified.
+**Two changes** to `v1/tikzjax.js`, both in a short header at the top:
+
+1. It loads the `.wasm` and `.gz` files from the folder it is served from,
+   instead of the Amazon S3 address.
+2. It writes each character using the code point the BaKoMa fonts actually
+   store it at (TeX positions 0–9 → U+00A1…, 10–32 → U+00AD…, 20 → U+2219,
+   127 → U+00C4, everything else unchanged). The original looked characters up
+   by their Unicode meaning (e.g. U+2212 for minus), which these fonts don't
+   contain, so `-` `.` `,` `/` and `√` showed as the wrong symbol.
+
+Nothing else was modified.
 
 ## Licences
 

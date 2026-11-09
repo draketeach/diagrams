@@ -39,13 +39,15 @@ const LOAD_FAILURE = /TIKZJAX_LOAD_FAILED|Failed to fetch|NetworkError|Load fail
 export async function renderTikz(code, options = {}) {
   cancelRender();
   const cfg = { ...TIKZJAX, ...options };
-  const { source, warnings } = toTikzJaxSource(code, cfg);
   const started = performance.now();
   const notes = [];
+  let warnings = [];
   for (let i = 0; i < cfg.sources.length; i++) {
     const src = cfg.sources[i];
+    const prepared = toTikzJaxSource(code, { ...cfg, glyphFixes: src.glyphFixes });
+    warnings = prepared.warnings;
     try {
-      const svg = await renderWith(source, src, cfg.timeoutMs);
+      const svg = await renderWith(prepared.source, src, cfg.timeoutMs);
       return {
         svg,
         warnings: [...warnings, ...notes],

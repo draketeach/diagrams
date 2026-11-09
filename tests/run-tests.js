@@ -10,6 +10,8 @@ import { defaultValues } from '../js/core/formBuilder.js';
 import polynomial, { _internal } from '../js/diagrams/polynomial.js';
 import { readFileSync } from 'node:fs';
 import { buildIndex } from '../tools/stamp-versions.mjs';
+import { parsePiecewise, piecewiseFunction } from '../js/lib/piecewiseParser.js';
+import piecewise from '../js/diagrams/piecewise.js';
 
 let passed = 0;
 function test(name, fn) {
@@ -116,6 +118,34 @@ test('every mode generates code', () => {
     assert.ok(code.includes('\\begin{tikzpicture}'), mode);
     assert.ok(!/NaN|Infinity|undefined/.test(code), `${mode} has bad values`);
   }
+});
+
+test('piecewise parser: exam notation and otherwise', () => {
+  const ps = parsePiecewise('x/4, 0 <= x <= 2sqrt(2)\n0, otherwise');
+  assert.equal(ps.length, 3);
+  assert.deepEqual(ps.map((p) => [p.aInc, p.bInc]), [[false, false], [true, true], [false, false]]);
+  assert.equal(ps[1].bLatex, '2\\sqrt{2}');
+  const q = parsePiecewise('x^2 for x < 1\n2 - x if 1 ≤ x < 3\n3, x = 2\n0: x in [3, inf)');
+  const f = piecewiseFunction(q);
+  close(f(0.5), 0.25); close(f(1), 1); close(f(2), 3); close(f(2.5), -0.5); close(f(3), 0);
+  assert.throws(() => parsePiecewise('x, 0 <= x <= 2\n1, 1 < x < 3'), /overlap/);
+  assert.throws(() => parsePiecewise('x, 3 <= x <= 1'), /bigger/);
+});
+
+test('piecewise diagram: dots and exact labels for the PDF example', () => {
+  const base = defaultValues(piecewise.schema);
+  const { code } = piecewise.generate(base);
+  assert.ok(code.includes('\\fill (0,0) circle'), 'filled dot at O');
+  assert.ok(/fill=white\] \(2\.8284,0\) circle/.test(code), 'open dot at (2√2, 0)');
+  assert.ok(code.includes('\\fill (2.8284,0.7071) circle'), 'filled dot at top');
+  assert.ok(code.includes('{$2\\sqrt{2}$}') && code.includes('{$\\frac{\\sqrt{2}}{2}$}'), 'exact labels');
+  const noJoin = piecewise.generate({ ...base, joinDots: false }).code;
+  assert.ok(!noJoin.includes('\\fill (0,0) circle'), 'no dot at a continuous join');
+});
+
+test('patched local TikZJax gets the code unchanged', () => {
+  const { source } = toTikzJaxSource('\\begin{tikzpicture}\\node {$-1.5$};\\end{tikzpicture}', { glyphFixes: false });
+  assert.ok(!source.includes('mathcode') && source.includes('{$-1.5$}'));
 });
 
 test('index.html versions are up to date (run: node tools/stamp-versions.mjs)', () => {

@@ -140,12 +140,10 @@ See `vendor/tikzjax/README.md` for where the files came from and their licences.
 - TikZ maths overflows above about ±16000. For steep functions, choose
   **Plot method → Pre-computed coordinates**.
 - PNG/SVG export embeds the Computer Modern fonts from the local copy.
-- TikZJax's fonts show some maths characters wrongly: `.` as ▷, `,` as a hook,
-  `/` as ◁, and the minus sign in a substitute font with the wrong width. Before
-  rendering, the site remaps `.` `,` `/` to the roman font and replaces each `-` inside
-  `$…$` with a minus drawn as a rule sized from the real minus. (TikZJax's TeX hangs on
-  `\mathcode"8000`, so the source is rewritten instead.) Copied and downloaded code is unchanged, and real
-  LaTeX is unaffected. (Details in `js/core/tikzDocument.js`.)
+- The original TikZJax shows some maths symbols wrongly (`-` `.` `,` `/` `√`)
+  because it looks characters up in its fonts by the wrong code. The copy in
+  `vendor/tikzjax/` is patched to fix this. If the site ever falls back to
+  tikzjax.com, it applies TeX workarounds for `-` `.` `,` `/` instead.
 - PNGs carry their dpi, so Word/Google Docs insert them at the correct physical size.
 
 ## Credits

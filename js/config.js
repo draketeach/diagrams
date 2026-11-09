@@ -15,14 +15,16 @@ const local = (path) => new URL(`../vendor/tikzjax/${path}`, import.meta.url).hr
 
 export const TIKZJAX = {
   sources: [
-    { name: 'this site', script: local('v1/tikzjax.js'), fonts: local('v1/fonts.css') },
-    { name: 'tikzjax.com', script: 'https://tikzjax.com/v1/tikzjax.js', fonts: 'https://tikzjax.com/v1/fonts.css' },
+    // glyphFixes: work around TikZJax showing - . , / √ as the wrong symbol.
+    // The local copy is patched to fix this properly; tikzjax.com is not.
+    { name: 'this site', script: local('v1/tikzjax.js'), fonts: local('v1/fonts.css'), glyphFixes: false },
+    { name: 'tikzjax.com', script: 'https://tikzjax.com/v1/tikzjax.js', fonts: 'https://tikzjax.com/v1/fonts.css', glyphFixes: true },
   ],
   // fonts.css used for the page preview and when embedding fonts in exports
   fonts: local('v1/fonts.css'),
   // Large files downloaded up front (with a progress bar) and kept in this
   // Cache Storage cache by the service worker. Must match ENGINE_CACHE in sw.js.
-  engineCache: 'tikzjax-engine-v1',
+  engineCache: 'tikzjax-engine-v2',
   engineFiles: [
     { url: local('v1/tikzjax.js'), bytes: 459101 },
     { url: local('v1/3f69afb974a1e83f66a36f7618f88a38c254034b.wasm'), bytes: 612530 },

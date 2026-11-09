@@ -158,6 +158,8 @@ export function niceLatex(v, dp = 2, exact = true) {
           return fracLatex(num, den, '\\pi');
         }
       }
+      const surd = surdLatex(v);
+      if (surd) return surd;
       const sq = v * v;
       for (let a = 1; a <= 10; a++) {
         const k = Math.round(sq / (a * a));
@@ -173,6 +175,27 @@ export function niceLatex(v, dp = 2, exact = true) {
     }
   }
   return fmt(v, dp);
+}
+
+function squareFree(k) {
+  for (let p = 2; p * p <= k; p++) if (k % (p * p) === 0) return false;
+  return true;
+}
+
+/** ±(a√k)/d for small a, d and square-free k, e.g. √2/2, 3√5/4. */
+function surdLatex(v) {
+  for (let d = 1; d <= 12; d++) {
+    const w = Math.abs(v) * d;
+    for (let a = 1; a <= 12; a++) {
+      const k = Math.round((w / a) ** 2);
+      if (k < 2 || k > 200 || !squareFree(k) || gcd(a, d) !== 1) continue;
+      if (Math.abs(a * Math.sqrt(k) - w) < 1e-9 * Math.max(1, w)) {
+        const num = `${a === 1 ? '' : a}\\sqrt{${k}}`;
+        return `${v < 0 ? '-' : ''}${d === 1 ? num : `\\frac{${num}}{${d}}`}`;
+      }
+    }
+  }
+  return null;
 }
 
 /** Round to a "nice" axis value. */

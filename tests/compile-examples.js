@@ -7,8 +7,10 @@ import { execFileSync } from 'node:child_process';
 import { defaultValues } from '../js/core/formBuilder.js';
 import { toStandaloneDocument } from '../js/core/tikzDocument.js';
 import polynomial from '../js/diagrams/polynomial.js';
+import piecewise from '../js/diagrams/piecewise.js';
 
 const base = defaultValues(polynomial.schema);
+const pbase = defaultValues(piecewise.schema);
 const examples = {
   'roots-default': { mode: 'roots' },
   'roots-all-labels': {
@@ -30,8 +32,18 @@ const examples = {
 
 mkdirSync(new URL('./out/', import.meta.url), { recursive: true });
 let failures = 0;
-for (const [name, opts] of Object.entries(examples)) {
-  const { code, warnings } = polynomial.generate({ ...base, ...opts });
+const pwExamples = {
+  'pw-pdf': {},
+  'pw-hybrid': { pieces: 'x^2, x < 1\n2 - x, 1 <= x < 3\n3, x = 2\n-1, x >= 3', xCustomTicks: '' },
+  'pw-reciprocal': { pieces: '1/x + 1, x > 0\n-x/2 + 1, x <= 0', asymptotes: 'x = 0, y = 1', labelAsymptotes: true, windowMode: 'manual', xmin: -3, xmax: 4, ymin: -1, ymax: 5 },
+  'pw-shaded': { pieces: '3x^2/8, 0 <= x <= 2\n0, otherwise', shade: '1 to 2', xCustomTicks: '1' },
+  'pw-step': { pieces: '1, 0 <= x < 1\n2, 1 <= x < 2\n3, 2 <= x < 3', xCustomTicks: '', guideLines: true },
+};
+const jobs = [
+  ...Object.entries(examples).map(([name, o]) => [name, polynomial.generate({ ...base, ...o })]),
+  ...Object.entries(pwExamples).map(([name, o]) => [name, piecewise.generate({ ...pbase, ...o })]),
+];
+for (const [name, { code, warnings }] of jobs) {
   const texPath = new URL(`./out/${name}.tex`, import.meta.url).pathname;
   writeFileSync(texPath, toStandaloneDocument(code));
   if (warnings.length) console.log(`${name}: warnings: ${warnings.join(' | ')}`);
