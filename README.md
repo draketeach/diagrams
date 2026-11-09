@@ -59,6 +59,7 @@ js/lib/                  helpers for diagram modules
   functionGraph.js       window, axes, curve pieces, intercept/turning-point labels
   hermite.js             smooth sketch curves through points
   tikz.js                TikZ writing helpers
+vendor/tikzjax/           local copy of TikZJax + fonts (own licences)
 js/diagrams/
   index.js               list of registered diagram types
   polynomial.js          the polynomial graph module
@@ -102,9 +103,16 @@ fragments and drawing helpers in `js/lib/functionGraph.js`, the same way
 The schema field types are `group`, `select`, `number`, `text`, `textarea` and
 `checkbox`. Any field can have `help` text and a `showIf: (values) => boolean`.
 
-## TikZJax limitations
+## TikZJax
 
-- The public TikZJax build has TikZ preloaded but **no `\usetikzlibrary` libraries
+TikZJax is served from this site, in `vendor/tikzjax/`, so the site never
+contacts tikzjax.com or Amazon S3. Some school and network filters block those.
+If the local copy fails to load, the site falls back to tikzjax.com and says so.
+See `vendor/tikzjax/README.md` for where the files came from and their licences.
+
+### Limitations
+
+- The TikZJax v1 build has TikZ preloaded but **no `\usetikzlibrary` libraries
   and no extra packages** (no `arrows.meta`, `calc`, `pgfplots`…). The generated
   code uses core TikZ only (`stealth`, `latex` and `to` arrow tips). If a future
   diagram needs libraries, switch `js/config.js` to a build that includes them
@@ -113,9 +121,7 @@ The schema field types are `group`, `select`, `number`, `text`, `textarea` and
 - TikZJax can't report TeX errors, so a broken edit shows as a timeout.
 - TikZ maths overflows above about ±16000. For steep functions, choose
   **Plot method → Pre-computed coordinates**.
-- PNG/SVG export embeds the Computer Modern fonts by downloading them from
-  tikzjax.com. If that download is blocked, the image uses a fallback font and
-  the site shows a warning.
+- PNG/SVG export embeds the Computer Modern fonts from the local copy.
 - TikZJax's fonts show some maths characters wrongly: `.` as ▷, `,` as a hook,
   `/` as ◁, and the minus sign in a substitute font with the wrong width. Before
   rendering, the site remaps `.` `,` `/` to the roman font and replaces each `-` inside
@@ -136,5 +142,6 @@ waived all copyright and related rights to this work. Every source file has an
 `SPDX-License-Identifier: CC0-1.0` header. The TikZ code and images this site
 generates are also yours to use without restriction.
 
-TikZJax itself is loaded from tikzjax.com and is not part of this repository.
-Its license is its own.
+The exception is `vendor/tikzjax/`, a copy of TikZJax and the BaKoMa fonts. Those
+files keep their own licences (GPL-3.0 or LPPL-1.3c for TikZJax). See
+`vendor/tikzjax/README.md`.
