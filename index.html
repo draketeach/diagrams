@@ -49,6 +49,7 @@
       <div class="panel-head">
         <h2 id="h-preview">Preview</h2>
         <span id="status" class="status" aria-live="polite"></span>
+        <progress id="load-progress" max="1" value="0" hidden></progress>
         <label class="zoom">Zoom
           <select id="zoom">
             <option value="fit">Fit</option>
@@ -80,7 +81,7 @@
     Made by <a href="https://mrdrake.com" target="_blank" rel="noopener author">MrDrake</a>
     with <a href="https://www.anthropic.com/claude" target="_blank" rel="noopener">Claude</a> (Anthropic).
     <br>
-    Rendering by <a href="https://tikzjax.com" target="_blank" rel="noopener">TikZJax</a> (served from this site). The first render downloads TeX (~10 MB) and can take a few seconds.
+    Rendering by <a href="https://tikzjax.com" target="_blank" rel="noopener">TikZJax</a> (served from this site). The first visit downloads TeX (~11 MB) once; after that it is kept on this computer.
     <br>
     Site code and generated diagrams are dedicated to the public domain under
     <a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener license">CC0 1.0 Universal</a>

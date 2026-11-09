@@ -7,6 +7,7 @@ import { diagramsByCategory, getDiagram, listDiagrams } from './core/registry.js
 import { buildForm } from './core/formBuilder.js';
 import { createCodeEditor } from './core/codeEditor.js';
 import { renderTikz } from './core/tikzRenderer.js';
+import { ensureTikzJax, registerServiceWorker } from './core/tikzjaxLoader.js';
 import { toStandaloneDocument, toPictureOnly } from './core/tikzDocument.js';
 import {
   svgToPngBlob,
@@ -41,6 +42,7 @@ const els = {
   copyPng: $('btn-copy-png'),
   downloadSvg: $('btn-download-svg'),
   filename: $('filename'),
+  progress: $('load-progress'),
 };
 
 let current = null; // current diagram module
@@ -128,6 +130,18 @@ async function render() {
   els.preview.classList.add('is-busy');
   setExportEnabled(false);
   try {
+    // First visit only: download the TeX engine with a progress bar.
+    const mb = (b) => (b / 1048576).toFixed(1);
+    const downloaded = await ensureTikzJax(({ loaded, total }) => {
+      if (seq !== renderSeq) return;
+      els.progress.hidden = false;
+      els.progress.max = total;
+      els.progress.value = loaded;
+      setStatus(`Downloading TeX engine (first time only)… ${mb(loaded)} of ${mb(total)} MB (${Math.round((100 * loaded) / total)}%)`, 'busy');
+    });
+    els.progress.hidden = true;
+    if (seq !== renderSeq) return;
+    setStatus(downloaded ? 'Running TeX for the first time…' : 'Rendering with TikZJax…', 'busy');
     const { svg, warnings, ms } = await renderTikz(code);
     if (seq !== renderSeq) return;
     currentSvg = svg;
@@ -261,5 +275,6 @@ els.downloadSvg.addEventListener('click', exportSvg);
 
 els.dpi.value = String(EXPORT_DEFAULTS.dpi);
 els.transparent.checked = EXPORT_DEFAULTS.transparent;
+registerServiceWorker();
 populateTypes();
 selectType(new URLSearchParams(location.search).get('type'));

@@ -165,6 +165,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   vertical-align: -1px;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+#load-progress { width: 110px; height: 8px; }
 .zoom { display: flex; gap: 6px; align-items: center; font-size: 12px; }
 
 .preview {

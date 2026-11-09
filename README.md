@@ -46,12 +46,14 @@ index.html               page shell
 css/style.css
 js/config.js             TikZJax URLs and export defaults
 js/app.js                wires the page together
+sw.js                    service worker: keeps TikZJax cached, fetches site code fresh
 js/core/                 shared by every diagram type
   registry.js            registerDiagram / getDiagram
   formBuilder.js         builds the options panel from a schema
   codeEditor.js          editable code box (Ctrl+Enter renders)
   tikzDocument.js        TikZJax input, standalone .tex, picture-only
   tikzRenderer.js        renders code to <svg> with TikZJax
+  tikzjaxLoader.js       first-time TeX download with progress; registers sw.js
   exporter.js            SVG/PNG download, clipboard, font embedding, PNG dpi
 js/lib/                  helpers for diagram modules
   mathParser.js          expression → value / pgfmath / LaTeX
@@ -108,6 +110,12 @@ The schema field types are `group`, `select`, `number`, `text`, `textarea` and
 TikZJax is served from this site, in `vendor/tikzjax/`, so the site never
 contacts tikzjax.com or Amazon S3. Some school and network filters block those.
 If the local copy fails to load, the site falls back to tikzjax.com and says so.
+
+The first visit downloads the TeX engine (~11 MB) with a progress bar. A service
+worker (`sw.js`) keeps those files on the computer, so later visits load
+instantly. It also fetches the site's own code fresh on every visit, so updates
+appear without a hard refresh. If the TikZJax files are ever replaced, change
+`ENGINE_CACHE` in `sw.js` and `engineCache` in `js/config.js`.
 See `vendor/tikzjax/README.md` for where the files came from and their licences.
 
 ### Limitations

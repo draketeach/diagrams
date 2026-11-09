@@ -20,6 +20,14 @@ export const TIKZJAX = {
   ],
   // fonts.css used for the page preview and when embedding fonts in exports
   fonts: local('v1/fonts.css'),
+  // Large files downloaded up front (with a progress bar) and kept in this
+  // Cache Storage cache by the service worker. Must match ENGINE_CACHE in sw.js.
+  engineCache: 'tikzjax-engine-v1',
+  engineFiles: [
+    { url: local('v1/tikzjax.js'), bytes: 459101 },
+    { url: local('v1/3f69afb974a1e83f66a36f7618f88a38c254034b.wasm'), bytes: 612530 },
+    { url: local('v1/b565ab0b474e8e557d954694b7379a57db669ac9.gz'), bytes: 9785967 },
+  ],
   supportsLibraries: false,
   timeoutMs: 60000,
 };
