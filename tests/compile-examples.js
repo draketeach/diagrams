@@ -8,9 +8,11 @@ import { defaultValues } from '../js/core/formBuilder.js';
 import { toStandaloneDocument } from '../js/core/tikzDocument.js';
 import polynomial from '../js/diagrams/polynomial.js';
 import piecewise from '../js/diagrams/piecewise.js';
+import normal from '../js/diagrams/normal.js';
 
 const base = defaultValues(polynomial.schema);
 const pbase = defaultValues(piecewise.schema);
+const nbase = defaultValues(normal.schema);
 const examples = {
   'roots-default': { mode: 'roots' },
   'roots-all-labels': {
@@ -44,6 +46,9 @@ const pwExamples = {
 const jobs = [
   ...Object.entries(examples).map(([name, o]) => [name, polynomial.generate({ ...base, ...o })]),
   ...Object.entries(pwExamples).map(([name, o]) => [name, piecewise.generate({ ...pbase, ...o })]),
+  ['normal-tails', normal.generate(nbase)],
+  ['normal-real', normal.generate({ ...nbase, labelMode: 'real', mean: '50', sd: '10', regions: 'x > 62\n35 < x < 45', areaLabels: 'prob', shadeStyle: 'gray!20' })],
+  ['normal-empirical', normal.generate({ ...nbase, labelMode: 'symbolic', regions: '-1 < z < 1', areaLabels: 'percent', empirical: 'both' })],
 ];
 for (const [name, { code, warnings }] of jobs) {
   const texPath = new URL(`./out/${name}.tex`, import.meta.url).pathname;

@@ -14,6 +14,7 @@ import { TIKZJAX } from '../js/config.js';
 import { buildIndex } from '../tools/stamp-versions.mjs';
 import { parsePiecewise, piecewiseFunction } from '../js/lib/piecewiseParser.js';
 import piecewise from '../js/diagrams/piecewise.js';
+import normal, { normalProbability } from '../js/diagrams/normal.js';
 import { encodeShareHash, decodeShareHash, changedValues } from '../js/core/shareLink.js';
 
 let passed = 0;
@@ -192,6 +193,28 @@ test('grid and curve range', () => {
   assert.ok(!/\\draw\[semithick, -to\] plot|\\draw\[semithick, to-to\] plot/.test(code), 'no arrow at a chosen end');
   const pw = piecewise.generate({ ...defaultValues(piecewise.schema), showGrid: true });
   assert.ok(pw.code.includes('% grid every'), 'grid in piecewise graphs too');
+});
+
+test('normal distribution: probabilities', () => {
+  close(normalProbability(-Infinity, -1.5), 0.0668072, 1e-6);
+  close(normalProbability(1.2, Infinity), 0.1150697, 1e-6);
+  close(normalProbability(-1, 1), 0.6826895, 1e-6);
+  close(normalProbability(-1.96, 1.96), 0.9500042, 1e-6);
+});
+
+test('normal distribution: default diagram like the exam image', () => {
+  const base = defaultValues(normal.schema);
+  const { code, warnings } = normal.generate(base);
+  assert.deepEqual(warnings, []);
+  assert.equal((code.match(/\\clip/g) || []).length, 2, 'two dotted regions');
+  assert.ok(code.includes('{$-1.5$}') && code.includes('{$0$}') && code.includes('{$1.2$}'), 'labels at -1.5, 0, 1.2');
+  assert.ok(code.includes('\\draw[dashed, thin] (-1.5,0) --') && code.includes('\\draw[dashed, thin] (1.2,0) --'), 'dashed boundaries');
+  const r = normal.generate({ ...base, labelMode: 'real', mean: '50', sd: '10', regions: 'x > 62 : P(X>62)', areaLabels: 'prob', shadeStyle: 'gray!20' });
+  assert.ok(r.code.includes('{$62$}') && r.code.includes('{$50$}'), 'real-value labels');
+  assert.ok(r.code.includes('$P(X>62)$'), 'typed area label');
+  const s = normal.generate({ ...base, labelMode: 'symbolic', regions: '-1 < z < 1', areaLabels: 'percent', empirical: 'both' });
+  assert.ok(s.code.includes('{$\\mu - \\sigma$}') && s.code.includes('{$\\mu + 2\\sigma$}'), 'symbolic labels');
+  assert.ok(s.code.includes('68.27\\%') && s.code.includes('99.7\\%'), 'area percent and empirical brackets');
 });
 
 test('index.html versions are up to date (run: node tools/stamp-versions.mjs)', () => {

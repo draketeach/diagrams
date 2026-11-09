@@ -20,6 +20,11 @@ The first diagram type is the **Polynomial graph**, which can be defined in four
 | Coefficients | `1, 0, -13, 12` | Same as typed equation |
 | Sketch through points | `x, y [, label]` per line | Uses your values or custom labels such as `a`; optional dots at the curve ends |
 
+The **Normal distribution** type draws a bell curve with regions shaded by
+inequality (`z < -1.5`, `-1 < z < 2`, `x > 62 : 0.1151`), dotted or grey;
+labels as z-scores, real values (from μ and σ) or μ ± kσ; dashed boundary
+lines; calculated or typed area labels; and the 68–95–99.7% empirical rule.
+
 Function graphs can have a background grid (its own range, x/y spacing and line
 shade), and in the equation-based modes the curve can be limited to a range
 (e.g. from x = 0 to 1.43) so it stops there instead of running to the edge.
@@ -75,6 +80,8 @@ vendor/tikzjax/           local copy of TikZJax + fonts (own licences)
 js/diagrams/
   index.js               list of registered diagram types
   polynomial.js          the polynomial graph module
+  piecewise.js           the piecewise function module
+  normal.js              the normal distribution module
 tools/
   stamp-versions.mjs     adds content-hash versions to JS/CSS URLs in index.html
 tests/

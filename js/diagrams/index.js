@@ -6,5 +6,6 @@
 import { registerDiagram } from '../core/registry.js';
 import polynomial from './polynomial.js';
 import piecewise from './piecewise.js';
+import normal from './normal.js';
 
-[polynomial, piecewise].forEach(registerDiagram);
+[polynomial, piecewise, normal].forEach(registerDiagram);
