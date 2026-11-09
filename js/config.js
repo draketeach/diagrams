@@ -17,16 +17,18 @@ export const TIKZJAX = {
   sources: [
     // glyphFixes: work around TikZJax showing - . , / √ as the wrong symbol.
     // The local copy is patched to fix this properly; tikzjax.com is not.
-    { name: 'this site', script: local('v1/tikzjax.js'), fonts: local('v1/fonts.css'), glyphFixes: false },
+    { name: 'this site', script: local('v1/tikzjax-b33ac02c99.js'), fonts: local('v1/fonts.css'), glyphFixes: false },
     { name: 'tikzjax.com', script: 'https://tikzjax.com/v1/tikzjax.js', fonts: 'https://tikzjax.com/v1/fonts.css', glyphFixes: true },
   ],
   // fonts.css used for the page preview and when embedding fonts in exports
   fonts: local('v1/fonts.css'),
+  // The TikZJax script's file name includes a hash of its contents, so a changed
+  // script can never be served from an old cache (see vendor/tikzjax/README.md).
   // Large files downloaded up front (with a progress bar) and kept in this
   // Cache Storage cache by the service worker. Must match ENGINE_CACHE in sw.js.
-  engineCache: 'tikzjax-engine-v2',
+  engineCache: 'tikzjax-engine-v3',
   engineFiles: [
-    { url: local('v1/tikzjax.js'), bytes: 459101 },
+    { url: local('v1/tikzjax-b33ac02c99.js'), bytes: 459525 },
     { url: local('v1/3f69afb974a1e83f66a36f7618f88a38c254034b.wasm'), bytes: 612530 },
     { url: local('v1/b565ab0b474e8e557d954694b7379a57db669ac9.gz'), bytes: 9785967 },
   ],

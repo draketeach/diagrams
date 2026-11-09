@@ -11,7 +11,7 @@
 // If the TikZJax files are ever replaced, change ENGINE_CACHE (and the same
 // name in js/config.js) so browsers download the new copy.
 
-const ENGINE_CACHE = 'tikzjax-engine-v2';
+const ENGINE_CACHE = 'tikzjax-engine-v3';
 const SITE_CACHE = 'site-v1';
 const KEEP = [ENGINE_CACHE, SITE_CACHE];
 
@@ -22,13 +22,15 @@ self.addEventListener('activate', (event) => {
     (async () => {
       for (const key of await caches.keys()) {
         if (KEEP.includes(key)) continue;
-        // The .wasm/.gz files are named by their hash, so they never change:
-        // carry them over from an older engine cache instead of re-downloading.
+        // Files named by their hash (and the fonts) never change: carry them
+        // over from an older engine cache instead of re-downloading.
         if (key.startsWith('tikzjax-engine-')) {
           const old = await caches.open(key);
           const next = await caches.open(ENGINE_CACHE);
           for (const req of await old.keys()) {
-            if (/\.(wasm|gz)$/.test(new URL(req.url).pathname) && !(await next.match(req))) {
+            const path = new URL(req.url).pathname;
+            const immutable = /\.(wasm|gz|ttf)$/.test(path) || /-[0-9a-f]{10}\.js$/.test(path);
+            if (immutable && !(await next.match(req))) {
               const res = await old.match(req);
               if (res) await next.put(req, res);
             }

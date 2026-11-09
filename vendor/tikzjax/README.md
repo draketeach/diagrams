@@ -6,7 +6,7 @@ school and network filters block).
 
 | File | Original location |
 |---|---|
-| `v1/tikzjax.js` | https://tikzjax.com/v1/tikzjax.js |
+| `v1/tikzjax-b33ac02c99.js` (patched, see below) | https://tikzjax.com/v1/tikzjax.js |
 | `v1/fonts.css` | https://tikzjax.com/v1/fonts.css |
 | `v1/3f69afb974a1e83f66a36f7618f88a38c254034b.wasm` (TeX engine) | https://s3.us-east-2.amazonaws.com/tikzjax.com/ |
 | `v1/b565ab0b474e8e557d954694b7379a57db669ac9.gz` (TeX memory dump with TikZ loaded) | https://s3.us-east-2.amazonaws.com/tikzjax.com/ |
@@ -15,7 +15,9 @@ school and network filters block).
 The `.wasm` and `.gz` file names are their SHA-1 hashes, which were checked
 when they were copied.
 
-**Two changes** to `v1/tikzjax.js`, both in a short header at the top:
+**Two changes** to the script (saved as `v1/tikzjax-b33ac02c99.js`; the name ends in the first
+10 characters of its SHA-1 so browsers never use a cached older copy — rename
+it and update `js/config.js` if it is ever changed again), both in a short header at the top:
 
 1. It loads the `.wasm` and `.gz` files from the folder it is served from,
    instead of the Amazon S3 address.

@@ -9,6 +9,8 @@ import { toTikzJaxSource, toStandaloneDocument, toPictureOnly } from '../js/core
 import { defaultValues } from '../js/core/formBuilder.js';
 import polynomial, { _internal } from '../js/diagrams/polynomial.js';
 import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { TIKZJAX } from '../js/config.js';
 import { buildIndex } from '../tools/stamp-versions.mjs';
 import { parsePiecewise, piecewiseFunction } from '../js/lib/piecewiseParser.js';
 import piecewise from '../js/diagrams/piecewise.js';
@@ -146,6 +148,14 @@ test('piecewise diagram: dots and exact labels for the PDF example', () => {
 test('patched local TikZJax gets the code unchanged', () => {
   const { source } = toTikzJaxSource('\\begin{tikzpicture}\\node {$-1.5$};\\end{tikzpicture}', { glyphFixes: false });
   assert.ok(!source.includes('mathcode') && source.includes('{$-1.5$}'));
+});
+
+test('TikZJax script name matches its contents', () => {
+  const url = TIKZJAX.sources[0].script;
+  const file = new URL(url);
+  const hash = createHash('sha1').update(readFileSync(file)).digest('hex').slice(0, 10);
+  assert.ok(file.pathname.endsWith(`tikzjax-${hash}.js`), `rename the script to tikzjax-${hash}.js`);
+  for (const f of TIKZJAX.engineFiles) assert.equal(readFileSync(new URL(f.url)).length, f.bytes, `byte size in config for ${f.url}`);
 });
 
 test('index.html versions are up to date (run: node tools/stamp-versions.mjs)', () => {
