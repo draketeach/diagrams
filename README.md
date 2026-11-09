@@ -18,7 +18,7 @@ The first diagram type is the **Polynomial graph**, which can be defined in four
 | Roots + leading coefficient | `-4, 1, 3` and `a = 1` | Exact, as typed (`1/2` → ½, `sqrt(3)` → √3) |
 | Typed equation | `x^3 - 7x + 6`, `2sin(x)` | Exact where possible (fractions, π, surds) |
 | Coefficients | `1, 0, -13, 12` | Same as typed equation |
-| Sketch through points | `x, y [, label]` per line | Uses your values or custom labels such as `a`; optional dots at the curve ends |
+| Sketch through points | `x, y [, label]` per line | Uses your values or custom labels such as `a`; optional dots or plain (arrowless) curve ends |
 
 The **Normal distribution** type draws a bell curve with regions shaded by
 inequality (`z < -1.5`, `-1 < z < 2`, `x > 62 : 0.1151`), dotted like exam

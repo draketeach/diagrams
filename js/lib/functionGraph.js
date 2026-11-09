@@ -482,10 +482,10 @@ export function drawCurve(b, pieces, values, opts) {
 }
 
 /** Draw a smooth Bézier path through points with given slopes (cubic Hermite). */
-export function drawHermite(b, points, slopes, values, { startDot = false, endDot = false } = {}) {
+export function drawHermite(b, points, slopes, values, { startDot = false, endDot = false, startArrow = true, endArrow = true } = {}) {
   if (points.length < 2) return;
   // an end with a dot gets no arrow
-  const arrows = arrowSpec(values.curveArrow, !startDot, !endDot);
+  const arrows = arrowSpec(values.curveArrow, startArrow && !startDot, endArrow && !endDot);
   const style = [values.curveWidth, arrows].filter(Boolean).join(', ');
   let path = pt(points[0].x, points[0].y);
   for (let i = 0; i < points.length - 1; i++) {

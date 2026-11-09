@@ -110,6 +110,19 @@ const schema = [
         help: 'A dot replaces the arrow at that end.',
       },
       {
+        type: 'select',
+        key: 'plainEnds',
+        label: 'Plain curve ends (no arrow or dot)',
+        default: 'none',
+        options: [
+          { value: 'none', label: 'None' },
+          { value: 'left', label: 'Left end' },
+          { value: 'right', label: 'Right end' },
+          { value: 'both', label: 'Both ends' },
+        ],
+        help: 'The curve simply stops at that end, e.g. a curve that starts on the y-axis.',
+      },
+      {
         type: 'text',
         key: 'domainFrom',
         label: 'Draw the curve from x =',
@@ -138,6 +151,8 @@ const schema = [
 ];
 
 // ------------------------------------------------------------------ helpers
+
+const plainAt = (values, side) => values.plainEnds === side || values.plainEnds === 'both';
 
 function polyFromRoots(roots, a) {
   // coefficients highest power first
@@ -326,6 +341,8 @@ function generateFormula(values) {
   }
   const endDots = [];
   if (pieces.length) {
+    if (plainAt(values, 'left')) pieces[0].startArrow = false;
+    if (plainAt(values, 'right')) pieces[pieces.length - 1].endArrow = false;
     if (values.endDots === 'left' || values.endDots === 'both') {
       pieces[0].startArrow = false;
       endDots.push(pieces[0].a);
@@ -456,6 +473,8 @@ function generateSketch(values) {
   drawHermite(b, pts, slopes, values, {
     startDot: values.endDots === 'left' || values.endDots === 'both',
     endDot: values.endDots === 'right' || values.endDots === 'both',
+    startArrow: !plainAt(values, 'left'),
+    endArrow: !plainAt(values, 'right'),
   });
   drawXIntercepts(b, roots, f, values, win);
   if (yPoint) drawYIntercept(b, f, values, win, { latex: yPoint.yLatex, slope: slopes[pts.indexOf(yPoint)] });

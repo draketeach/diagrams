@@ -258,6 +258,25 @@ test('extra graphs: line crossing a parabola like the exam image', () => {
   assert.ok(pw.code.includes('% where the graphs cross\n  \\fill (2,0.5) circle'), 'crosses a piecewise graph at (2, 0.5)');
 });
 
+test('sketch with a plain start, asymptote and turning-point dot (exam image)', () => {
+  const { code, warnings } = polynomial.generate({
+    ...defaultValues(polynomial.schema),
+    mode: 'sketch',
+    points: '0, -1.24\n2, -2.35\n4.13, 0\n5.6, 3\n7.2, 4.4\n9.6, 4.88',
+    plainEnds: 'left',
+    labelX: false,
+    tpLabel: 'none',
+    tpDots: true,
+    xCustomTicks: '2, 5',
+    yCustomTicks: '5',
+    extraGraphs: 'y = 5; dashed; thin; no arrows; from 0 to 10.6',
+  });
+  assert.deepEqual(warnings, []);
+  assert.ok(code.includes('\\draw[semithick, -to] (0,-1.24)'), 'arrow at the right end only');
+  assert.ok(code.includes('\\fill (2,-2.35) circle'), 'dot at the minimum');
+  assert.ok(code.includes('\\draw[thin, dashed] (0,5) -- (10.6,5);'), 'dashed asymptote');
+});
+
 test('index.html versions are up to date (run: node tools/stamp-versions.mjs)', () => {
   const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   assert.equal(html, buildIndex(html));
