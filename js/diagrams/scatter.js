@@ -166,6 +166,7 @@ const schema = [
       ]),
       group('Grid', [
         { type: 'checkbox', key: 'showGrid', label: 'Grid', default: true },
+        { type: 'checkbox', key: 'gridToAxes', label: 'Grid reaches the axes', default: true, showIf: (v) => v.showGrid },
         row(
           { type: 'number', key: 'gridX', label: 'x spacing', default: null, step: 0.1, min: 0, showIf: (v) => v.showGrid },
           { type: 'number', key: 'gridY', label: 'y spacing', default: null, step: 0.1, min: 0, showIf: (v) => v.showGrid }
@@ -313,10 +314,15 @@ function generate(values) {
   if (values.showGrid) {
     const ex = (X.end - X.start) * 1e-4;
     const ey = (Y.end - Y.start) * 1e-4;
+    // from the axes (through any zig-zag gap) or from the first ticks; the
+    // shift keeps the lines on multiples of the spacing from the first tick
+    const toAxes = values.gridToAxes ?? true;
+    const gx = toAxes ? Math.min(X.start, yAxisX) - X.start : -ex;
+    const gy = toAxes ? Math.min(Y.start, xAxisY) - Y.start : -ey;
     b.comment(`grid every ${n(X.grid)} by ${n(Y.grid)}`);
     b.add(
       `\\draw[${values.gridShade || 'black'}, very thin, xstep=${n(X.grid * X.unit, 4)}cm, ystep=${n(Y.grid * Y.unit, 4)}cm, ` +
-        `shift={${pt(X.start, Y.start)}}] ${pt(-ex, -ey)} grid ${pt(X.end - X.start + ex, Y.end - Y.start + ey)};`
+        `shift={${pt(X.start, Y.start)}}] ${pt(gx, gy)} grid ${pt(X.end - X.start + ex, Y.end - Y.start + ey)};`
     );
   }
 
