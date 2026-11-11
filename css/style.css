@@ -31,12 +31,13 @@
   --border: #d9dce1;
   --text: #1d2330;
   --muted: #667085;
-  --accent: #b23a3a; /* rosewood */
-  --accent-dark: #8f2e2e;
+  --accent: #b3305e; /* raspberry */
+  --accent-dark: #8f264b;
   --warn-bg: #fff7e0;
   --warn-border: #f0c75e;
-  --err-bg: #fdecec;
-  --err-border: #e48a8a;
+  --err-text: #c2410c; /* vermilion: kept apart from the raspberry accent */
+  --err-bg: #fdefe7;
+  --err-border: #ee9f78;
   --ok: #1f7a46;
   --radius: 8px;
   font-family: 'Latin Modern Sans', 'CMU Sans Serif', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -201,7 +202,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 /* ---- preview */
 .status { font-size: 12px; color: var(--muted); margin-left: auto; }
 .status.ok { color: var(--ok); }
-.status.error { color: #b42318; }
+.status.error { color: var(--err-text); }
 .status.busy::before {
   content: '';
   display: inline-block;
