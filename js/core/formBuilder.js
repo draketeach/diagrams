@@ -11,6 +11,8 @@
 //   { type: 'checkbox', key, label, default }
 // Any field may have:
 //   help: 'small hint text'
+//   examples: { rows: [['code', 'what it does'], …], notes?: ['…'] }
+//             -- a "?" button by the label opens a box of syntax examples
 //   showIf: (values) => boolean   -- hidden (and still keeps its value) when false
 //
 // buildForm(container, schema) returns { getValues, setValues, reset }.
@@ -80,7 +82,12 @@ export function buildForm(container, schema, { onChange } = {}) {
       const label = document.createElement('label');
       label.htmlFor = id;
       label.textContent = f.label;
-      wrapper.append(label);
+      if (f.examples) {
+        const head = document.createElement('div');
+        head.className = 'form-label-row';
+        head.append(label, ...examplesBox(f, id, wrapper));
+        wrapper.append(head);
+      } else wrapper.append(label);
       if (f.type === 'select') {
         el = document.createElement('select');
         for (const o of f.options) {
@@ -123,6 +130,51 @@ export function buildForm(container, schema, { onChange } = {}) {
     inputs.set(f.key, { field: f, el });
     if (f.showIf) conditional.push({ field: f, wrapper });
     parent.append(wrapper);
+  }
+
+  /** The "?" button and its box of examples (the box goes after the input). */
+  function examplesBox(f, id, wrapper) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'help-toggle';
+    btn.textContent = '?';
+    btn.title = 'Show examples';
+    btn.setAttribute('aria-label', `Examples for ${f.label}`);
+    btn.setAttribute('aria-expanded', 'false');
+    btn.setAttribute('aria-controls', `${id}-examples`);
+    const box = document.createElement('div');
+    box.className = 'examples-box';
+    box.id = `${id}-examples`;
+    box.hidden = true;
+    const table = document.createElement('table');
+    for (const [code, text] of f.examples.rows) {
+      const tr = document.createElement('tr');
+      const c = document.createElement('td');
+      const k = document.createElement('code');
+      k.textContent = code;
+      c.append(k);
+      const t = document.createElement('td');
+      t.textContent = text;
+      tr.append(c, t);
+      table.append(tr);
+    }
+    box.append(table);
+    for (const note of f.examples.notes || []) {
+      const p = document.createElement('p');
+      p.textContent = note;
+      box.append(p);
+    }
+    const show = (open) => {
+      box.hidden = !open;
+      btn.setAttribute('aria-expanded', String(open));
+      btn.classList.toggle('is-open', open);
+    };
+    btn.addEventListener('click', () => show(box.hidden));
+    box.addEventListener('keydown', (e) => e.key === 'Escape' && (show(false), btn.focus()));
+    btn.addEventListener('keydown', (e) => e.key === 'Escape' && show(false));
+    // after the input, so the box opens below the box it explains
+    queueMicrotask(() => wrapper.append(box));
+    return [btn];
   }
 
   function getValues() {

@@ -106,6 +106,23 @@ body {
 .form-field label { font-weight: 500; }
 .form-field-checkbox label { font-weight: 400; display: flex; gap: 6px; align-items: center; }
 .form-help { color: var(--muted); font-size: 12px; line-height: 1.35; }
+.form-label-row { display: flex; align-items: center; gap: 6px; }
+.help-toggle {
+  width: 20px; height: 20px; padding: 0; border-radius: 50%;
+  font-size: 12px; font-weight: 700; line-height: 18px;
+  color: var(--accent); background: #fff; border: 1px solid var(--accent);
+}
+.help-toggle.is-open, .help-toggle:hover { color: #fff; background: var(--accent); }
+.examples-box {
+  font-size: 12px; line-height: 1.4; padding: 6px 8px;
+  background: #f7f8fa; border: 1px solid var(--border); border-radius: 5px;
+}
+.examples-box table, .examples-box tbody, .examples-box tr, .examples-box td { display: block; }
+.examples-box tr { padding: 4px 0; border-bottom: 1px solid var(--border); }
+.examples-box tr:last-child { border-bottom: 0; }
+.examples-box td + td { color: var(--muted); }
+.examples-box code { font-family: ui-monospace, Consolas, monospace; font-size: 11.5px; user-select: all; }
+.examples-box p { margin: 6px 0 0; color: var(--muted); }
 [hidden] { display: none !important; }
 
 input[type='text'], input[type='number'], select, textarea {

@@ -42,7 +42,7 @@ import {
   drawAsymptotes,
   parseAsymptotes,
 } from '../lib/functionGraph.js';
-import { field, row, curveEndFields, basicLabelFields, moreOptions, legacyValues } from '../lib/graphOptions.js';
+import { row, curveEndFields, basicLabelFields, moreOptions, legacyValues, GRAPH_EXAMPLES } from '../lib/graphOptions.js';
 
 // what the first graph is, from the text of the box (for showing options)
 const firstLine = (v) => String(v.graphs ?? '').split('\n').map((l) => l.trim()).find(Boolean) || '';
@@ -71,10 +71,8 @@ const schema = [
         rows: 4,
         default: 'y = x^3 - 7x + 6',
         placeholder: 'y = x^3 - 7x + 6',
-        help:
-          'Piecewise: { x/4, 0 <= x <= 2; 0, otherwise }. Domain: x^2, -1 <= x <= 3. ' +
-          'Settings after ";" — dashed, dotted, thick, no arrows, from 0 to 4, label, label: text. ' +
-          'Labels below are for the first graph.',
+        help: 'Press ? for piecewise functions, domains, vertical lines and settings such as dashed.',
+        examples: GRAPH_EXAMPLES,
       },
       ...basicLabelFields(),
       row(

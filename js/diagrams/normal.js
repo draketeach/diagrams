@@ -41,9 +41,17 @@ const schema = [
         label: 'Shaded regions, one per line',
         rows: 3,
         default: 'z < -1.5\nz > 1.2',
-        help:
-          'Inequalities such as "z > 1.2", "-1 < z < 2" or "x <= 65". Add a label after a colon, e.g. "z > 1.2 : 0.1151". ' +
-          'Values are z-scores, or real values when the labels show real values.',
+        help: 'Press ? for examples. Values are z-scores, or real values when the labels show real values.',
+        examples: {
+          rows: [
+            ['z < -1.5', 'The left tail below z = −1.5'],
+            ['z > 1.2', 'The right tail above z = 1.2'],
+            ['-1 < z < 2', 'Between two values'],
+            ['x <= 65', 'Real values (choose real-value labels and set μ and σ)'],
+            ['z > 1.2 : 0.1151', 'Your own area label after a colon'],
+          ],
+          notes: ['One region per line.'],
+        },
       },
       { type: 'text', key: 'mean', label: 'Mean μ', default: '0', showIf: (v) => v.labelMode === 'real' },
       { type: 'text', key: 'sd', label: 'Standard deviation σ', default: '1', showIf: (v) => v.labelMode === 'real' },

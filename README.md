@@ -22,7 +22,7 @@ Type one graph per line in the **Graphs** box:
 | `{ x/4, 0 <= x <= 2sqrt(2); 0, otherwise }` | a piecewise function (pieces may also go on separate lines inside the braces) |
 | `x = 3` | a vertical line |
 
-Settings go after semicolons: `dashed`, `dotted`, a line width (`thick` …),
+Press **?** next to the box for examples. Settings go after semicolons: `dashed`, `dotted`, a line width (`thick` …),
 `no arrows`, `from 0 to 4`, `label` (shows the equation) or `label: text`, e.g.
 `y = 6 - 3x; dashed; label`.
 
@@ -165,7 +165,9 @@ fragments and drawing helpers in `js/lib/functionGraph.js`, the same way
 `function.js` does.
 
 The schema field types are `group` (groups can nest), `row` (fields side by
-side), `select`, `number`, `text`, `textarea` and `checkbox`. Any field can have `help` text and a `showIf: (values) => boolean`.
+side), `select`, `number`, `text`, `textarea` and `checkbox`. A field can also
+have `examples` (`{ rows: [[code, description], …], notes }`), shown in a box
+opened by a "?" button next to its label. Any field can have `help` text and a `showIf: (values) => boolean`.
 
 ## TikZJax
 

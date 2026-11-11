@@ -32,7 +32,7 @@ import {
   drawAsymptotes,
   parseAsymptotes,
 } from '../lib/functionGraph.js';
-import { curveEndFields, basicLabelFields, moreOptions, legacyValues } from '../lib/graphOptions.js';
+import { curveEndFields, basicLabelFields, moreOptions, legacyValues, GRAPH_EXAMPLES, POINT_EXAMPLES } from '../lib/graphOptions.js';
 
 const schema = [
   {
@@ -42,10 +42,11 @@ const schema = [
       {
         type: 'textarea',
         key: 'points',
-        label: 'Points, one per line: x, y [, gradient] [: label]',
+        label: 'Points, one per line',
         rows: 7,
         default: '-4.6, -9\n-4, 0\n-2, 6, 0\n1, 0\n2.2, -1.5, 0\n3, 0\n3.6, 9',
-        help: 'A smooth curve goes through the points in order of x. Give a gradient to set the slope there, e.g. "2, 3, 0" for a turning point. Add a label after a colon, e.g. "1, 4 : P".',
+        help: 'x, y — or x, y, gradient. Press ? for examples.',
+        examples: POINT_EXAMPLES,
       },
       ...basicLabelFields(),
     ],
@@ -60,7 +61,7 @@ const schema = [
         rows: 2,
         default: '',
         placeholder: 'e.g. y = 6 - 3x; dashed',
-        help: 'Drawn with the sketch, using the same notation as the Function graph type.',
+        examples: GRAPH_EXAMPLES,
       },
     ],
     meet: [

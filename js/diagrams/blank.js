@@ -18,6 +18,7 @@ import {
   parseTickList,
 } from '../lib/functionGraph.js';
 import { FONT_SIZES } from '../lib/tikz.js';
+import { TICK_EXAMPLES } from '../lib/graphOptions.js';
 
 const PRESETS = {
   radians: 'pi/2, pi, 3pi/2, 2pi',
@@ -51,7 +52,8 @@ const schema = [
         label: 'x ticks',
         default: '2, 5',
         placeholder: 'e.g. 2, 5 or pi/3, 2pi/3',
-        help: 'Comma separated. Add a label after a colon, e.g. 3:a. Added to any preset.',
+        help: 'Added to any preset. Press ? for examples.',
+        examples: TICK_EXAMPLES,
       },
       { type: 'text', key: 'yCustomTicks', label: 'y ticks', default: '', placeholder: 'e.g. 1, -1' },
       { type: 'checkbox', key: 'customTickLabels', label: 'Label the ticks', default: true },

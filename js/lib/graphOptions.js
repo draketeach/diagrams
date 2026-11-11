@@ -107,19 +107,31 @@ export function moreOptions(extra = {}) {
         field('exact'),
       ]),
       group('Points on the curve', [
-        field('curvePoints', { label: 'At x =' }),
+        field('curvePoints', {
+          label: 'At x =',
+          help: undefined,
+          examples: {
+            rows: [
+              ['3', 'A point on the curve at x = 3'],
+              ['2:P, -1:Q', 'Named points P and Q'],
+              ['1/2, pi', 'Exact x-values'],
+            ],
+          },
+        }),
         field('curvePointLabel'),
         row(field('curvePointDots'), field('curvePointLines', { label: 'Dashed lines to axes' })),
       ]),
       group('Asymptotes & shading', [
-        row(field('asymptotes', { label: 'Asymptotes', help: undefined }), field('asymptoteLabel')),
+        field('asymptotes', { label: 'Asymptotes', help: undefined, examples: ASYMPTOTE_EXAMPLES }),
+        field('asymptoteLabel'),
         ...(extra.lines || []),
       ]),
       ...(extra.meet ? [group('Where graphs meet', extra.meet)] : []),
       group('Axes', [
         row(field('xAxisLabel', { label: 'x label' }), field('yAxisLabel', { label: 'y label' })),
         row(field('xAxisLabelPos', { label: 'x label position' }), field('yAxisLabelPos', { label: 'y label position' })),
-        row(field('xCustomTicks', { label: 'Ticks on x', help: undefined }), field('yCustomTicks', { label: 'Ticks on y' })),
+        field('xCustomTicks', { label: 'Ticks on x', help: undefined, examples: TICK_EXAMPLES }),
+        field('yCustomTicks', { label: 'Ticks on y' }),
         field('customTickLabels'),
         row(field('xScaleTicks', { label: 'Scale ticks on x' }), field('yScaleTicks', { label: 'Scale ticks on y' })),
         row(
@@ -156,3 +168,56 @@ export function moreOptions(extra = {}) {
 export function legacyValues(values) {
   return { ...values, interceptDots: !!values.pointDots, tpDots: !!values.pointDots };
 }
+
+// ---------------------------------------------------------------- "?" examples
+
+export const GRAPH_EXAMPLES = {
+  rows: [
+    ['y = x^3 - 7x + 6', 'A function of x ("y =" is optional)'],
+    ['y = 2sin(x) + e^(-x)', 'sin cos tan, sqrt, ln, log, e^, pi, |x| or abs(x)'],
+    ['y = -1/2(x+2)(x-3)^2', 'Brackets multiply; 2x, 3(x+1), x(x-1) all work'],
+    ['x^2 - 1, -2 <= x < 3', 'Restricted domain: filled dot for ≤, open dot for <'],
+    ['{ x/4, 0 <= x <= 2; 0, otherwise }', 'Piecewise: pieces separated by ; inside { }'],
+    ['{ 1, x < 0; 3, x = 0; x^2, x > 0 }', 'A single point (x = a) is drawn as a dot'],
+    ['x = 3', 'A vertical line (after the first graph)'],
+    ['y = 6 - 3x; dashed; label', 'Settings after ; — dashed or dotted, label shows the equation'],
+    ['y = 1/x; thick; no arrows', 'A line width (thin … very thick), no arrows at the ends'],
+    ['y = 2x; from 0 to 4; label: L', 'Only draw it for 0 ≤ x ≤ 4; label it L'],
+  ],
+  notes: [
+    'One graph per line. The first graph gets the intercept and turning-point labels.',
+    'Piecewise pieces may also go on separate lines between { and }, with settings after "};".',
+  ],
+};
+
+export const POINT_EXAMPLES = {
+  rows: [
+    ['-4, 0', 'The curve passes through (−4, 0)'],
+    ['2, -2.35, 0', 'Gradient 0 there: a turning point'],
+    ['4.13, 0, 2.5', 'Passes through (4.13, 0) with gradient 2.5'],
+    ['1, 3 : P', 'A labelled point (the label goes after a colon)'],
+    ['sqrt(2), pi/2', 'Exact values work: fractions, sqrt, pi'],
+  ],
+  notes: [
+    'One point per line. Points are joined in order of x.',
+    'Without a gradient, a point higher or lower than both neighbours becomes a turning point, and other points follow the curve smoothly.',
+  ],
+};
+
+export const ASYMPTOTE_EXAMPLES = {
+  rows: [
+    ['y = 5', 'A horizontal dashed line across the axes'],
+    ['x = -2', 'A vertical dashed line'],
+    ['y = 5 from 0 to 10', 'Only from x = 0 to 10'],
+    ['y = 1, x = 0', 'Several, separated by commas'],
+  ],
+};
+
+export const TICK_EXAMPLES = {
+  rows: [
+    ['3, 5', 'Ticks labelled 3 and 5'],
+    ['5/2, pi, 2sqrt(3)', 'Exact values: fractions, π and surds'],
+    ['3:a', 'A tick at 3 labelled a'],
+    ['2pi:2\\pi', 'Any LaTeX label after the colon'],
+  ],
+};
