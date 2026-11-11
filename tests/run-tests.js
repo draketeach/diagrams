@@ -345,7 +345,7 @@ test('scatterplot: data, regression, axis breaks and clicks', () => {
   close(reg.a, 1);
   close(reg.r, 1);
   const base = defaultValues(scatter.schema);
-  const { code, warnings, click } = scatter.generate({ ...base, showEquation: true });
+  const { code, warnings, click } = scatter.generate({ ...base, showEquation: true, showR: true });
   assert.deepEqual(warnings, []);
   assert.ok(code.includes('{$0$}'), '0 at the broken corner');
   assert.ok(code.includes('++(1.5pt,2.5pt)') && code.includes('++(2.5pt,1.5pt)'), 'zig-zags on both axes');
@@ -361,7 +361,9 @@ test('scatterplot: data, regression, axis breaks and clicks', () => {
   const removed = scatter.onPreviewClick(added, { x: 7.49, y: 8.03, remove: true, scale: { x: 2, y: 2 } });
   assert.equal(removed.data, base.data);
   const typed = scatter.generate({ ...base, line: 'typed', lineEquation: 'y = 0.5x + 3', showEquation: true }).code;
-  assert.ok(typed.includes('{$y = 0.5x + 3$}'));
+  assert.ok(typed.includes('{$y = 0.5x + 3$}'), 'typed equation without r');
+  assert.ok(scatter.generate({ ...base, showEquation: true }).code.includes('{$y = 0.53x + 2.82$}'), 'equation only');
+  assert.ok(scatter.generate({ ...base, line: 'none', showR: true }).code.includes('{$r = 0.854$}'), 'r only, no line');
 });
 
 test('gallery: every entry generates cleanly and has its image', () => {

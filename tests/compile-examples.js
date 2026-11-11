@@ -53,7 +53,7 @@ const jobs = [
   ['normal-tails', normal.generate(nbase)],
   ['normal-real', normal.generate({ ...nbase, labelMode: 'real', mean: '50', sd: '10', regions: 'x > 62\n35 < x < 45', areaLabels: 'prob', shadeStyle: 'gray!20' })],
   ['normal-empirical', normal.generate({ ...nbase, labelMode: 'symbolic', regions: '-1 < z < 1', areaLabels: 'percent', empirical: 'both' })],
-  ['scatter-default', scatter.generate({ ...defaultValues(scatter.schema), showEquation: true })],
+  ['scatter-default', scatter.generate({ ...defaultValues(scatter.schema), showEquation: true, showR: true })],
   ['scatter-typed-crosses', scatter.generate({ ...defaultValues(scatter.schema), line: 'typed', lineEquation: '0.5x + 3', pointStyle: 'cross', axisBreak: 'off', showGrid: false })],
   ['blank-trig', blank.generate({ ...defaultValues(blank.schema), xPreset: 'radians', xCustomTicks: '', originLabel: true })],
   ['blank-degrees-grid', blank.generate({ ...defaultValues(blank.schema), xPreset: 'degrees', yCustomTicks: '1, -1', showGrid: true })],

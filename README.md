@@ -67,7 +67,7 @@ use a trig preset (π/2 … 2π, or 90° … 360°), with an optional grid.
 Points as `x, y` lines, or two columns pasted from a spreadsheet (a first row
 of words becomes the axis titles). **Click the preview to add a point**, and
 Shift+click to remove the nearest one. Optional least-squares regression line
-(or a typed line), with its equation and r; axis titles (the y title is
+(or a typed line), with its equation and/or r (separate options); axis titles (the y title is
 rotated); a grid with roughly square cells; scale numbers to the data's
 decimals; and zig-zag axis breaks, with 0 at the corner, when an axis starts
 far from 0 (automatic, always or never).

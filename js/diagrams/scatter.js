@@ -56,7 +56,10 @@ const schema = [
         placeholder: 'e.g. 0.54x + 2.7',
         showIf: (v) => v.line === 'typed',
       },
-      { type: 'checkbox', key: 'showEquation', label: 'Show the equation (and r)', default: false, showIf: (v) => v.line !== 'none' },
+      row(
+        { type: 'checkbox', key: 'showEquation', label: 'Show the equation', default: false, showIf: (v) => v.line !== 'none' },
+        { type: 'checkbox', key: 'showR', label: 'Show r', default: false }
+      ),
       row(
         { type: 'text', key: 'xTitle', label: 'x-axis title', default: "Critics' score" },
         { type: 'text', key: 'yTitle', label: 'y-axis title', default: "Public's score" }
@@ -378,7 +381,6 @@ function generate(values) {
       line = {
         f: (x) => reg.a + reg.b * x,
         latex: `y = ${fixed(reg.b, dp)}x ${reg.a < 0 ? '-' : '+'} ${fixed(Math.abs(reg.a), dp)}`,
-        extra: isFinite(reg.r) ? `r = ${fixed(reg.r, values.rDp ?? 3)}` : '',
       };
     }
   } else if (values.line === 'typed') {
@@ -388,7 +390,7 @@ function generate(values) {
     } catch (err) {
       throw new Error(`Could not read the line "${values.lineEquation}" (${err.message})`);
     }
-    line = { f: e.evaluate, latex: `y = ${e.toLatex()}`, extra: '' };
+    line = { f: e.evaluate, latex: `y = ${e.toLatex()}` };
   }
   if (line) {
     const [a, c] = values.lineExtent === 'axes' || !xs.length ? [X.start, X.end] : [Math.min(...xs), Math.max(...xs)];
@@ -396,10 +398,20 @@ function generate(values) {
     const clip = (x) => Math.min(Y.end, Math.max(Y.start, line.f(x)));
     b.comment('line');
     b.add(`\\draw[${values.lineWidth || 'thin'}] ${pt(a, clip(a))} -- ${pt(c, clip(c))};`);
-    if (values.showEquation) {
-      const text = [line.latex, line.extra].filter(Boolean).join(',\\quad ');
-      b.add(`\\node[anchor=north west, fill=white, inner sep=2pt] at ${pt(X.start, Y.end)} [xshift=2pt, yshift=-2pt] {$${text}$};`);
-    }
+  }
+
+  // ---- equation and/or r, in the top-left corner of the plot
+  const parts = [];
+  if (line && values.showEquation) parts.push(line.latex);
+  if (values.showR) {
+    const reg = regression(points);
+    if (reg && isFinite(reg.r)) parts.push(`r = ${fixed(reg.r, values.rDp ?? 3)}`);
+    else if (points.length) warnings.push('r needs at least two points that are not all in a line parallel to an axis.');
+  }
+  if (parts.length) {
+    b.add(
+      `\\node[anchor=north west, fill=white, inner sep=2pt] at ${pt(X.start, Y.end)} [xshift=2pt, yshift=-2pt] {$${parts.join(',\\quad ')}$};`
+    );
   }
 
   // ---- points (on top)
