@@ -151,6 +151,7 @@ js/lib/                  helpers for diagram modules
   tikz.js                TikZ writing helpers
 vendor/tikzjax-benrbray/  TikZJax build used by the site (own licence)
 vendor/tikzjax/           older TikZJax v1 copy, used as a fallback (own licences)
+vendor/fonts/latin-modern-sans/  interface font, Computer Modern Sans design (GUST Font License)
 js/diagrams/
   index.js               list of registered diagram types
   function.js            function graphs (plain, piecewise, several graphs)
@@ -260,5 +261,6 @@ waived all copyright and related rights to this work. Every source file has an
 generates are also yours to use without restriction.
 
 The exceptions are `vendor/tikzjax-benrbray/` and `vendor/tikzjax/`, copies of
-TikZJax and its fonts. Those files keep their own licences (GPL-3.0 for the
+TikZJax and its fonts, and `vendor/fonts/latin-modern-sans/`, the interface font
+(GUST Font License). Those files keep their own licences (GPL-3.0 for the
 benrbray build; GPL-3.0 or LPPL-1.3c for TikZJax v1). See the README in each folder.
