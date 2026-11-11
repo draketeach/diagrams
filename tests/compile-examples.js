@@ -11,6 +11,7 @@ import sketch from '../js/diagrams/sketch.js';
 import normal from '../js/diagrams/normal.js';
 import blank from '../js/diagrams/blank.js';
 import scatter from '../js/diagrams/scatter.js';
+import slopefield from '../js/diagrams/slopefield.js';
 
 const base = defaultValues(fn.schema);
 const sbase = defaultValues(sketch.schema);
@@ -56,6 +57,8 @@ const jobs = [
   ['normal-empirical', normal.generate({ ...nbase, labelMode: 'symbolic', regions: '-1 < z < 1', areaLabels: 'percent', empirical: 'both' })],
   ['scatter-default', scatter.generate({ ...defaultValues(scatter.schema), showEquation: true, showR: true })],
   ['scatter-typed-crosses', scatter.generate({ ...defaultValues(scatter.schema), line: 'typed', lineEquation: '0.5x + 3', pointStyle: 'cross', axisBreak: 'off', showGrid: false })],
+  ['slopefield-curves', slopefield.generate({ ...defaultValues(slopefield.schema), solutions: 'dashed', isoclines: '0, 1', labelIsoclines: true, xScaleTicks: true, yScaleTicks: true })],
+  ['slopefield-arrows', slopefield.generate({ ...defaultValues(slopefield.schema), equation: 'xy/4', arrows: true, skipAxes: true })],
   ['blank-trig', blank.generate({ ...defaultValues(blank.schema), xPreset: 'radians', xCustomTicks: '', originLabel: true })],
   ['blank-degrees-grid', blank.generate({ ...defaultValues(blank.schema), xPreset: 'degrees', yCustomTicks: '1, -1', showGrid: true })],
 ];

@@ -9,5 +9,6 @@ import sketch from './sketch.js';
 import normal from './normal.js';
 import blank from './blank.js';
 import scatter from './scatter.js';
+import slopefield from './slopefield.js';
 
-[fn, sketch, blank, normal, scatter].forEach(registerDiagram);
+[fn, sketch, blank, normal, scatter, slopefield].forEach(registerDiagram);

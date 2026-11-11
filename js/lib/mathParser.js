@@ -8,7 +8,9 @@
 //
 // Supports + - * / ^, implicit multiplication (2x, 3(x+1), (x+1)(x-2)),
 // |x| for absolute value, constants pi and e, and the functions
-// sin cos tan sqrt abs exp ln log (log = base 10).
+// sin cos tan sqrt abs exp ln log (log = base 10) sgn (sign: -1, 0 or 1).
+// Two-variable expressions: parseExpression('x - y', { variables: ['x', 'y'] })
+// then e.evaluate({ x: 1, y: 2 }).
 
 const FUNCS = {
   sin: Math.sin,
@@ -19,13 +21,14 @@ const FUNCS = {
   exp: Math.exp,
   ln: Math.log,
   log: Math.log10,
+  sgn: Math.sign,
 };
 const CONSTS = { pi: Math.PI, e: Math.E };
 const NAMES = [...Object.keys(FUNCS), ...Object.keys(CONSTS)].sort((a, b) => b.length - a.length);
 
 export class ParseError extends Error {}
 
-function tokenize(src, variable) {
+function tokenize(src, variables) {
   const tokens = [];
   let i = 0;
   const s = src.replace(/−/g, '-').replace(/π/g, 'pi').replace(/[×·]/g, '*').replace(/÷/g, '/');
@@ -44,8 +47,8 @@ function tokenize(src, variable) {
       if (name) {
         tokens.push({ t: FUNCS[name] ? 'func' : 'const', v: name });
         i += name.length;
-      } else if (ch === variable) {
-        tokens.push({ t: 'var' });
+      } else if (variables.includes(ch)) {
+        tokens.push({ t: 'var', v: ch });
         i++;
       } else {
         throw new ParseError(`Unknown name starting at "${rest}"`);
@@ -142,7 +145,7 @@ function parseTokens(tokens) {
       case 'num':
         return { type: 'num', v: tok.v, raw: tok.raw };
       case 'var':
-        return { type: 'var' };
+        return { type: 'var', name: tok.v };
       case 'const':
         return { type: 'const', name: tok.v };
       case 'func': {
@@ -179,12 +182,13 @@ function parseTokens(tokens) {
 
 // ---------- evaluation
 
+// x is a number (one variable) or an object of values, e.g. { x: 1, y: 2 }
 function evaluate(node, x) {
   switch (node.type) {
     case 'num':
       return node.v;
     case 'var':
-      return x;
+      return typeof x === 'object' && x !== null ? x[node.name] : x;
     case 'const':
       return CONSTS[node.name];
     case 'paren':
@@ -233,7 +237,7 @@ function toPgf(node, X) {
     case 'num':
       return formatPgfNumber(node.v);
     case 'var':
-      return `(${X})`;
+      return node.name === 'y' ? '(\\y)' : `(${X})`;
     case 'const':
       return node.name === 'pi' ? 'pi' : 'exp(1)';
     case 'paren':
@@ -248,6 +252,8 @@ function toPgf(node, X) {
           return `${node.fn}(deg(${p(node.a)}))`;
         case 'log':
           return `(ln(${p(node.a)})/ln(10))`;
+        case 'sgn':
+          return `sign(${p(node.a)})`;
         default:
           return `${node.fn}(${p(node.a)})`;
       }
@@ -290,7 +296,7 @@ function toLatex(node) {
     case 'num':
       return node.raw ?? String(node.v);
     case 'var':
-      return 'x';
+      return node.name || 'x';
     case 'const':
       return node.name === 'pi' ? '\\pi' : 'e';
     case 'paren':
@@ -306,6 +312,10 @@ function toLatex(node) {
           return `|${inner}|`;
         case 'exp':
           return `e^{${inner}}`;
+        case 'sgn': {
+          const arg = node.a.type === 'paren' ? inner : `(${inner})`;
+          return `\\operatorname{sgn}${arg}`;
+        }
         default: {
           const arg = node.a.type === 'paren' ? inner : `(${inner})`;
           return `\\${node.fn}${arg}`;
@@ -341,10 +351,10 @@ function stripParen(node) {
 
 // ---------- public API
 
-export function parseExpression(src, { variable = 'x' } = {}) {
+export function parseExpression(src, { variable = 'x', variables = null } = {}) {
   const text = String(src ?? '').trim();
   if (!text) throw new ParseError('Expression is empty');
-  const tree = parseTokens(tokenize(text, variable));
+  const tree = parseTokens(tokenize(text, variables ?? [variable]));
   return {
     source: text,
     tree,

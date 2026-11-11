@@ -18,6 +18,7 @@ import { buildIndex } from '../tools/stamp-versions.mjs';
 import { parsePiecewise, piecewiseFunction } from '../js/lib/piecewiseParser.js';
 import blank from '../js/diagrams/blank.js';
 import scatter, { parseData, regression } from '../js/diagrams/scatter.js';
+import slopefield, { solutionCurve, contour } from '../js/diagrams/slopefield.js';
 import normal, { normalProbability } from '../js/diagrams/normal.js';
 import { GALLERY } from '../js/galleryEntries.js';
 import { existsSync } from 'node:fs';
@@ -339,6 +340,35 @@ test('y^2 = f(x): oval, open branch and NOT TO SCALE', () => {
   assert.equal(parseGraphList('y² = x')[0].kind, 'ysq');
 });
 
+test('two-variable expressions and sgn', () => {
+  const e = parseExpression('xy - y^2 + sgn(x)', { variables: ['x', 'y'] });
+  close(e.evaluate({ x: 2, y: 3 }), 6 - 9 + 1);
+  assert.equal(e.toLatex(), 'xy - y^{2} + \\operatorname{sgn}(x)');
+  assert.throws(() => parseExpression('y + 1'), /Unknown name/, 'single-variable expressions still reject y');
+});
+
+test('slope field: segments, solution curves and isoclines', () => {
+  // y' = y: solution through (0, 1) is e^x
+  const curve = solutionCurve(({ y }) => y, 0, 1, { xmin: -2, xmax: 2, ymin: -10, ymax: 10 });
+  for (const [x, y] of curve) close(y, Math.exp(x), 1e-6);
+  // isocline of x - y = 0 is the line y = x
+  const lines = contour((x, y) => x - y, { xmin: -3, xmax: 3, ymin: -3, ymax: 3 }, 30);
+  assert.equal(lines.length, 1);
+  for (const [x, y] of lines[0]) close(x, y, 1e-9);
+  const base = defaultValues(slopefield.schema);
+  const { code, warnings } = slopefield.generate({ ...base, solutions: 'dashed', isoclines: '0', labelIsoclines: true });
+  assert.deepEqual(warnings, []);
+  assert.equal((code.match(/ -- /g) || []).length > 121, true, '11 x 11 segments and more');
+  assert.ok(code.includes('% isocline dy/dx = 0') && code.includes('\\frac{dy}{dx} = 0'), 'isocline and its label');
+  assert.ok(code.includes('% solution curves') && code.includes('\\draw[semithick, dashed]'), 'dashed solution curves');
+  // a horizontal segment at a point where dy/dx = 0 (x - y at (1, 1))
+  assert.ok(/\(0\.\d+,1\) -- \(1\.\d+,1\)/.test(code), 'flat segment where dy/dx = 0');
+  const arrows = slopefield.generate({ ...base, arrows: true, skipAxes: true }).code;
+  assert.ok(arrows.includes('-{Stealth[length=3pt]}') && arrows.startsWith('\\usetikzlibrary{arrows.meta}'), 'arrowheads');
+  assert.ok(!/\([-\d.]+,0\) -- \([-\d.]+,0\)/.test(arrows.split('% axes')[0]), 'none on the x-axis');
+  assert.throws(() => slopefield.generate({ ...base, equation: 'x +' }), /Could not read/);
+});
+
 test('blank axes: ticks, trig presets and full-size fractions', () => {
   const base = defaultValues(blank.schema);
   const a = blank.generate(base);
@@ -387,7 +417,7 @@ test('scatterplot: data, regression, axis breaks and clicks', () => {
 });
 
 test('gallery: every entry generates cleanly and has its image', () => {
-  const modules = { function: fn, sketch, blank, normal, scatter };
+  const modules = { function: fn, sketch, blank, normal, scatter, slopefield };
   const ids = new Set();
   for (const e of GALLERY) {
     assert.ok(!ids.has(e.id), `duplicate gallery id ${e.id}`);

@@ -81,6 +81,15 @@ app finds that area in the rendered picture with an invisible marker
 rectangle added to the code sent to TikZJax only (never to the code box or
 exports).
 
+### Slope field
+
+Type the right-hand side of dy/dx = f(x, y) (in x and y; `sgn` is available).
+Segments (or short arrows) of chosen spacing and length over a chosen range,
+optionally none on the axes; labelled points (`x, y : A`); solution curves
+through the points (dashed or solid, computed with the Runge–Kutta method);
+dotted isoclines where dy/dx takes given values, optionally labelled; and the
+usual axis labels, scale ticks and NOT TO SCALE note.
+
 Fractions in labels are drawn full size (`\\displaystyle`), as on exam papers.
 
 ## Running it
@@ -94,7 +103,7 @@ Use either:
   then open http://localhost:8000.
 
 You can open a diagram type directly, e.g. `?type=function`, `?type=sketch`,
-`?type=blank`, `?type=normal` or `?type=scatter`.
+`?type=blank`, `?type=normal`, `?type=scatter` or `?type=slopefield`.
 
 The **Gallery** (`gallery.html`, linked from the top bar) shows example
 diagrams made with the site, grouped by type; each opens in the editor with
@@ -159,6 +168,7 @@ js/diagrams/
   normal.js              the normal distribution module
   blank.js               blank axes
   scatter.js             scatterplots (click the preview to add points)
+  slopefield.js          slope fields, solution curves, isoclines
 tools/
   stamp-versions.mjs     adds content-hash versions to JS/CSS URLs in index.html and gallery.html
   build-gallery.mjs      renders the gallery images with the site in a headless browser

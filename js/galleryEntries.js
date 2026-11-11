@@ -10,6 +10,7 @@ export const GALLERY_GROUPS = [
   { type: 'blank', heading: 'Blank axes' },
   { type: 'normal', heading: 'Normal distribution' },
   { type: 'scatter', heading: 'Scatterplots' },
+  { type: 'slopefield', heading: 'Slope fields' },
 ];
 
 export const GALLERY = [
@@ -239,5 +240,22 @@ export const GALLERY = [
     title: 'Scatterplot with regression line',
     description: 'Critics’ and public scores with the least-squares line, a grid and zig-zag breaks on both axes.',
     values: {},
+  },
+  {
+    id: 'slope-field',
+    type: 'slopefield',
+    title: 'Slope field with labelled points',
+    description: 'dy/dx = −0.7 sgn(y) e^(−x²/68) (estimated from an exam diagram), with points A–D to match to solutions.',
+    values: {
+      equation: '-0.7 sgn(y) e^(-x^2/68)',
+      points: '4.9, 5 : A\n-5.1, 3 : B\n-3.1, -4 : C\n3.9, -3 : D',
+      fxmin: -7,
+      fxmax: 7,
+      fymin: -7,
+      fymax: 7,
+      segLength: 0.75,
+      width: 9,
+      height: 6.5,
+    },
   },
 ];
