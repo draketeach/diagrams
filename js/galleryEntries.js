@@ -84,6 +84,7 @@ export const GALLERY = [
     values: {
       graphs: 'y^2 = x(x+2)(x-5)',
       notToScale: true,
+      originLabel: false,
       xScaleTicks: true,
       xStep: 1,
       xScaleNumbers: false,
