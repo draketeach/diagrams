@@ -17,6 +17,8 @@ import { buildIndex } from '../tools/stamp-versions.mjs';
 import { parsePiecewise, piecewiseFunction } from '../js/lib/piecewiseParser.js';
 import blank from '../js/diagrams/blank.js';
 import normal, { normalProbability } from '../js/diagrams/normal.js';
+import { GALLERY } from '../js/galleryEntries.js';
+import { existsSync } from 'node:fs';
 import { encodeShareHash, decodeShareHash, changedValues } from '../js/core/shareLink.js';
 
 let passed = 0;
@@ -330,6 +332,25 @@ test('blank axes: ticks, trig presets and full-size fractions', () => {
   assert.ok(r.code.includes('{$O$}'), 'origin label');
   const d = blank.generate({ ...base, xPreset: 'degrees', xCustomTicks: '' });
   assert.ok(d.code.includes('{$360^{\\circ}$}'), 'degree ticks');
+});
+
+test('gallery: every entry generates cleanly and has its image', () => {
+  const modules = { function: fn, sketch, blank, normal };
+  const ids = new Set();
+  for (const e of GALLERY) {
+    assert.ok(!ids.has(e.id), `duplicate gallery id ${e.id}`);
+    ids.add(e.id);
+    const m = modules[e.type];
+    assert.ok(m, `${e.id}: unknown type ${e.type}`);
+    const { warnings } = m.generate({ ...defaultValues(m.schema), ...e.values });
+    assert.deepEqual(warnings, [], e.id);
+    assert.ok(existsSync(new URL(`../gallery/${e.id}.svg`, import.meta.url)), `gallery/${e.id}.svg missing (run tools/build-gallery.mjs)`);
+  }
+});
+
+test('gallery.html versions are up to date', () => {
+  const html = readFileSync(new URL('../gallery.html', import.meta.url), 'utf8');
+  assert.equal(html, buildIndex(html));
 });
 
 test('index.html versions are up to date (run: node tools/stamp-versions.mjs)', () => {

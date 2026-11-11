@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: CC0-1.0
-// Stamps content-hash versions onto the site's JS and CSS URLs in index.html.
+// Stamps content-hash versions onto the site's JS and CSS URLs in index.html
+// and gallery.html.
 //
 // Why: GitHub Pages' CDN can briefly serve a mix of old and new files right
 // after a deploy (e.g. a new app.js with an old module it imports), which
@@ -41,14 +42,17 @@ export function buildIndex(html) {
   );
   out = out.replace(/href="css\/style\.css(\?v=[0-9a-f]+)?"/, `href="css/style.css?v=${hash('css/style.css')}"`);
   out = out.replace(/src="js\/app\.js(\?v=[0-9a-f]+)?"/, `src="js/app.js?v=${hash('js/app.js')}"`);
+  out = out.replace(/src="js\/gallery\.js(\?v=[0-9a-f]+)?"/, `src="js/gallery.js?v=${hash('js/gallery.js')}"`);
   return out;
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  const file = join(root, 'index.html');
-  const before = readFileSync(file, 'utf8');
-  if (!before.includes('<!-- importmap:start -->')) throw new Error('index.html has no importmap markers');
-  const after = buildIndex(before);
-  writeFileSync(file, after);
-  console.log(after === before ? 'index.html already up to date' : 'index.html versions updated');
+  for (const page of ['index.html', 'gallery.html']) {
+    const file = join(root, page);
+    const before = readFileSync(file, 'utf8');
+    if (!before.includes('<!-- importmap:start -->')) throw new Error(`${page} has no importmap markers`);
+    const after = buildIndex(before);
+    writeFileSync(file, after);
+    console.log(after === before ? `${page} already up to date` : `${page} versions updated`);
+  }
 }

@@ -77,6 +77,22 @@ Use either:
 You can open a diagram type directly, e.g. `?type=function`, `?type=sketch`,
 `?type=blank` or `?type=normal`.
 
+The **Gallery** (`gallery.html`, linked from the top bar) shows example
+diagrams made with the site, grouped by type; each opens in the editor with
+its settings filled in. The examples live in `js/galleryEntries.js` and their
+images in `gallery/`. After changing an entry, or how diagrams are drawn,
+regenerate the images with the site served locally:
+
+```
+python -m http.server 8765
+node tools/build-gallery.mjs            # all entries
+node tools/build-gallery.mjs blank-trig # just one
+```
+
+This needs [Playwright](https://playwright.dev) (`npm i -g playwright`, then
+`npx playwright install chromium`). The tests check that every entry
+generates without warnings and has an image.
+
 **Copy link** (under the options) saves the diagram type, every option you've
 changed, and any hand edits to the code in the page address after `#`. Opening
 the link rebuilds the same diagram, so you can bookmark diagrams or share them.
@@ -85,10 +101,14 @@ Nothing is stored on a server.
 ## Project layout
 
 ```
-index.html               page shell
+index.html               page shell (the editor)
+gallery.html             example diagrams, linked to the editor
+gallery/                 gallery images (made by tools/build-gallery.mjs)
 css/style.css
 js/config.js             TikZJax URLs and export defaults
 js/app.js                wires the page together
+js/gallery.js            builds the gallery page
+js/galleryEntries.js     the gallery's diagrams and their settings
 sw.js                    service worker: keeps TikZJax cached, fetches site code fresh
 js/core/                 shared by every diagram type
   registry.js            registerDiagram / getDiagram
@@ -119,7 +139,8 @@ js/diagrams/
   normal.js              the normal distribution module
   blank.js               blank axes
 tools/
-  stamp-versions.mjs     adds content-hash versions to JS/CSS URLs in index.html
+  stamp-versions.mjs     adds content-hash versions to JS/CSS URLs in index.html and gallery.html
+  build-gallery.mjs      renders the gallery images with the site in a headless browser
 tests/
   run-tests.js           unit tests: node tests/run-tests.js
   compile-examples.js    compiles examples with local pdflatex (if installed)
