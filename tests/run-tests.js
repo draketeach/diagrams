@@ -348,7 +348,9 @@ test('scatterplot: data, regression, axis breaks and clicks', () => {
   const { code, warnings, click } = scatter.generate({ ...base, showEquation: true, showR: true });
   assert.deepEqual(warnings, []);
   assert.ok(code.includes('-- ++(0,-3pt) node[anchor=north, inner sep=2pt] {$0$}') && code.includes('-- ++(-3pt,0) node[anchor=east, inner sep=2pt] {$0$}'), 'ticked 0s at the broken corner');
-  assert.ok(scatter.generate({ ...base, zeroTicks: false }).code.includes('yshift=-3pt] at (6.8,5.75) {$0$}'), '0s without ticks');
+  const one = scatter.generate({ ...base, zeroStyle: 'one' }).code;
+  assert.equal((one.match(/\{\$0\$\}/g) || []).length, 1, 'a single 0');
+  assert.ok(one.includes('\\node[anchor=north east, inner sep=2pt] at (6.8,5.75) {$0$};'), 'at the corner, no tick');
   assert.ok(code.includes('++(1.5pt,2.5pt)') && code.includes('++(2.5pt,1.5pt)'), 'zig-zags on both axes');
   assert.ok(code.includes('{$7.0$}') && code.includes('{$8.5$}'), 'scale numbers to the data decimals');
   assert.ok(code.includes('{$y = 0.53x + 2.82,\\quad r = 0.854$}'), 'equation and r');

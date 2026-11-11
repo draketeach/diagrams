@@ -138,7 +138,17 @@ const schema = [
             { value: 'off', label: 'Never' },
           ],
         },
-        { type: 'checkbox', key: 'zeroTicks', label: 'Ticks at the 0s of broken axes', default: true, showIf: (v) => v.axisBreak !== 'off' },
+        {
+          type: 'select',
+          key: 'zeroStyle',
+          label: '0 at broken axes',
+          default: 'two',
+          options: [
+            { value: 'two', label: 'Two 0s, with ticks' },
+            { value: 'one', label: 'One 0 at the corner, no ticks' },
+          ],
+          showIf: (v) => v.axisBreak !== 'off',
+        },
         row(
           { type: 'select', key: 'axisArrow', label: 'Arrowheads', default: 'latex', options: ARROW_TIPS },
           { type: 'select', key: 'fontSize', label: 'Font size', default: '', options: FONT_SIZES }
@@ -368,21 +378,13 @@ function generate(values) {
   for (const t of Y.ticks) {
     b.add(`\\draw[${w}] ${pt(yAxisX, t)} -- ++(-3pt,0) node[anchor=east, inner sep=2pt] {$${fixed(t, Y.dp)}$};`);
   }
-  // the 0 at a broken axis's corner, with a tick like the other numbers
-  const zeroTicks = values.zeroTicks ?? true;
-  if (X.brk) {
-    b.add(
-      zeroTicks
-        ? `\\draw[${w}] ${pt(cx, xAxisY)} -- ++(0,-3pt) node[anchor=north, inner sep=2pt] {$0$};`
-        : `\\node[anchor=north, inner sep=2pt, yshift=-3pt] at ${pt(cx, xAxisY)} {$0$};`
-    );
-  }
-  if (Y.brk) {
-    b.add(
-      zeroTicks
-        ? `\\draw[${w}] ${pt(yAxisX, cy)} -- ++(-3pt,0) node[anchor=east, inner sep=2pt] {$0$};`
-        : `\\node[anchor=east, inner sep=2pt, xshift=-3pt] at ${pt(yAxisX, cy)} {$0$};`
-    );
+  // the 0s of broken axes: one under the x-axis and one beside the y-axis,
+  // each with a tick, or a single 0 at the corner
+  if (values.zeroStyle === 'one' && (X.brk || Y.brk)) {
+    b.add(`\\node[anchor=north east, inner sep=2pt] at ${pt(yAxisX, xAxisY)} {$0$};`);
+  } else {
+    if (X.brk) b.add(`\\draw[${w}] ${pt(cx, xAxisY)} -- ++(0,-3pt) node[anchor=north, inner sep=2pt] {$0$};`);
+    if (Y.brk) b.add(`\\draw[${w}] ${pt(yAxisX, cy)} -- ++(-3pt,0) node[anchor=east, inner sep=2pt] {$0$};`);
   }
 
   // ---- axis titles
