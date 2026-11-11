@@ -62,6 +62,22 @@ The **Blank axes** type draws labelled axes with tick marks and no curve, for
 "sketch the graph" questions: type the ticks (`2, 5`, `pi/3, 2pi/3`, `3:a`) or
 use a trig preset (π/2 … 2π, or 90° … 360°), with an optional grid.
 
+### Scatterplot
+
+Points as `x, y` lines, or two columns pasted from a spreadsheet (a first row
+of words becomes the axis titles). **Click the preview to add a point**, and
+Shift+click to remove the nearest one. Optional least-squares regression line
+(or a typed line), with its equation and r; axis titles (the y title is
+rotated); a grid with roughly square cells; scale numbers to the data's
+decimals; and zig-zag axis breaks, with 0 at the corner, when an axis starts
+far from 0 (automatic, always or never).
+
+A diagram type can take clicks on its preview: its `generate` returns
+`click: { area, decimals, scale }` and the module has `onPreviewClick`. The
+app finds that area in the rendered picture with an invisible marker
+rectangle added to the code sent to TikZJax only (never to the code box or
+exports).
+
 Fractions in labels are drawn full size (`\\displaystyle`), as on exam papers.
 
 ## Running it
@@ -75,7 +91,7 @@ Use either:
   then open http://localhost:8000.
 
 You can open a diagram type directly, e.g. `?type=function`, `?type=sketch`,
-`?type=blank` or `?type=normal`.
+`?type=blank`, `?type=normal` or `?type=scatter`.
 
 The **Gallery** (`gallery.html`, linked from the top bar) shows example
 diagrams made with the site, grouped by type; each opens in the editor with
@@ -138,6 +154,7 @@ js/diagrams/
   sketch.js              smooth curves through points with optional gradients
   normal.js              the normal distribution module
   blank.js               blank axes
+  scatter.js             scatterplots (click the preview to add points)
 tools/
   stamp-versions.mjs     adds content-hash versions to JS/CSS URLs in index.html and gallery.html
   build-gallery.mjs      renders the gallery images with the site in a headless browser

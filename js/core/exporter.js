@@ -120,6 +120,7 @@ export function svgSizePt(svg) {
  */
 export function serializeSvg(svg, { fontCss = '', width, height, background } = {}) {
   const clone = svg.cloneNode(true);
+  clone.querySelectorAll('[data-click-area]').forEach((el) => el.remove()); // preview-only marker
   clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
   clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
   clone.removeAttribute('style');

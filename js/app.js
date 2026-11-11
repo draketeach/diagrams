@@ -52,6 +52,8 @@ let current = null; // current diagram module
 let form = null;
 let currentSvg = null;
 let codeDirty = false;
+let lastResult = null; // the last generate() result (for clickable previews)
+let clickArea = null; // { el, area, decimals, scale } when the preview takes clicks
 
 const editor = createCodeEditor(els.code, { onRun: render });
 els.code.addEventListener('input', () => {
@@ -161,9 +163,64 @@ function generate() {
   }
   editor.setValue(result.code);
   codeDirty = false;
+  lastResult = result;
   showMessages(result.warnings || []);
   render();
 }
+
+// ---------------------------------------------------------------- clickable previews
+//
+// A diagram module can take clicks on the preview (e.g. a scatterplot adds a
+// point): generate() returns `click: { area: {x0, x1, y0, y1}, decimals, scale }`
+// in graph units and the module has onPreviewClick(values, info). To find
+// where that area is in the rendered picture, the code sent to TikZJax (not
+// the code shown) gets an invisible rectangle in a marker colour over it.
+
+const MARK_FILL = '#010203';
+
+function withClickMarker(code) {
+  const a = lastResult?.click?.area;
+  if (!a || codeDirty || !current?.onPreviewClick) return code;
+  const mark =
+    `\\path[fill={rgb,255:red,1;green,2;blue,3}, fill opacity=0.01] (${a.x0},${a.y0}) rectangle (${a.x1},${a.y1});`;
+  return code.replace(/\\end\{tikzpicture\}\s*$/, `${mark}\n\\end{tikzpicture}`);
+}
+
+/** Find the marker in the rendered SVG; hide it and keep it out of exports. */
+function setUpClickArea(svg) {
+  clickArea = null;
+  els.preview.classList.remove('is-clickable');
+  const marker = svg.querySelector(`[fill="${MARK_FILL}"]`);
+  if (!marker || !lastResult?.click) return;
+  marker.setAttribute('data-click-area', '');
+  marker.setAttribute('visibility', 'hidden');
+  clickArea = { el: marker, ...lastResult.click };
+  els.preview.classList.add('is-clickable');
+}
+
+els.preview.addEventListener('click', (e) => {
+  if (!clickArea || codeDirty || !current?.onPreviewClick) return;
+  const r = clickArea.el.getBoundingClientRect();
+  if (!r.width || !r.height) return;
+  const { x0, x1, y0, y1 } = clickArea.area;
+  const x = x0 + ((e.clientX - r.left) / r.width) * (x1 - x0);
+  const y = y1 - ((e.clientY - r.top) / r.height) * (y1 - y0);
+  const remove = e.shiftKey;
+  if (!remove && (x < x0 - 1e-9 || x > x1 + 1e-9 || y < y0 - 1e-9 || y > y1 + 1e-9)) return;
+  const next = current.onPreviewClick(form.getValues(), { x, y, remove, decimals: clickArea.decimals, scale: clickArea.scale });
+  if (!next) return;
+  if (!remove) {
+    // instant feedback until the new picture arrives
+    const box = els.preview.getBoundingClientRect();
+    const dot = document.createElement('span');
+    dot.className = 'click-dot';
+    dot.style.left = `${e.clientX - box.left + els.preview.scrollLeft}px`;
+    dot.style.top = `${e.clientY - box.top + els.preview.scrollTop}px`;
+    els.preview.append(dot);
+  }
+  form.setValues(next);
+  generate();
+});
 
 let renderSeq = 0;
 
@@ -186,11 +243,12 @@ async function render() {
     els.progress.hidden = true;
     if (seq !== renderSeq) return;
     setStatus(downloaded ? 'Running TeX for the first time…' : 'Rendering with TikZJax…', 'busy');
-    const { svg, warnings, ms } = await renderTikz(code);
+    const { svg, warnings, ms } = await renderTikz(withClickMarker(code));
     if (seq !== renderSeq) return;
     currentSvg = svg;
     svg.removeAttribute('style');
     els.preview.replaceChildren(svg);
+    setUpClickArea(svg);
     applyZoom();
     setExportEnabled(true);
     setStatus(`Rendered in ${(ms / 1000).toFixed(1)} s`, 'ok');

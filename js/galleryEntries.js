@@ -9,6 +9,7 @@ export const GALLERY_GROUPS = [
   { type: 'sketch', heading: 'Sketch graphs' },
   { type: 'blank', heading: 'Blank axes' },
   { type: 'normal', heading: 'Normal distribution' },
+  { type: 'scatter', heading: 'Scatterplots' },
 ];
 
 export const GALLERY = [
@@ -206,6 +207,13 @@ export const GALLERY = [
     type: 'normal',
     title: 'Shaded tails',
     description: 'z < −1.5 and z > 1.2 dotted like an exam paper, with dashed boundary lines.',
+    values: {},
+  },
+  {
+    id: 'scatter-scores',
+    type: 'scatter',
+    title: 'Scatterplot with regression line',
+    description: 'Critics’ and public scores with the least-squares line, a grid and zig-zag breaks on both axes.',
     values: {},
   },
 ];

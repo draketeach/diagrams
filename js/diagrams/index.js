@@ -8,5 +8,6 @@ import fn from './function.js';
 import sketch from './sketch.js';
 import normal from './normal.js';
 import blank from './blank.js';
+import scatter from './scatter.js';
 
-[fn, sketch, blank, normal].forEach(registerDiagram);
+[fn, sketch, blank, normal, scatter].forEach(registerDiagram);

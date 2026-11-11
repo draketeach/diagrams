@@ -16,6 +16,7 @@ import { TIKZJAX } from '../js/config.js';
 import { buildIndex } from '../tools/stamp-versions.mjs';
 import { parsePiecewise, piecewiseFunction } from '../js/lib/piecewiseParser.js';
 import blank from '../js/diagrams/blank.js';
+import scatter, { parseData, regression } from '../js/diagrams/scatter.js';
 import normal, { normalProbability } from '../js/diagrams/normal.js';
 import { GALLERY } from '../js/galleryEntries.js';
 import { existsSync } from 'node:fs';
@@ -334,8 +335,37 @@ test('blank axes: ticks, trig presets and full-size fractions', () => {
   assert.ok(d.code.includes('{$360^{\\circ}$}'), 'degree ticks');
 });
 
+test('scatterplot: data, regression, axis breaks and clicks', () => {
+  const d = parseData("Critics' score\tPublic's score\n7.1\t6.7\n8, 7.2\n9.0 7.6");
+  assert.deepEqual(d.header, ["Critics' score", "Public's score"]);
+  assert.deepEqual(d.points.map((p) => [p.x, p.y]), [[7.1, 6.7], [8, 7.2], [9, 7.6]]);
+  assert.throws(() => parseData('1, 2\nfoo, 3'), /Line 2/);
+  const reg = regression([{ x: 1, y: 3 }, { x: 2, y: 5 }, { x: 3, y: 7 }]);
+  close(reg.b, 2);
+  close(reg.a, 1);
+  close(reg.r, 1);
+  const base = defaultValues(scatter.schema);
+  const { code, warnings, click } = scatter.generate({ ...base, showEquation: true });
+  assert.deepEqual(warnings, []);
+  assert.ok(code.includes('{$0$}'), '0 at the broken corner');
+  assert.ok(code.includes('++(1.5pt,2.5pt)') && code.includes('++(2.5pt,1.5pt)'), 'zig-zags on both axes');
+  assert.ok(code.includes('{$7.0$}') && code.includes('{$8.5$}'), 'scale numbers to the data decimals');
+  assert.ok(code.includes('{$y = 0.53x + 2.82,\\quad r = 0.854$}'), 'equation and r');
+  assert.ok(code.includes('rotate=90') && code.includes("Public’s score"), 'rotated y title');
+  assert.equal((code.match(/\\fill \(/g) || []).length, 23, '23 points');
+  assert.deepEqual(click.area, { x0: 7, x1: 10, y0: 6, y1: 8.5 });
+  const off = scatter.generate({ ...base, axisBreak: 'off' }).code;
+  assert.ok(!off.includes('++(1.5pt,2.5pt)'), 'no break when turned off');
+  const added = scatter.onPreviewClick(base, { x: 7.5, y: 8.04, decimals: [2, 2], scale: { x: 2, y: 2 } });
+  assert.ok(added.data.endsWith('\n7.50, 8.04'));
+  const removed = scatter.onPreviewClick(added, { x: 7.49, y: 8.03, remove: true, scale: { x: 2, y: 2 } });
+  assert.equal(removed.data, base.data);
+  const typed = scatter.generate({ ...base, line: 'typed', lineEquation: 'y = 0.5x + 3', showEquation: true }).code;
+  assert.ok(typed.includes('{$y = 0.5x + 3$}'));
+});
+
 test('gallery: every entry generates cleanly and has its image', () => {
-  const modules = { function: fn, sketch, blank, normal };
+  const modules = { function: fn, sketch, blank, normal, scatter };
   const ids = new Set();
   for (const e of GALLERY) {
     assert.ok(!ids.has(e.id), `duplicate gallery id ${e.id}`);
