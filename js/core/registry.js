@@ -4,7 +4,7 @@
 // Every diagram type is a plain object ("diagram module") with this shape:
 //
 //   {
-//     id: 'polynomial',                 // unique, URL-safe
+//     id: 'function',                   // unique, URL-safe
 //     name: 'Polynomial graph',         // shown in the type picker
 //     category: 'Function graphs',      // groups the picker
 //     description: 'Short help text',

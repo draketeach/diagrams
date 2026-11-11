@@ -2,7 +2,8 @@
 // Builds an options form from a declarative schema.
 //
 // Field types:
-//   { type: 'group',    label, fields: [...], showIf?, collapsed? }
+//   { type: 'group',    label, fields: [...], showIf?, collapsed? }  (groups can nest)
+//   { type: 'row',      fields: [...], showIf? }   -- fields side by side
 //   { type: 'select',   key, label, options: [{ value, label }], default }
 //   { type: 'number',   key, label, default, step?, min?, max? }
 //   { type: 'text',     key, label, default, placeholder? }
@@ -25,7 +26,7 @@ export function defaultValues(schema) {
 function walk(fields, fn) {
   for (const f of fields) {
     fn(f);
-    if (f.type === 'group') walk(f.fields, fn);
+    if (f.type === 'group' || f.type === 'row') walk(f.fields, fn);
   }
 }
 
@@ -35,6 +36,15 @@ export function buildForm(container, schema, { onChange } = {}) {
   const conditional = []; // { field, wrapper }
 
   function makeField(f, parent) {
+    if (f.type === 'row') {
+      const row = document.createElement('div');
+      row.className = 'form-row';
+      row.style.gridTemplateColumns = `repeat(${f.fields.length}, minmax(0, 1fr))`;
+      f.fields.forEach((child) => makeField(child, row));
+      parent.append(row);
+      if (f.showIf) conditional.push({ field: f, wrapper: row });
+      return;
+    }
     if (f.type === 'group') {
       const fs = document.createElement('fieldset');
       fs.className = 'form-group';

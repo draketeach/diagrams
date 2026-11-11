@@ -1,105 +1,13 @@
 // SPDX-License-Identifier: CC0-1.0
-// "Extra graphs": more lines or curves drawn on a function graph, e.g. the
-// straight line y = 6 - 3x crossing a parabola. Shared by the function-graph
-// diagram types.
-//
-// Each line of the text box is one graph: an equation, then any options after
-// semicolons:
-//
-//   y = 6 - 3x
-//   y = x/2 + 1; dashed; thick; no arrows; from -1 to 4; label
-//   x = 3; dotted; label: x = a
-//
-// Options: solid | dashed | dotted, a line width (very thin … very thick),
-// arrows | no arrows, from <a> to <b> (x-range; y-range for x = c),
-// label (shows its equation) or label: <text>.
+// Graphs after the first one in the Function diagram's "Graphs" box (see
+// lib/graphList.js): extra lines or curves such as the straight line
+// y = 6 - 3x crossing a parabola, with optional dots and coordinates where
+// graphs cross and labels for their axis intercepts.
 
-import { parseExpression, parseConstant } from './mathParser.js';
 import { findRoots, derivative, niceLatex } from './numeric.js';
-import { n, pt, arrowSpec, mathLabel, LINE_WIDTHS } from './tikz.js';
+import { n, pt, arrowSpec, mathLabel } from './tikz.js';
 import { findPieces, drawCurve, dotRadius } from './functionGraph.js';
-
-const DASHES = ['solid', 'dashed', 'dotted', 'densely dashed', 'loosely dashed', 'densely dotted'];
-const WIDTHS = LINE_WIDTHS.map((w) => w.value);
-
-export function extraGraphFields() {
-  return {
-    type: 'group',
-    label: 'Extra graphs',
-    collapsed: true,
-    fields: [
-      {
-        type: 'textarea',
-        key: 'extraGraphs',
-        label: 'Lines or curves, one per line',
-        rows: 3,
-        default: '',
-        placeholder: 'e.g. y = 6 - 3x',
-        help:
-          'An equation, then options after semicolons, e.g. "y = x/2 + 1; dashed; thick; no arrows; from -1 to 4; label". ' +
-          'Options: dashed or dotted, a line width (thin, thick…), no arrows, from a to b, ' +
-          'label (shows the equation) or label: text. "x = 3" draws a vertical line.',
-      },
-      { type: 'checkbox', key: 'extraDots', label: 'Dots where graphs cross', default: false },
-      { type: 'checkbox', key: 'extraCrossCoords', label: 'Coordinates where graphs cross', default: false },
-      { type: 'checkbox', key: 'extraIntercepts', label: "Label the extra graphs' axis intercepts", default: false },
-    ],
-  };
-}
-
-const constant = (text, what) => {
-  try {
-    return parseConstant(String(text).trim().replace(/√/g, 'sqrt'));
-  } catch (e) {
-    throw new Error(`${what}: could not read "${text}" (${e.message})`);
-  }
-};
-
-/** Parse the text box into graph descriptions. */
-export function parseExtraGraphs(src) {
-  const graphs = [];
-  String(src ?? '')
-    .split(/\n/)
-    .forEach((raw, i) => {
-      const line = raw.trim();
-      if (!line) return;
-      const where = `Extra graph ${i + 1}`;
-      const [eq, ...opts] = line.split(';').map((s) => s.trim());
-      const g = { dash: '', width: '', arrows: null, from: null, to: null, label: null };
-      const m = eq.match(/^([xy])\s*=\s*(.+)$/i);
-      if (m && m[1].toLowerCase() === 'x') {
-        const c = constant(m[2], where);
-        Object.assign(g, { vertical: true, value: c.value, latex: `x = ${c.latex}` });
-      } else {
-        const body = m ? m[2] : eq;
-        let e;
-        try {
-          e = parseExpression(body.replace(/√/g, 'sqrt'));
-        } catch (err) {
-          throw new Error(`${where}: could not read "${eq}" (${err.message})`);
-        }
-        Object.assign(g, { vertical: false, f: e.evaluate, pgf: e.toPgf('\\x'), latex: `y = ${e.toLatex()}` });
-      }
-      for (const opt of opts) {
-        if (!opt) continue;
-        const low = opt.toLowerCase().replace(/\s+/g, ' ');
-        const range = opt.match(/^from\s+(.+?)\s+to\s+(.+)$/i);
-        const label = opt.match(/^label\s*(?:[:=]\s*(.*))?$/i);
-        if (DASHES.includes(low)) g.dash = low === 'solid' ? '' : low;
-        else if (WIDTHS.includes(low)) g.width = low;
-        else if (/^no arrows?$/.test(low)) g.arrows = false;
-        else if (/^arrows?$/.test(low)) g.arrows = true;
-        else if (range) {
-          g.from = constant(range[1], where).value;
-          g.to = constant(range[2], where).value;
-          if (g.from >= g.to) throw new Error(`${where}: "from" must be less than "to".`);
-        } else if (label) g.label = label[1] ? label[1].trim() : g.latex;
-        else throw new Error(`${where}: didn't understand "${opt}".`);
-      }
-      graphs.push(g);
-    });
-  return graphs;
-}
+import { piecewiseDots, drawPieces, drawDots } from './piecewiseGraph.js';
 
 function isLinear(f, lo, hi) {
   const xs = [lo, (2 * lo + hi) / 3, (lo + 2 * hi) / 3, hi];
@@ -188,7 +96,13 @@ function coordPair(x, y, dp, exact) {
 function extents(graphs, win) {
   return graphs.map((g) => {
     const [min, max] = g.vertical ? [win.ymin, win.ymax] : [win.xmin, win.xmax];
-    return { g, lo: Math.max(min, g.from ?? -Infinity), hi: Math.min(max, g.to ?? Infinity) };
+    let lo = Math.max(min, g.from ?? -Infinity);
+    let hi = Math.min(max, g.to ?? Infinity);
+    if (g.kind === 'piecewise') {
+      lo = Math.max(lo, Math.min(...g.pieces.map((p) => p.a)));
+      hi = Math.min(hi, Math.max(...g.pieces.map((p) => p.b)));
+    }
+    return { g, lo, hi };
   });
 }
 
@@ -211,12 +125,12 @@ function crossings(A, B) {
 }
 
 /**
- * Draw the extra graphs, plus the chosen dots and labels.
- * main: { f, lo, hi } for the diagram's own curve (optional).
+ * Draw the extra graphs (parsed by lib/graphList.js), plus the chosen dots
+ * and labels. main: { f, lo, hi } for the first graph (optional).
  */
-export function drawExtraGraphs(b, win, values, { main = null, xUnit = 1, yUnit = 1 } = {}) {
-  const graphs = parseExtraGraphs(values.extraGraphs);
-  if (!graphs.length) return [];
+export function drawExtraGraphs(b, win, values, { graphs = [], main = null, xUnit = 1, yUnit = 1 } = {}) {
+  graphs = graphs.map((g) => ({ ...g, vertical: g.kind === 'vertical' }));
+  if (!graphs.length && !main) return [];
   const warnings = [];
   const ext = extents(graphs, win);
   const tangent = (g, x) => (g.vertical ? Math.PI / 2 : Math.atan2(derivative(g.f, x) * yUnit, xUnit));
@@ -224,17 +138,18 @@ export function drawExtraGraphs(b, win, values, { main = null, xUnit = 1, yUnit 
   const labels = [];
 
   ext.forEach(({ g, lo, hi }, i) => {
-    b.comment(`extra graph: ${g.latex}`);
+    b.comment(g.latex ? `graph: ${g.latex}` : 'graph: piecewise');
     const width = g.width || values.curveWidth || 'semithick';
     const tip = g.arrows === false ? 'none' : values.curveArrow;
+    const name = g.latex ? `${g.latex} (line ${g.line})` : `on line ${g.line}`;
     if (!(hi > lo)) {
-      warnings.push(`Extra graph ${i + 1} (${g.latex}) is outside the axes range.`);
+      warnings.push(`The graph ${name} is outside the axes range.`);
       return;
     }
     if (g.vertical) {
       const x = g.value;
       if (x < win.xmin || x > win.xmax) {
-        warnings.push(`Extra graph ${i + 1} (${g.latex}) is outside the axes range.`);
+        warnings.push(`The graph ${name} is outside the axes range.`);
         return;
       }
       const style = [width, g.dash, arrowSpec(tip, true, true)].filter(Boolean).join(', ');
@@ -242,9 +157,20 @@ export function drawExtraGraphs(b, win, values, { main = null, xUnit = 1, yUnit 
       if (g.label) labels.push(`\\node[anchor=south, inner sep=2pt] at ${pt(x, hi)} {${mathLabel(g.label)}};`);
       return;
     }
+    if (g.kind === 'piecewise') {
+      const visible = drawPieces(b, g.pieces, { ...win, xmin: lo, xmax: hi }, values, { width, dash: g.dash, tip });
+      const dots = piecewiseDots(g.pieces, win, { joinDots: values.joinDots ?? true });
+      drawDots(b, dots, dotRadius(values), width);
+      if (!visible && !dots.length) warnings.push(`The graph ${name} is not visible in this window.`);
+      if (g.label) {
+        const x = hi - (hi - lo) * 1e-6;
+        if (isFinite(g.f(x))) labels.push(`\\node[anchor=south east, inner sep=3pt] at ${pt(x, g.f(x))} {${mathLabel(g.label)}};`);
+      }
+      return;
+    }
     const pieces = findPieces(g.f, { ...win, xmin: lo, xmax: hi }, 1000);
     if (!pieces.length) {
-      warnings.push(`Extra graph ${i + 1} (${g.latex}) is not visible in this window.`);
+      warnings.push(`The graph ${name} is not visible in this window.`);
       return;
     }
     if (isLinear(g.f, lo, hi)) {
@@ -345,26 +271,25 @@ export function drawExtraGraphs(b, win, values, { main = null, xUnit = 1, yUnit 
 }
 
 /**
- * x and y values of the extra graphs' crossings and intercepts, so the
- * automatic window can include them.
+ * x and y values of the extra graphs' crossings with the first graph and
+ * their y-intercepts, so the automatic window can include them.
  */
-export function extraGraphFeatures(values, mainF = null, R = 50) {
-  let graphs;
-  try {
-    graphs = parseExtraGraphs(values.extraGraphs);
-  } catch {
-    return { xs: [], ys: [] }; // the error is reported when drawing
-  }
+export function extraGraphFeatures(graphs, mainF = null, R = 50) {
   const xs = [];
   const ys = [];
   for (const g of graphs) {
-    if (g.vertical) {
+    if (g.kind === 'vertical') {
       xs.push(g.value);
       if (mainF) ys.push(mainF(g.value));
       continue;
     }
-    const lo = Math.max(-R, g.from ?? -R);
-    const hi = Math.min(R, g.to ?? R);
+    let lo = Math.max(-R, g.from ?? -R);
+    let hi = Math.min(R, g.to ?? R);
+    if (g.kind === 'piecewise') {
+      for (const p of g.pieces) for (const x of [p.a, p.b]) if (isFinite(x)) { xs.push(x); ys.push(p.expr.evaluate(x)); }
+      lo = Math.max(lo, Math.min(...g.pieces.map((p) => p.a)));
+      hi = Math.min(hi, Math.max(...g.pieces.map((p) => p.b)));
+    }
     if (g.from !== null) xs.push(g.from);
     if (g.to !== null) xs.push(g.to);
     if (!(hi > lo)) continue;

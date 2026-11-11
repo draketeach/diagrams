@@ -7,16 +7,16 @@ import { findPieces } from '../js/lib/functionGraph.js';
 import { monotoneSlopes, hermiteFunction } from '../js/lib/hermite.js';
 import { toTikzJaxSource, toStandaloneDocument, toPictureOnly } from '../js/core/tikzDocument.js';
 import { defaultValues } from '../js/core/formBuilder.js';
-import polynomial, { _internal } from '../js/diagrams/polynomial.js';
+import fn from '../js/diagrams/function.js';
+import sketch, { parsePoints, pointSlopes } from '../js/diagrams/sketch.js';
+import { parseGraphList } from '../js/lib/graphList.js';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { TIKZJAX } from '../js/config.js';
 import { buildIndex } from '../tools/stamp-versions.mjs';
 import { parsePiecewise, piecewiseFunction } from '../js/lib/piecewiseParser.js';
-import piecewise from '../js/diagrams/piecewise.js';
 import blank from '../js/diagrams/blank.js';
 import normal, { normalProbability } from '../js/diagrams/normal.js';
-import { parseExtraGraphs } from '../js/lib/extraGraphs.js';
 import { encodeShareHash, decodeShareHash, changedValues } from '../js/core/shareLink.js';
 
 let passed = 0;
@@ -80,9 +80,7 @@ test('monotone hermite has flat tangent at extrema', () => {
   close(hermiteFunction(pts, m)(-2), 5);
 });
 
-test('polynomial helpers', () => {
-  assert.deepEqual(_internal.polyFromRoots([-4, 1, 3], 1), [1, 0, -13, 12]);
-  assert.equal(_internal.polyLatex([1, 0, -13, 12]), 'x^{3} - 13x + 12');
+test('fmt rounds tiny values to 0', () => {
   assert.equal(fmt(-0.0001, 2), '0');
 });
 
@@ -117,13 +115,34 @@ test('tikzjax source wrapping', () => {
   assert.equal(toPictureOnly(doc), '\\begin{tikzpicture}\\end{tikzpicture}');
 });
 
-test('every mode generates code', () => {
-  const base = defaultValues(polynomial.schema);
-  for (const mode of ['roots', 'expression', 'coefficients', 'sketch']) {
-    const { code } = polynomial.generate({ ...base, mode });
-    assert.ok(code.includes('\\begin{tikzpicture}'), mode);
-    assert.ok(!/NaN|Infinity|undefined/.test(code), `${mode} has bad values`);
+test('function and sketch defaults generate code', () => {
+  for (const m of [fn, sketch]) {
+    const { code, warnings } = m.generate(defaultValues(m.schema));
+    assert.ok(code.includes('\\begin{tikzpicture}'), m.id);
+    assert.ok(!/NaN|Infinity|undefined/.test(code), `${m.id} has bad values`);
+    assert.deepEqual(warnings, [], m.id);
   }
+  const { code } = fn.generate(defaultValues(fn.schema));
+  assert.ok(code.includes('{$-3$}') && code.includes('{$1$}') && code.includes('{$2$}'), 'roots of x^3 - 7x + 6');
+});
+
+test('graph list: plain, piecewise in braces, domains, vertical lines and settings', () => {
+  const gs = parseGraphList(
+    'y = x^2\n{ x/4, 0 <= x <= 2sqrt(2); 0, otherwise }; thick\nx^2 - 1, -2 <= x < 3\n{\n  1, x < 0\n  2, x >= 0\n}; dashed\ny = 6 - 3x; dashed; thick; no arrows; from -2 to 6.5; label\nx = 1/2; label: x = a'
+  );
+  assert.deepEqual(gs.map((g) => g.kind), ['expr', 'piecewise', 'piecewise', 'piecewise', 'expr', 'vertical']);
+  assert.equal(gs[1].width, 'thick');
+  assert.equal(gs[1].pieces.length, 3, 'otherwise fills both sides');
+  assert.equal(gs[2].pieces.length, 1);
+  assert.ok(gs[2].pieces[0].aInc && !gs[2].pieces[0].bInc);
+  assert.equal(gs[3].dash, 'dashed');
+  const a = gs[4];
+  close(a.f(1), 3);
+  assert.deepEqual([a.dash, a.width, a.arrows, a.from, a.to, a.label], ['dashed', 'thick', false, -2, 6.5, 'y = 6 - 3x']);
+  assert.ok(gs[5].value === 0.5 && gs[5].label === 'x = a');
+  assert.equal(parseGraphList('2x + 1')[0].f(1), 3, 'y = is optional');
+  assert.throws(() => parseGraphList('y = x; wobbly'), /didn't understand "wobbly"/);
+  assert.throws(() => parseGraphList('{ x, x < 0'), /no matching/);
 });
 
 test('piecewise parser: exam notation and otherwise', () => {
@@ -138,14 +157,16 @@ test('piecewise parser: exam notation and otherwise', () => {
   assert.throws(() => parsePiecewise('x, 3 <= x <= 1'), /bigger/);
 });
 
-test('piecewise diagram: dots and exact labels for the PDF example', () => {
-  const base = defaultValues(piecewise.schema);
-  const { code } = piecewise.generate(base);
+const PDF = { ...defaultValues(fn.schema), graphs: '{ x/4, 0 <= x <= 2sqrt(2); 0, otherwise }; thick', dotSize: '2pt' };
+
+test('piecewise graph: dots and exact labels for the PDF example', () => {
+  const base = PDF;
+  const { code } = fn.generate(base);
   assert.ok(code.includes('\\fill (0,0) circle'), 'filled dot at O');
   assert.ok(/fill=white\] \(2\.8284,0\) circle/.test(code), 'open dot at (2√2, 0)');
   assert.ok(code.includes('\\fill (2.8284,0.7071) circle'), 'filled dot at top');
   assert.ok(code.includes('{$2\\sqrt{2}$}') && code.includes('{$\\displaystyle \\frac{\\sqrt{2}}{2}$}'), 'exact labels');
-  const noJoin = piecewise.generate({ ...base, joinDots: false }).code;
+  const noJoin = fn.generate({ ...base, joinDots: false }).code;
   assert.ok(!noJoin.includes('\\fill (0,0) circle'), 'no dot at a continuous join');
 });
 
@@ -168,37 +189,37 @@ test('TikZJax files are named after their contents', () => {
 });
 
 test('share links round-trip options and code', () => {
-  const defaults = defaultValues(piecewise.schema);
-  const values = { ...defaults, pieces: 'x/4, 0 ≤ x ≤ 2√2\n0, otherwise', shade: '1 to 2', joinDots: false };
+  const defaults = defaultValues(fn.schema);
+  const values = { ...defaults, graphs: '{ x/4, 0 ≤ x ≤ 2√2; 0, otherwise }', shade: '1 to 2', joinDots: false };
   const changed = changedValues(values, defaults);
-  assert.deepEqual(Object.keys(changed).sort(), ['joinDots', 'pieces', 'shade']);
+  assert.deepEqual(Object.keys(changed).sort(), ['graphs', 'joinDots', 'shade']);
   assert.deepEqual(changedValues({ a: null, b: '' }, { a: '', b: null }), {}, 'blank number boxes are not changes');
-  const hash = encodeShareHash({ type: 'piecewise', values: changed, code: '\\begin{tikzpicture}% π\n\\end{tikzpicture}' });
-  assert.ok(/^#type=piecewise&o=[\w-]+&c=[\w-]+$/.test(hash), hash);
+  const hash = encodeShareHash({ type: 'function', values: changed, code: '\\begin{tikzpicture}% π\n\\end{tikzpicture}' });
+  assert.ok(/^#type=function&o=[\w-]+&c=[\w-]+$/.test(hash), hash);
   const back = decodeShareHash(hash);
-  assert.equal(back.type, 'piecewise');
+  assert.equal(back.type, 'function');
   assert.deepEqual(back.values, changed);
   assert.equal(back.code, '\\begin{tikzpicture}% π\n\\end{tikzpicture}');
   assert.equal(decodeShareHash(''), null);
   assert.throws(() => decodeShareHash('#type=x&o=!!!'), /damaged/);
 });
 
-test('sketch mode: dots at curve ends replace arrows', () => {
-  const base = defaultValues(polynomial.schema);
-  const { code } = polynomial.generate({ ...base, mode: 'sketch', points: '0,-2\n4,-1\n8,-2.8', endDots: 'right', curveArrow: 'to', dotSize: '2pt' });
+test('sketch: dots at curve ends replace arrows', () => {
+  const base = defaultValues(sketch.schema);
+  const { code } = sketch.generate({ ...base, points: '0,-2\n4,-1\n8,-2.8', rightEnd: 'dot', curveArrow: 'to', dotSize: '2pt' });
   assert.ok(code.includes('\\fill (8,-2.8) circle[radius=2pt]'), 'dot at right end');
   assert.ok(/\\draw\[semithick, to-\]/.test(code), 'arrow only at the left end');
 });
 
 test('grid and curve range', () => {
-  const base = defaultValues(polynomial.schema);
-  const { code } = polynomial.generate({ ...base, mode: 'expression', expression: '2x^3 - 5.3x^2 + 3.35x', domainFrom: '0', domainTo: '1.43',
+  const base = defaultValues(fn.schema);
+  const { code } = fn.generate({ ...base, graphs: 'y = 2x^3 - 5.3x^2 + 3.35x; from 0 to 1.43', leftEnd: 'plain', rightEnd: 'plain',
     showGrid: true, gridXStep: 0.25, gridYStep: 0.25, gridXmin: 0, gridXmax: 1.5, gridYmin: -0.25, gridYmax: 1, windowMode: 'manual', xmin: -0.1, xmax: 1.65, ymin: -0.38, ymax: 1.2 });
   const grid = code.split('\n').find((l) => l.trim().startsWith('\\draw') && l.includes(' grid '));
   assert.ok(/xstep=[\d.]+cm, ystep=[\d.]+cm\] \(-0\.0002,-0\.2501\) grid \(1\.5002,1\.0001\);/.test(grid), grid);
   assert.ok(/plot\[domain=0:1\.43,/.test(code), 'curve limited to 0..1.43');
   assert.ok(!/\\draw\[semithick, -to\] plot|\\draw\[semithick, to-to\] plot/.test(code), 'no arrow at a chosen end');
-  const pw = piecewise.generate({ ...defaultValues(piecewise.schema), showGrid: true });
+  const pw = fn.generate({ ...PDF, showGrid: true });
   assert.ok(pw.code.includes('% grid every'), 'grid in piecewise graphs too');
 });
 
@@ -225,27 +246,14 @@ test('normal distribution: default diagram like the exam image', () => {
   assert.ok(s.code.includes('68.27\\%') && s.code.includes('99.7\\%'), 'area percent and empirical brackets');
 });
 
-test('extra graphs: parsing options', () => {
-  const [a, v] = parseExtraGraphs('y = 6 - 3x; dashed; thick; no arrows; from -2 to 6.5; label\nx = 1/2; label: x = a');
-  close(a.f(1), 3);
-  assert.equal(a.dash, 'dashed');
-  assert.equal(a.width, 'thick');
-  assert.equal(a.arrows, false);
-  assert.deepEqual([a.from, a.to], [-2, 6.5]);
-  assert.equal(a.label, 'y = 6 - 3x');
-  assert.ok(v.vertical && v.value === 0.5 && v.label === 'x = a');
-  assert.equal(parseExtraGraphs('2x + 1')[0].f(1), 3, 'y = is optional');
-  assert.throws(() => parseExtraGraphs('y = x; wobbly'), /didn't understand "wobbly"/);
-});
-
 test('extra graphs: line crossing a parabola like the exam image', () => {
-  const base = { ...defaultValues(polynomial.schema), roots: '-3, 4', leading: '-1' };
-  const plain = polynomial.generate({ ...base, extraGraphs: 'y = 6 - 3x; from -2.3 to 6.4' });
+  const base = defaultValues(fn.schema);
+  const plain = fn.generate({ ...base, graphs: 'y = -(x+3)(x-4)\ny = 6 - 3x; from -2.3 to 6.4' });
   assert.deepEqual(plain.warnings, []);
   assert.ok(plain.code.includes('\\draw[semithick, to-to] (-2.3,12.9) -- (6.4,-13.2);'), 'straight line with arrows');
-  const { code } = polynomial.generate({
+  const { code } = fn.generate({
     ...base,
-    extraGraphs: 'y = 6 - 3x; dashed; label',
+    graphs: 'y = -(x+3)(x-4)\ny = 6 - 3x; dashed; label',
     extraDots: true,
     extraCrossCoords: true,
     extraIntercepts: true,
@@ -255,29 +263,60 @@ test('extra graphs: line crossing a parabola like the exam image', () => {
   assert.equal((code.match(/circle\[radius=1\.3pt\]/g) || []).length, 2, 'two crossing dots');
   assert.ok(code.includes('{$(-1.16, 9.49)$}') && code.includes('{$(5.16, -9.49)$}'), 'crossing coordinates');
   assert.ok(code.includes('{$2$}') && code.includes('{$6$}'), 'line intercepts');
-  const pw = piecewise.generate({ ...defaultValues(piecewise.schema), extraGraphs: 'y = 1/2', extraDots: true });
+  const pw = fn.generate({ ...PDF, graphs: PDF.graphs + '\ny = 1/2', extraDots: true });
   assert.ok(pw.code.includes('% where the graphs cross\n  \\fill (2,0.5) circle'), 'crosses a piecewise graph at (2, 0.5)');
 });
 
 test('sketch with a plain start, asymptote and turning-point dot (exam image)', () => {
-  const { code, warnings } = polynomial.generate({
-    ...defaultValues(polynomial.schema),
-    mode: 'sketch',
+  const { code, warnings } = sketch.generate({
+    ...defaultValues(sketch.schema),
     points: '0, -1.24\n2, -2.35\n4.13, 0\n5.6, 3\n7.2, 4.4\n9.6, 4.88',
-    plainEnds: 'left',
+    leftEnd: 'plain',
     labelX: false,
     tpLabel: 'none',
-    tpDots: true,
+    pointDots: true,
     xCustomTicks: '2, 5',
     asymptotes: 'y = 5 from 0 to 10.6',
   });
   assert.deepEqual(warnings, []);
   assert.ok(code.includes('\\node[anchor=east, inner sep=2pt, xshift=-2pt] at (0,5) {$5$};'), 'value on the y-axis');
-  const eq = polynomial.generate({ ...defaultValues(polynomial.schema), roots: '1', asymptotes: 'x = -2, y = 3', asymptoteLabel: 'equation' }).code;
+  const eq = fn.generate({ ...defaultValues(fn.schema), graphs: 'y = x - 1', asymptotes: 'x = -2, y = 3', asymptoteLabel: 'equation' }).code;
   assert.ok(eq.includes('{$x = -2$}') && eq.includes('{$y = 3$}') && !eq.includes('{$-2$}'), 'equation labels only');
   assert.ok(code.includes('\\draw[semithick, -to] (0,-1.24)'), 'arrow at the right end only');
   assert.ok(code.includes('\\fill (2,-2.35) circle'), 'dot at the minimum');
   assert.ok(code.includes('\\draw[dashed, thin] (0,5) -- (10.6,5);'), 'dashed asymptote');
+});
+
+test('sketch: points with gradients', () => {
+  const pts = parsePoints('0, 1\n2, 3, 0 : A\n4, 0, -2');
+  assert.deepEqual(pts.map((p) => p.gradient), [null, 0, -2]);
+  assert.equal(pts[1].label, 'A');
+  const m = pointSlopes(pts);
+  assert.equal(m[1], 0);
+  assert.equal(m[2], -2);
+  const { code } = sketch.generate({ ...defaultValues(sketch.schema), points: '-2, 0\n0, 4, 0\n2, 0, -5', tpLabel: 'coords' });
+  assert.ok(code.includes('(0, 4)'), 'turning point with gradient 0 labelled');
+  assert.ok(code.includes('.. controls (1.3333,0.6667) and (2,0) ..') || /and \(1\.3333,3\.3333\) \.\. \(2,0\)/.test(code), 'gradient -5 at (2, 0)');
+  assert.throws(() => parsePoints('1, 2, 3, 4'), /expected/);
+});
+
+test('function: piecewise extra graph and labels on the first graph only', () => {
+  const { code, warnings } = fn.generate({
+    ...defaultValues(fn.schema),
+    graphs: 'y = x^2 - 4\n{ 1, x < 0; -1, x >= 0 }; dashed',
+  });
+  assert.deepEqual(warnings, []);
+  assert.ok(code.includes('{$-2$}') && code.includes('{$2$}'), 'roots of the first graph');
+  assert.ok(code.includes('fill=white] (0,1) circle') && code.includes('\\fill (0,-1) circle'), 'open and filled dots on the extra piecewise graph');
+  assert.ok(/\\draw\[semithick, dashed[^\]]*\] \(-?[\d.]+,1\) -- \(0,1\);/.test(code), 'dashed piece');
+});
+
+test('function: first graph settings and restricted domain with dots', () => {
+  const c = fn.generate({ ...defaultValues(fn.schema), graphs: 'y = x^2 - 1, -2 <= x < 3; thick' }).code;
+  assert.ok(c.includes('\\fill (-2,3) circle') && c.includes('fill=white] (3,8) circle'), 'closed and open end dots');
+  assert.ok(c.includes('\\draw[thick] plot'), 'own line width');
+  assert.ok(c.includes('{$-1$}') && c.includes('{$1$}'), 'x-intercepts inside the domain');
+  assert.throws(() => fn.generate({ ...defaultValues(fn.schema), graphs: 'x = 2' }), /first graph/);
 });
 
 test('blank axes: ticks, trig presets and full-size fractions', () => {

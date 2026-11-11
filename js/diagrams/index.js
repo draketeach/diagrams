@@ -4,9 +4,9 @@
 //   2. import it below and add it to the list.
 
 import { registerDiagram } from '../core/registry.js';
-import polynomial from './polynomial.js';
-import piecewise from './piecewise.js';
+import fn from './function.js';
+import sketch from './sketch.js';
 import normal from './normal.js';
 import blank from './blank.js';
 
-[polynomial, piecewise, normal, blank].forEach(registerDiagram);
+[fn, sketch, blank, normal].forEach(registerDiagram);

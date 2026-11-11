@@ -11,14 +11,44 @@ editable TikZ code, see it rendered live with [TikZJax](https://tikzjax.com),
 and export PNG (150/300/600 dpi, optional transparent background), SVG, or a
 standalone `.tex` file.
 
-The first diagram type is the **Polynomial graph**, which can be defined in four ways:
+### Function graph
 
-| Mode | Example | Labels |
-|---|---|---|
-| Roots + leading coefficient | `-4, 1, 3` and `a = 1` | Exact, as typed (`1/2` → ½, `sqrt(3)` → √3) |
-| Typed equation | `x^3 - 7x + 6`, `2sin(x)` | Exact where possible (fractions, π, surds) |
-| Coefficients | `1, 0, -13, 12` | Same as typed equation |
-| Sketch through points | `x, y [, label]` per line | Uses your values or custom labels such as `a`; optional dots or plain (arrowless) curve ends |
+Type one graph per line in the **Graphs** box:
+
+| Line | Draws |
+|---|---|
+| `y = x^3 - 7x + 6` | a function of x (`y =` is optional; `2sin(x)`, `1/x`, `e^x` … work too) |
+| `x^2 - 1, -2 <= x < 3` | a function on a restricted domain, with filled/open end dots |
+| `{ x/4, 0 <= x <= 2sqrt(2); 0, otherwise }` | a piecewise function (pieces may also go on separate lines inside the braces) |
+| `x = 3` | a vertical line |
+
+Settings go after semicolons: `dashed`, `dotted`, a line width (`thick` …),
+`no arrows`, `from 0 to 4`, `label` (shows the equation) or `label: text`, e.g.
+`y = 6 - 3x; dashed; label`.
+
+The first graph gets the labels: x-intercepts, y-intercept and turning points
+(coordinates, or dashed lines with values on the axes), and for piecewise
+functions the endpoints on the x-axis and dot heights on the y-axis. Everything
+else is under **More options**: curve ends (arrow, dot or plain), line widths
+and arrowheads, tick marks and dots, the equation on the graph, decimal places
+and exact values (fractions, π, surds), points on the curve at chosen x-values
+(e.g. `2:P` labelled P(2, −6)), dashed **asymptotes** (`y = 5, x = -2`,
+optionally `y = 5 from 0 to 10`, labelled by value, equation, both or neither),
+shading under the graph, dots/coordinates where graphs cross, the axes (labels,
+`O`, custom ticks such as `3`, `5/2`, `pi` or `3:a`, evenly spaced scale ticks),
+size and range, a background grid (own range, spacing and shade), and the plot
+method.
+
+### Sketch graph
+
+A smooth curve through points when there is no equation, one per line:
+`x, y`, optionally a gradient `x, y, gradient` (e.g. `2, -2.35, 0` for a
+turning point), and a label after a colon (`1, 0 : a`). Points without a
+gradient get one automatically. It has the same labels and More options as the
+Function graph, plus an **Other graphs** box (same notation) for lines or
+asymptote-like curves drawn with the sketch.
+
+### Normal distribution
 
 The **Normal distribution** type draws a bell curve with regions shaded by
 inequality (`z < -1.5`, `-1 < z < 2`, `x > 62 : 0.1151`), dotted like exam
@@ -26,33 +56,13 @@ papers (`patterns.meta` dots in three densities), crosshatched or grey;
 labels as z-scores, real values (from μ and σ) or μ ± kσ; dashed boundary
 lines; calculated or typed area labels; and the 68–95–99.7% empirical rule.
 
+### Blank axes
+
 The **Blank axes** type draws labelled axes with tick marks and no curve, for
 "sketch the graph" questions: type the ticks (`2, 5`, `pi/3, 2pi/3`, `3:a`) or
 use a trig preset (π/2 … 2π, or 90° … 360°), with an optional grid.
 
-Fractions in labels are drawn full size (`\displaystyle`), as on exam papers.
-
-Function graphs (polynomial and piecewise) can show dashed **asymptotes**, e.g.
-`y = 5, x = -2`, optionally shortened with a range (`y = 5 from 0 to 10`),
-labelled by their value on the axis, by their equation, both, or not at all.
-
-Function graphs (polynomial and piecewise) can also have **extra graphs**, such
-as a straight line crossing a parabola. Each line of the box is an equation with
-optional settings after semicolons, e.g. `y = 6 - 3x; dashed; thick; no arrows;
-from -2 to 6; label` (or `label: text`); `x = 3` draws a vertical line. Optional
-dots and coordinates where graphs cross, and labels for the extra graphs' axis
-intercepts, are placed where they cover the least of the lines.
-
-Function graphs can have a background grid (its own range, x/y spacing and line
-shade), and in the equation-based modes the curve can be limited to a range
-(e.g. from x = 0 to 1.43) so it stops there instead of running to the edge.
-
-You can toggle x-/y-intercept labels, tick marks at the intercepts, evenly spaced
-scale ticks (optionally numbered) on either axis, custom ticks at chosen values
-(e.g. `3`, `5/2`, `pi`, or `3:a` for a custom label), points on the curve at chosen
-x-values (e.g. `2:P` labelled P(2, −6), or dashed lines with values on the axes), turning points (coordinates, or
-dashed lines to the axes), dots, the equation, the axis labels, the origin `O`,
-arrowheads, line widths and font size.
+Fractions in labels are drawn full size (`\\displaystyle`), as on exam papers.
 
 ## Running it
 
@@ -64,7 +74,8 @@ Use either:
 - **A local server** from this folder: `python -m http.server 8000` (or `npx serve`),
   then open http://localhost:8000.
 
-You can open a diagram type directly with `?type=polynomial`.
+You can open a diagram type directly, e.g. `?type=function`, `?type=sketch`,
+`?type=blank` or `?type=normal`.
 
 **Copy link** (under the options) saves the diagram type, every option you've
 changed, and any hand edits to the code in the page address after `#`. Opening
@@ -92,15 +103,19 @@ js/lib/                  helpers for diagram modules
   mathParser.js          expression → value / pgfmath / LaTeX
   numeric.js             roots, turning points, exact-value labels
   functionGraph.js       window, axes, curve pieces, intercept/turning-point labels
-  extraGraphs.js         extra lines/curves on a function graph, crossings
+  graphList.js           the Function graph's "Graphs" box (one graph per line)
+  graphOptions.js        options layout shared by Function and Sketch
+  piecewiseGraph.js      piecewise pieces, end dots, shading
+  extraGraphs.js         graphs after the first, crossings
+  piecewiseParser.js     piecewise pieces in exam notation
   hermite.js             smooth sketch curves through points
   tikz.js                TikZ writing helpers
 vendor/tikzjax-benrbray/  TikZJax build used by the site (own licence)
 vendor/tikzjax/           older TikZJax v1 copy, used as a fallback (own licences)
 js/diagrams/
   index.js               list of registered diagram types
-  polynomial.js          the polynomial graph module
-  piecewise.js           the piecewise function module
+  function.js            function graphs (plain, piecewise, several graphs)
+  sketch.js              smooth curves through points with optional gradients
   normal.js              the normal distribution module
   blank.js               blank axes
 tools/
@@ -147,10 +162,10 @@ browsers and GitHub's CDN never mix old and new files right after a deploy.
 That's it. The options panel, code box, preview and all exports work automatically.
 For function graphs (trig, exponential, log, hyperbola…), reuse the schema
 fragments and drawing helpers in `js/lib/functionGraph.js`, the same way
-`polynomial.js` does.
+`function.js` does.
 
-The schema field types are `group`, `select`, `number`, `text`, `textarea` and
-`checkbox`. Any field can have `help` text and a `showIf: (values) => boolean`.
+The schema field types are `group` (groups can nest), `row` (fields side by
+side), `select`, `number`, `text`, `textarea` and `checkbox`. Any field can have `help` text and a `showIf: (values) => boolean`.
 
 ## TikZJax
 
