@@ -952,3 +952,14 @@ export function drawAsymptotes(b, win, values, f = null) {
   }
   return out;
 }
+
+// ---------------------------------------------------------------- "NOT TO SCALE"
+
+export const NOT_TO_SCALE_FIELD = { type: 'checkbox', key: 'notToScale', label: 'NOT TO SCALE note', default: false };
+
+/** "NOT TO SCALE" to the right of the top of the picture, as on exam papers. */
+export function drawNotToScale(b, win, values) {
+  if (!values.notToScale) return;
+  b.comment('note');
+  b.add(`\\node[anchor=north west, align=center, xshift=0.6cm, font=\\small] at ${pt(win.xmax, win.ymax)} {NOT TO\\\\SCALE};`);
+}

@@ -31,6 +31,7 @@ import {
   drawCurvePoints,
   drawAsymptotes,
   parseAsymptotes,
+  drawNotToScale,
 } from '../lib/functionGraph.js';
 import { curveEndFields, basicLabelFields, moreOptions, legacyValues, GRAPH_EXAMPLES, POINT_EXAMPLES } from '../lib/graphOptions.js';
 
@@ -205,6 +206,7 @@ function generate(input) {
     }
   }
 
+  drawNotToScale(b, win, values);
   return { code: b.toString([...options, fontOption(values)]), warnings };
 }
 

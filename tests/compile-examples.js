@@ -32,6 +32,7 @@ const examples = {
   'grid-range': { graphs: 'y = 2x^3 - 5.3x^2 + 3.35x; from 0 to 1.43', leftEnd: 'plain', rightEnd: 'plain', labelX: false, xCustomTicks: '1, 1.43:a', yCustomTicks: '1',
     showGrid: true, gridXStep: 0.25, gridYStep: 0.25, gridXmin: 0, gridXmax: 1.5, gridYmin: -0.25, gridYmax: 1, gridShade: 'black', windowMode: 'manual', xmin: -0.1, xmax: 1.65, ymin: -0.38, ymax: 1.2, equalScale: true, width: 7.5 },
   'line-and-parabola': { graphs: 'y = -(x+3)(x-4)\ny = 6 - 3x; dashed; label', extraDots: true, extraCrossCoords: true, extraIntercepts: true },
+  'y-squared': { graphs: 'y^2 = x(x+2)(x-5)\ny^2 = 4 - x^2; dashed', notToScale: true },
   'domain-dots': { graphs: 'y = x^2 - 1, -2 <= x < 3' },
   'pw-pdf': { graphs: '{ x/4, 0 <= x <= 2sqrt(2); 0, otherwise }; thick', dotSize: '2pt', xCustomTicks: '2' },
   'pw-hybrid': { graphs: '{\n x^2, x < 1\n 2 - x, 1 <= x < 3\n 3, x = 2\n -1, x >= 3\n}' },

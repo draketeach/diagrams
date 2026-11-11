@@ -10,6 +10,7 @@
 // the others are drawn with their own settings.
 
 import { parseGraphList } from '../lib/graphList.js';
+import { drawYSquared, ySquaredTurningPoints, positiveIntervals } from '../lib/ySquared.js';
 import { findRoots, findTurningPoints, niceLatex } from '../lib/numeric.js';
 import { TikzBuilder, pt, mathLabel } from '../lib/tikz.js';
 import { drawExtraGraphs, extraGraphFeatures } from '../lib/extraGraphs.js';
@@ -41,6 +42,7 @@ import {
   drawCurvePoints,
   drawAsymptotes,
   parseAsymptotes,
+  drawNotToScale,
 } from '../lib/functionGraph.js';
 import { row, curveEndFields, basicLabelFields, moreOptions, legacyValues, GRAPH_EXAMPLES } from '../lib/graphOptions.js';
 
@@ -50,7 +52,8 @@ const isPiecewise = (v) => {
   const t = firstLine(v).split(';')[0];
   return t.startsWith('{') || /,|\bfor\b|\bif\b|\bwhen\b/.test(t);
 };
-const isFormula = (v) => !isPiecewise(v);
+const isYSquared = (v) => /^y\s*(\^\s*2|²)\s*=/i.test(firstLine(v));
+const isFormula = (v) => !isPiecewise(v) && !isYSquared(v);
 const manyGraphs = (v) => {
   try {
     return parseGraphList(v.graphs).length > 1;
@@ -129,7 +132,13 @@ function generate(input) {
     tip: main.arrows === false ? 'none' : values.curveArrow,
   };
   const v = { ...values, curveWidth: [style.width, style.dash].filter(Boolean).join(', '), curveArrow: style.tip };
-  return main.kind === 'piecewise' ? generatePiecewise(v, main, others, style) : generateFormula(v, main, others, style);
+  const result =
+    main.kind === 'piecewise'
+      ? generatePiecewise(v, main, others, style)
+      : main.kind === 'ysq'
+        ? generateYSquared(v, main, others, style)
+        : generateFormula(v, main, others, style);
+  return result;
 }
 
 /** Things every function graph draws before the curve. Returns { asym, skip-ready lists }. */
@@ -220,6 +229,7 @@ function generateFormula(values, main, others, style) {
   if (main.label) drawMainLabel(b, f, pieces, main.label);
   else drawEquation(b, main.latex, f, pieces, values);
   warnings.push(...drawExtraGraphs(b, win, values, { graphs: others, main: { f, lo, hi }, xUnit, yUnit }));
+  drawNotToScale(b, win, values);
 
   return { code: b.toString([...options, fontOption(values)]), warnings };
 }
@@ -230,6 +240,83 @@ function drawMainLabel(b, f, pieces, text) {
   const x = pieces[pieces.length - 1].b;
   b.comment('label');
   b.add(`\\node[anchor=south east, inner sep=3pt] at ${pt(x, f(x))} {${mathLabel(text)}};`);
+}
+
+// ---- y^2 = f(x): y = ±√f(x) wherever f(x) ≥ 0
+function generateYSquared(values, main, others, style) {
+  const warnings = [];
+  const { f } = main;
+  const top = (x) => (f(x) >= 0 ? Math.sqrt(f(x)) : NaN);
+
+  // key points: where f = 0 (the curve meets the x-axis) and turning points
+  const R = 50;
+  const roots = findRoots(f, -R, R);
+  const tps0 = ySquaredTurningPoints(f, -R, R);
+  // room for open arms: their height near the edges of the likely window,
+  // capped at 1.6 × the tallest turning point so ovals aren't squashed
+  const xsKey = [...roots, ...tps0.map((t) => t.x), 0];
+  const lo = Math.min(...xsKey);
+  const hi = Math.max(...xsKey);
+  const pad = 0.3 * Math.max(hi - lo, 1);
+  const tpMax = Math.max(0, ...tps0.map((t) => Math.abs(t.y)));
+  let arm = 0;
+  for (let i = 0; i <= 200; i++) {
+    const y = top(lo - pad + ((hi - lo + 2 * pad) * i) / 200);
+    if (isFinite(y)) arm = Math.max(arm, y);
+  }
+  if (tpMax > 0) arm = Math.min(arm, 1.6 * tpMax);
+  const win = featureWindow(
+    values,
+    top,
+    xsKey,
+    [...tps0.map((t) => t.y), 0, arm, -arm],
+    others,
+    { fallbackF: tps0.length ? null : top }
+  );
+  if (!positiveIntervals(f, win).length) warnings.push('The curve is not visible in this window (the right-hand side is negative everywhere here).');
+
+  const { options, xUnit, yUnit } = scaleOptions(win, values);
+  const b = new TikzBuilder();
+  b.comment(`${main.latex}, i.e. y = ±√(…) where the right-hand side is ≥ 0`);
+  const bg = background(b, win, values, top, []);
+  warnings.push(...bg.warnings);
+  const xRoots = findRoots(f, win.xmin, win.xmax);
+  const y0 = f(0) > 1e-12 ? Math.sqrt(f(0)) : null;
+  warnings.push(
+    ...ticks(
+      b,
+      win,
+      values,
+      [...(values.labelX ? xRoots : []), ...bg.asym.skipX],
+      [...(values.labelY && y0 ? [y0, -y0] : []), ...bg.asym.skipY]
+    )
+  );
+  b.comment('curve');
+  drawYSquared(b, f, win, style);
+
+  // x-intercepts: label on the side away from the curve (it is vertical there)
+  const side = (x) => (f(x) >= 0 ? 1 : -1);
+  const rootsInfo = xRoots.map((x) => {
+    const d = 1e-3 * (win.xmax - win.xmin);
+    const right = f(x + d) > 0;
+    const left = f(x - d) > 0;
+    return { x, slope: right && !left ? -1 : left && !right ? 1 : 0 };
+  });
+  drawXIntercepts(b, rootsInfo, side, values, win);
+  if (y0 && win.xmin <= 0 && win.xmax >= 0) {
+    // two y-intercepts, ±√f(0)
+    drawYIntercept(b, top, values, win);
+    drawYIntercept(b, (x) => -top(x), values, win);
+  }
+  const tps = ySquaredTurningPoints(f, win.xmin, win.xmax).filter((t) => t.y >= win.ymin && t.y <= win.ymax);
+  drawTurningPoints(b, tps, values, win, { xUnit, yUnit });
+  if (values.showEquation) {
+    b.comment('equation');
+    b.add(`\\node[anchor=north west, inner sep=2pt] at ${pt(win.xmin, win.ymax)} {$${main.latex}$};`);
+  }
+  warnings.push(...drawExtraGraphs(b, win, values, { graphs: others, main: null, xUnit, yUnit }));
+  drawNotToScale(b, win, values);
+  return { code: b.toString([...options, fontOption(values)]), warnings };
 }
 
 // ---- a piecewise function
@@ -351,6 +438,7 @@ function generatePiecewise(values, main, others, style) {
   warnings.push(
     ...drawExtraGraphs(b, win, values, { graphs: others, main: { f, lo: win.xmin, hi: win.xmax }, xUnit, yUnit })
   );
+  drawNotToScale(b, win, values);
 
   return { code: b.toString([...options, fontOption(values)]), warnings };
 }

@@ -10,6 +10,7 @@ import { defaultValues } from '../js/core/formBuilder.js';
 import fn from '../js/diagrams/function.js';
 import sketch, { parsePoints, pointSlopes } from '../js/diagrams/sketch.js';
 import { parseGraphList } from '../js/lib/graphList.js';
+import { ySquaredPaths } from '../js/lib/ySquared.js';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { TIKZJAX } from '../js/config.js';
@@ -320,6 +321,22 @@ test('function: first graph settings and restricted domain with dots', () => {
   assert.ok(c.includes('\\draw[thick] plot'), 'own line width');
   assert.ok(c.includes('{$-1$}') && c.includes('{$1$}'), 'x-intercepts inside the domain');
   assert.throws(() => fn.generate({ ...defaultValues(fn.schema), graphs: 'x = 2' }), /first graph/);
+});
+
+test('y^2 = f(x): oval, open branch and NOT TO SCALE', () => {
+  const f = (x) => x * (x + 2) * (x - 5);
+  const paths = ySquaredPaths(f, { xmin: -4, xmax: 8, ymin: -6, ymax: 6 });
+  assert.equal(paths.length, 2);
+  assert.ok(paths[0].closed, 'oval between -2 and 0');
+  assert.ok(!paths[1].closed && paths[1].arrows[0] && paths[1].arrows[1], 'branch from 5 with two arms');
+  for (const [x, y] of paths[0].points) close(y * y, Math.max(0, f(x)), 1e-6);
+  assert.ok(paths[1].points.some(([x, y]) => x === 5 && y === 0), 'branch passes through (5, 0)');
+  const { code, warnings } = fn.generate({ ...defaultValues(fn.schema), graphs: 'y^2 = x(x+2)(x-5)', notToScale: true });
+  assert.deepEqual(warnings, []);
+  assert.ok(code.includes('-- cycle;'), 'closed oval');
+  assert.ok(code.includes('{$-2$}') && code.includes('{$5$}'), 'x-intercepts');
+  assert.ok(code.includes('{NOT TO\\\\SCALE}'), 'note');
+  assert.equal(parseGraphList('y² = x')[0].kind, 'ysq');
 });
 
 test('blank axes: ticks, trig presets and full-size fractions', () => {

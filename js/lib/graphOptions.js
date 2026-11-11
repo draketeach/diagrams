@@ -12,6 +12,7 @@ import {
   curvePointFields,
   labelFields,
   asymptoteFields,
+  NOT_TO_SCALE_FIELD,
 } from './functionGraph.js';
 
 const ALL = [windowFields(), axesFields(), gridFields(), curveStyleFields(), curvePointFields(), labelFields(), asymptoteFields()];
@@ -142,7 +143,7 @@ export function moreOptions(extra = {}) {
           field('xScaleNumbers', { label: 'Numbers', showIf: (v) => v.xScaleTicks }),
           field('yScaleNumbers', { label: 'Numbers', showIf: (v) => v.yScaleTicks })
         ),
-        field('originLabel', { label: 'Label the origin O' }),
+        row(field('originLabel', { label: 'Label the origin O' }), NOT_TO_SCALE_FIELD),
         row(field('axisArrow', { label: 'Arrowheads' }), field('axisWidth', { label: 'Line width' })),
       ]),
       group('Size & range', [
@@ -180,6 +181,7 @@ export const GRAPH_EXAMPLES = {
     ['{ x/4, 0 <= x <= 2; 0, otherwise }', 'Piecewise: pieces separated by ; inside { }'],
     ['{ 1, x < 0; 3, x = 0; x^2, x > 0 }', 'A single point (x = a) is drawn as a dot'],
     ['x = 3', 'A vertical line (after the first graph)'],
+    ['y^2 = x(x+2)(x-5)', 'y² = f(x): y = ±√f(x), e.g. an oval and an open branch'],
     ['y = 6 - 3x; dashed; label', 'Settings after ; — dashed or dotted, label shows the equation'],
     ['y = 1/x; thick; no arrows', 'A line width (thin … very thick), no arrows at the ends'],
     ['y = 2x; from 0 to 4; label: L', 'Only draw it for 0 ≤ x ≤ 4; label it L'],

@@ -21,6 +21,7 @@ Type one graph per line in the **Graphs** box:
 | `x^2 - 1, -2 <= x < 3` | a function on a restricted domain, with filled/open end dots |
 | `{ x/4, 0 <= x <= 2sqrt(2); 0, otherwise }` | a piecewise function (pieces may also go on separate lines inside the braces) |
 | `x = 3` | a vertical line |
+| `y^2 = x(x+2)(x-5)` | y² = f(x), drawn as y = ±√f(x): closed ovals and open branches |
 
 Press **?** next to the box for examples. Settings go after semicolons: `dashed`, `dotted`, a line width (`thick` …),
 `no arrows`, `from 0 to 4`, `label` (shows the equation) or `label: text`, e.g.
@@ -36,7 +37,7 @@ and exact values (fractions, π, surds), points on the curve at chosen x-values
 optionally `y = 5 from 0 to 10`, labelled by value, equation, both or neither),
 shading under the graph, dots/coordinates where graphs cross, the axes (labels,
 `O`, custom ticks such as `3`, `5/2`, `pi` or `3:a`, evenly spaced scale ticks),
-size and range, a background grid (own range, spacing and shade), and the plot
+a NOT TO SCALE note, size and range, a background grid (own range, spacing and shade), and the plot
 method.
 
 ### Sketch graph

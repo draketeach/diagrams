@@ -6,6 +6,7 @@
 //   x^2 - 1, -2 <= x < 3                          a function on a restricted domain
 //   { x/4, 0 <= x <= 2sqrt(2); 0, otherwise }     a piecewise function
 //   x = 3; dotted                                 a vertical line
+//   y^2 = x(x + 2)(x - 5)                         y = ±√f(x) (an oval and/or branches)
 //
 // Braces may span several lines, with one piece per line:
 //   {
@@ -89,6 +90,7 @@ function parseOptions(text, g, where) {
  *   { kind: 'expr', f, pgf, latex }            y = …
  *   { kind: 'piecewise', f, pieces, latex: '' } { … } or "expr, condition"
  *   { kind: 'vertical', value, latex }         x = c
+ *   { kind: 'ysq', f, latex }                  y^2 = f(x) (f is the right-hand side)
  * plus settings { dash, width, arrows, from, to, label, line }.
  */
 export function parseGraphList(src) {
@@ -97,7 +99,16 @@ export function parseGraphList(src) {
     const g = { dash: '', width: '', arrows: null, from: null, to: null, label: null, line };
     const text = body.trim();
     const vertical = text.match(/^x\s*=\s*([^<>≤≥,]+)$/i);
-    if (braces || (!vertical && HAS_CONDITION.test(stripY(text)))) {
+    const ysq = !braces && text.match(/^y\s*(?:\^\s*2|²)\s*=\s*(.+)$/i);
+    if (ysq) {
+      let e;
+      try {
+        e = parseExpression(sqrt(ysq[1]));
+      } catch (err) {
+        throw new Error(`${where}: could not read "${ysq[1]}" (${err.message})`);
+      }
+      Object.assign(g, { kind: 'ysq', f: e.evaluate, latex: `y^{2} = ${e.toLatex()}`, expr: e });
+    } else if (braces || (!vertical && HAS_CONDITION.test(stripY(text)))) {
       const piecesText = (braces ? text.split(/[;\n]/) : [text])
         .map((s) => stripY(s.trim()))
         .filter(Boolean)

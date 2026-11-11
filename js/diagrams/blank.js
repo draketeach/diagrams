@@ -16,6 +16,8 @@ import {
   drawScaleTicks,
   drawCustomTicks,
   parseTickList,
+  drawNotToScale,
+  NOT_TO_SCALE_FIELD,
 } from '../lib/functionGraph.js';
 import { FONT_SIZES } from '../lib/tikz.js';
 import { TICK_EXAMPLES } from '../lib/graphOptions.js';
@@ -58,6 +60,7 @@ const schema = [
       { type: 'text', key: 'yCustomTicks', label: 'y ticks', default: '', placeholder: 'e.g. 1, -1' },
       { type: 'checkbox', key: 'customTickLabels', label: 'Label the ticks', default: true },
       { type: 'select', key: 'fontSize', label: 'Label font size', default: '', options: FONT_SIZES },
+      NOT_TO_SCALE_FIELD,
     ],
   },
   withDefaults(windowFields(), { width: 9, height: 6 }),
@@ -98,6 +101,7 @@ function generate(input) {
   warnings.push(...drawAxes(b, win, values));
   warnings.push(...drawScaleTicks(b, win, values));
   warnings.push(...drawCustomTicks(b, win, values));
+  drawNotToScale(b, win, values);
   return { code: b.toString([...options, fontOption(values)]), warnings };
 }
 

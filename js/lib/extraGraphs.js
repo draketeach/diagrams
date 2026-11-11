@@ -8,6 +8,7 @@ import { findRoots, derivative, niceLatex } from './numeric.js';
 import { n, pt, arrowSpec, mathLabel } from './tikz.js';
 import { findPieces, drawCurve, dotRadius } from './functionGraph.js';
 import { piecewiseDots, drawPieces, drawDots } from './piecewiseGraph.js';
+import { drawYSquared } from './ySquared.js';
 
 function isLinear(f, lo, hi) {
   const xs = [lo, (2 * lo + hi) / 3, (lo + 2 * hi) / 3, hi];
@@ -157,6 +158,10 @@ export function drawExtraGraphs(b, win, values, { graphs = [], main = null, xUni
       if (g.label) labels.push(`\\node[anchor=south, inner sep=2pt] at ${pt(x, hi)} {${mathLabel(g.label)}};`);
       return;
     }
+    if (g.kind === 'ysq') {
+      if (!drawYSquared(b, g.f, win, { width, dash: g.dash, tip })) warnings.push(`The graph ${name} is not visible in this window.`);
+      return;
+    }
     if (g.kind === 'piecewise') {
       const visible = drawPieces(b, g.pieces, { ...win, xmin: lo, xmax: hi }, values, { width, dash: g.dash, tip });
       const dots = piecewiseDots(g.pieces, win, { joinDots: values.joinDots ?? true });
@@ -213,6 +218,7 @@ export function drawExtraGraphs(b, win, values, { graphs = [], main = null, xUni
     const nearAxisX = (y) => Math.abs(y * yUnit) < 0.05;
     const mainHas = (x, y) => main && Math.abs(main.f(x) - y) < 1e-9 && x >= main.lo && x <= main.hi;
     for (const { g, lo, hi } of ext) {
+      if (g.kind === 'ysq') continue;
       if (!(hi > lo)) continue;
       const xs = g.vertical ? (0 >= lo && 0 <= hi ? [g.value] : []) : findRoots(g.f, lo, hi);
       for (const x of xs) {
@@ -243,7 +249,7 @@ export function drawExtraGraphs(b, win, values, { graphs = [], main = null, xUni
 
   // ---- where graphs cross
   if (values.extraDots || values.extraCrossCoords) {
-    const all = [...ext];
+    const all = ext.filter((e) => e.g.kind !== 'ysq'); // y^2 = f(x) has no single y for each x
     if (main) all.unshift({ g: { vertical: false, f: main.f }, lo: Math.max(win.xmin, main.lo), hi: Math.min(win.xmax, main.hi) });
     const found = [];
     for (let i = 0; i < all.length; i++) {
@@ -278,6 +284,7 @@ export function extraGraphFeatures(graphs, mainF = null, R = 50) {
   const xs = [];
   const ys = [];
   for (const g of graphs) {
+    if (g.kind === 'ysq') continue;
     if (g.kind === 'vertical') {
       xs.push(g.value);
       if (mainF) ys.push(mainF(g.value));
