@@ -518,7 +518,8 @@ export function drawXIntercepts(b, roots, f, values, win) {
     if (r.x < win.xmin || r.x > win.xmax) continue;
     const atOrigin = Math.abs(r.x) < 1e-9;
     if (values.interceptDots) lines.push(`\\fill ${pt(r.x, 0)} circle[radius=${dotRadius(values)}];`);
-    if (!values.labelX || (atOrigin && values.originLabel)) continue;
+    // a root at the origin is never labelled (it is O, or left unlabelled)
+    if (!values.labelX || atOrigin) continue;
     const d = 1e-3 * span;
     const yl = f(r.x - d);
     const yr = f(r.x + d);
