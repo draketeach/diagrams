@@ -143,7 +143,8 @@ const schema = [
           field('yScaleNumbers', { label: 'Numbers', showIf: (v) => v.yScaleTicks })
         ),
         row(field('xCustomTicks', { label: 'Ticks on x', help: undefined }), field('yCustomTicks', { label: 'Ticks on y' })),
-        row(field('originLabel', { label: 'Label the origin O', default: false }), NOT_TO_SCALE_FIELD),
+        row(field('originLabel', { label: 'Label the origin', default: false }), field('originText', { label: 'as' })),
+        NOT_TO_SCALE_FIELD,
         row(field('axisArrow', { label: 'Arrowheads' }), field('axisWidth', { label: 'Line width' })),
       ]),
       group('Size', [row(field('width', { default: 9 }), field('height', { default: 7 })), field('equalScale'), field('fontSize')]),

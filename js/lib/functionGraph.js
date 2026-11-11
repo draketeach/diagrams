@@ -75,6 +75,7 @@ export function axesFields() {
         ],
       },
       { type: 'checkbox', key: 'originLabel', label: 'Label origin "O"', default: true },
+      { type: 'text', key: 'originText', label: 'Origin label', default: 'O', showIf: (v) => v.originLabel },
       { type: 'checkbox', key: 'xScaleTicks', label: 'Scale ticks on x-axis', default: false },
       {
         type: 'number',
@@ -449,7 +450,7 @@ export function drawAxes(b, win, values) {
     b.add(`\\draw[${style}] ${pt(0, win.ymin)} -- ${pt(0, win.ymax)}${label};`);
   } else warnings.push('The y-axis is outside the window, so it was not drawn.');
   if (values.originLabel && win.ymin <= 0 && win.ymax >= 0 && win.xmin <= 0 && win.xmax >= 0) {
-    b.add(`\\node[anchor=north east, inner sep=2pt] at (0,0) {$O$};`);
+    b.add(`\\node[anchor=north east, inner sep=2pt] at (0,0) {${mathLabel(values.originText || 'O')}};`);
   }
   return warnings;
 }

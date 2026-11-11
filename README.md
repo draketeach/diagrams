@@ -54,8 +54,8 @@ asymptote-like curves drawn with the sketch.
 The **Normal distribution** type draws a bell curve with regions shaded by
 inequality (`z < -1.5`, `-1 < z < 2`, `x > 62 : 0.1151`), dotted like exam
 papers (`patterns.meta` dots in three densities), crosshatched or grey;
-labels as z-scores, real values (from μ and σ) or μ ± kσ; dashed boundary
-lines; calculated or typed area labels; and the 68–95–99.7% empirical rule.
+labels as z-scores, real values (from μ and σ) or μ ± kσ, or your own text
+(`0.6:z`); dashed or solid boundary lines; calculated or typed area labels; and the 68–95–99.7% empirical rule.
 
 ### Blank axes
 

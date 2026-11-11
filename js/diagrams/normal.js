@@ -99,10 +99,28 @@ const schema = [
           { value: 'none', label: 'None' },
         ],
       },
-      { type: 'text', key: 'extraLabels', label: 'Extra labels at', default: '', placeholder: 'e.g. 2, 2.5' },
+      {
+        type: 'text',
+        key: 'extraLabels',
+        label: 'Extra labels at',
+        default: '',
+        placeholder: 'e.g. 2, 2.5 or 0.6:z',
+        help: 'Add your own label after a colon, e.g. 0.6:z (this also replaces a boundary\'s number).',
+      },
       { type: 'checkbox', key: 'ticks', label: 'Tick marks', default: true },
       { type: 'number', key: 'dp', label: 'Decimal places', default: 2, min: 0, max: 4, step: 1 },
-      { type: 'checkbox', key: 'boundaryLines', label: 'Dashed lines at region boundaries', default: true },
+      { type: 'checkbox', key: 'boundaryLines', label: 'Lines at region boundaries', default: true },
+      {
+        type: 'select',
+        key: 'boundaryStyle',
+        label: 'Boundary lines',
+        default: 'dashed',
+        options: [
+          { value: 'dashed', label: 'Dashed' },
+          { value: 'solid', label: 'Solid' },
+        ],
+        showIf: (v) => v.boundaryLines,
+      },
       { type: 'checkbox', key: 'meanLine', label: 'Dashed line at the mean', default: false },
       {
         type: 'select',
@@ -240,20 +258,22 @@ function generate(values) {
     b.add(pattern ? `\\fill[pattern={${pattern}}] ${region};` : `\\fill[${style}] ${region};`);
   }
 
-  // ---- dashed lines
-  const dashed = new Set();
-  const addDash = (z) => {
-    if (Math.abs(z) <= T) dashed.add(n(z, 6));
+  // ---- lines up to the curve (boundaries dashed or solid; mean and σ lines dashed)
+  const lines = new Map(); // z -> 'dashed' | 'solid'
+  const addLine = (z, style = 'dashed') => {
+    if (Math.abs(z) <= T && !lines.has(n(z, 6))) lines.set(n(z, 6), style);
   };
-  if (values.boundaryLines) for (const r of visible) [r.a, r.b].filter(isFinite).forEach(addDash);
-  if (values.meanLine) addDash(0);
+  if (values.boundaryLines) {
+    for (const r of visible) [r.a, r.b].filter(isFinite).forEach((z) => addLine(z, values.boundaryStyle === 'solid' ? 'solid' : 'dashed'));
+  }
+  if (values.meanLine) addLine(0);
   const emp = values.empirical || 'none';
-  if (emp !== 'none') [-3, -2, -1, 1, 2, 3].forEach(addDash);
-  if (dashed.size) {
-    b.comment('dashed lines up to the curve');
-    for (const zs of dashed) {
+  if (emp !== 'none') [-3, -2, -1, 1, 2, 3].forEach((z) => addLine(z));
+  if (lines.size) {
+    b.comment('lines up to the curve');
+    for (const [zs, style] of lines) {
       const z = Number(zs);
-      b.add(`\\draw[dashed, thin] ${pt(z, 0)} -- ${pt(z, h(z))};`);
+      b.add(`\\draw[${style === 'solid' ? '' : 'dashed, '}thin] ${pt(z, 0)} -- ${pt(z, h(z))};`);
     }
   }
 
@@ -275,14 +295,20 @@ function generate(values) {
     for (const r of visible) [r.a, r.b].filter(isFinite).forEach(addLabel);
   }
   if (where === 'sigma' || where === 'both' || emp !== 'none') [-3, -2, -1, 0, 1, 2, 3].forEach(addLabel);
+  // extra labels, optionally with their own text after a colon ("0.6:z")
+  const ownText = new Map();
   for (const t of String(values.extraLabels ?? '').split(',').map((s) => s.trim()).filter(Boolean)) {
-    addLabel(toZ(constant(t, 'extra label')));
+    const [v, ...rest] = t.split(':');
+    const z = toZ(constant(v.trim(), 'extra label'));
+    addLabel(z);
+    if (rest.length) ownText.set(n(z, 6), rest.join(':').trim());
   }
   if (at.size) {
     b.comment('axis labels');
     for (const z of [...at.values()].sort((p, q) => p - q)) {
       if (values.ticks) b.add(`\\draw[thin] ${pt(z, 0)} ++(0,-2pt) -- ++(0,4pt);`);
-      b.add(`\\node[anchor=north, inner sep=2pt, yshift=-2pt] at ${pt(z, 0)} {$${labelFor(z, values, mean, sd)}$};`);
+      const own = ownText.get(n(z, 6));
+      b.add(`\\node[anchor=north, inner sep=2pt, yshift=-2pt] at ${pt(z, 0)} {$${own ?? labelFor(z, values, mean, sd)}$};`);
     }
   }
 

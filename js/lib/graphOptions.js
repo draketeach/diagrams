@@ -143,7 +143,8 @@ export function moreOptions(extra = {}) {
           field('xScaleNumbers', { label: 'Numbers', showIf: (v) => v.xScaleTicks }),
           field('yScaleNumbers', { label: 'Numbers', showIf: (v) => v.yScaleTicks })
         ),
-        row(field('originLabel', { label: 'Label the origin O' }), NOT_TO_SCALE_FIELD),
+        row(field('originLabel', { label: 'Label the origin' }), field('originText', { label: 'as' })),
+        NOT_TO_SCALE_FIELD,
         row(field('axisArrow', { label: 'Arrowheads' }), field('axisWidth', { label: 'Line width' })),
       ]),
       group('Size & range', [
