@@ -246,7 +246,7 @@ const fixed = (v, dp) => {
 const tex = (s) => String(s).replace(/([&%$#_{}])/g, '\\$1').replace(/'/g, '\u2019');
 
 /** One axis: ticks, grid range and whether it has a zig-zag break. */
-function axisPlan(lo, hi, { step, gridStep, dp, dataDp = 0, mode, sizeCm, isManual }) {
+function axisPlan(lo, hi, { step, gridStep, dp, dataDp = 0, mode, sizeCm, isManual, grid = false }) {
   const span = Math.max(hi - lo, 1e-9);
   const s = auto(step) || step <= 0 ? niceStep(span, 5) : step;
   let start = isManual ? lo : Math.floor((lo + 1e-9) / s) * s;
@@ -261,8 +261,9 @@ function axisPlan(lo, hi, { step, gridStep, dp, dataDp = 0, mode, sizeCm, isManu
   const ticks = [];
   for (let k = Math.ceil((start - 1e-9) / s); k * s <= end + 1e-9; k++) ticks.push(Number((k * s).toPrecision(12)));
   // the plotting area, plus room for the arrow (~0.7 cm) and the break (0.55 cm)
-  const unit = (sizeCm - 0.7 - (brk ? 0.55 : 0)) / (end - start);
-  const gap = brk ? 0.55 / unit : 0;
+  const ARROW = 0.7;
+  const BREAK = 0.55;
+  let unit = (sizeCm - ARROW - (brk ? BREAK : 0)) / (end - start);
   // grid: a division of the tick step giving cells of about 5 mm
   let g = gridStep;
   if (auto(g) || g <= 0) {
@@ -275,6 +276,16 @@ function axisPlan(lo, hi, { step, gridStep, dp, dataDp = 0, mode, sizeCm, isManu
         g = s / d;
       }
     }
+  }
+  // with a grid, the break is exactly one grid square (unless squares are
+  // over 8 mm), so the axes sit on grid lines and the zig-zag fits a square
+  let gap = 0;
+  if (brk) {
+    const oneSquare = (sizeCm - ARROW) / (end - start + g);
+    if (grid && g * oneSquare <= 0.8) {
+      unit = oneSquare;
+      gap = g;
+    } else gap = BREAK / unit;
   }
   return { step: s, start, end, ticks, grid: g, dp: auto(dp) ? Math.max(dpOf(s), Math.min(dataDp, 3)) : dp, brk, gap, cross, unit };
 }
@@ -294,10 +305,10 @@ function generate(values) {
   if (!(yhi > ylo) && isManual) throw new Error('"y to" must be bigger than "y from".');
   const pad = (lo, hi) => (hi > lo ? [lo, hi] : [lo - 1, hi + 1]);
   const X = axisPlan(...pad(xlo, xhi), {
-    step: values.xStep, gridStep: values.gridX, dp: values.xDp, dataDp: Math.max(0, ...points.map((p) => p.dx)), mode: values.axisBreak, sizeCm: values.width || 8, isManual,
+    grid: !!values.showGrid, step: values.xStep, gridStep: values.gridX, dp: values.xDp, dataDp: Math.max(0, ...points.map((p) => p.dx)), mode: values.axisBreak, sizeCm: values.width || 8, isManual,
   });
   const Y = axisPlan(...pad(ylo, yhi), {
-    step: values.yStep, gridStep: values.gridY, dp: values.yDp, dataDp: Math.max(0, ...points.map((p) => p.dy)), mode: values.axisBreak, sizeCm: values.height || 5.5, isManual,
+    grid: !!values.showGrid, step: values.yStep, gridStep: values.gridY, dp: values.yDp, dataDp: Math.max(0, ...points.map((p) => p.dy)), mode: values.axisBreak, sizeCm: values.height || 5.5, isManual,
   });
 
   // corner where the axes meet, and the far ends of the arrows
@@ -332,18 +343,19 @@ function generate(values) {
   // ---- axes (with zig-zag breaks)
   const tip = arrowSpec(values.axisArrow, false, true);
   b.comment('axes');
-  const zigX = (x0) => `-- ${pt(x0, xAxisY)} -- ++(1.5pt,2.5pt) -- ++(3pt,-5pt) -- ++(1.5pt,2.5pt)`;
-  const zigY = (y0) => `-- ${pt(yAxisX, y0)} -- ++(2.5pt,1.5pt) -- ++(-5pt,3pt) -- ++(2.5pt,1.5pt)`;
+  // zig-zags 6pt long, centred in the gap (mid = middle of the gap)
+  const zigX = (mid) => `-- ([xshift=-3pt]${n(mid)},${n(xAxisY)}) -- ++(1.5pt,2.5pt) -- ++(3pt,-5pt) -- ++(1.5pt,2.5pt)`;
+  const zigY = (mid) => `-- ([yshift=-3pt]${n(yAxisX)},${n(mid)}) -- ++(2.5pt,1.5pt) -- ++(-5pt,3pt) -- ++(2.5pt,1.5pt)`;
   const xAxisFrom = X.brk ? cx : Math.min(X.start, yAxisX);
   const yAxisFrom = Y.brk ? cy : Math.min(Y.start, xAxisY);
   b.add(
     `\\draw[${w}${tip ? `, ${tip}` : ''}] ${pt(xAxisFrom, xAxisY)} ` +
-      (X.brk ? `${zigX(cx + X.gap * 0.35)} ` : '') +
+      (X.brk ? `${zigX(cx + X.gap / 2)} ` : '') +
       `-- ${pt(xEnd, xAxisY)} node[anchor=north east, inner sep=2pt] {${mathLabel(values.xAxisLabel ?? 'x')}};`
   );
   b.add(
     `\\draw[${w}${tip ? `, ${tip}` : ''}] ${pt(yAxisX, yAxisFrom)} ` +
-      (Y.brk ? `${zigY(cy + Y.gap * 0.35)} ` : '') +
+      (Y.brk ? `${zigY(cy + Y.gap / 2)} ` : '') +
       `-- ${pt(yAxisX, yEnd)} node[anchor=north east, inner sep=2pt] {${mathLabel(values.yAxisLabel ?? 'y')}};`
   );
 
