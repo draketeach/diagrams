@@ -10,7 +10,8 @@
 //   items: [
 //     { id, type: 'segment', a, b, style, label, labelPos, ticks, arrows },
 //     { id, type: 'polygon', pts: [ids], fill },              (shading only)
-//     { id, type: 'angle', v, a, b, label, labelPos, arcs, radius, reflex },
+//     { id, type: 'angle', v, a, b, label, labelPos, arcs, radius, reflex, arrow },
+//       arrow: null, or the id of the arm (a or b) the arc's arrowhead points at
 //     { id, type: 'right', v, a, b, size },
 //     { id, type: 'circle', c, p, style },                    (centre, a point on it)
 //     { id, type: 'arc', c, a, b, style },                    (centre, from a to b anticlockwise)
@@ -68,7 +69,7 @@ export function normalItem(it) {
   const base = {
     segment: { style: 'solid', label: '', labelPos: null, ticks: 0, arrows: 0 },
     polygon: { fill: 'gray!20' },
-    angle: { label: null, labelPos: null, arcs: 1, radius: 0.7, reflex: false },
+    angle: { label: null, labelPos: null, arcs: 1, radius: 0.7, reflex: false, arrow: null },
     right: { size: 0.25 },
     circle: { style: 'solid' },
     arc: { style: 'solid' },
@@ -661,8 +662,15 @@ export function sceneToTikz(scene) {
     // TikZ's angle = P--V--Q goes anticlockwise from VP to VQ
     const [p, q] = sp.first === 'a' ? [A, B] : [B, A];
     const r = it.radius ?? 0.7;
-    for (let k = 0; k < (it.arcs || 1); k++) {
-      b.add(`\\pic[draw${lw ? `, ${lw}` : ''}, angle radius=${fmt(r + k * 0.08)}cm] {angle = ${p.name}--${v.name}--${q.name}};`);
+    // an arrowhead on the outer arc, pointing at the chosen arm
+    let tip = '';
+    if (it.arrow === it.a || it.arrow === it.b) {
+      usedLibs.add('arrows.meta');
+      tip = pts.get(it.arrow) === q ? ', -{Stealth[length=4pt]}' : ', {Stealth[length=4pt]}-';
+    }
+    const n = it.arcs || 1;
+    for (let k = 0; k < n; k++) {
+      b.add(`\\pic[draw${lw ? `, ${lw}` : ''}${k === n - 1 ? tip : ''}, angle radius=${fmt(r + k * 0.08)}cm] {angle = ${p.name}--${v.name}--${q.name}};`);
     }
     const text = angleText(it, pts);
     if (text) {

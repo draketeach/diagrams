@@ -448,6 +448,15 @@ test('geometry: scene to TikZ', () => {
   const next = geometry.onCodeEdit(base, edited);
   assert.ok(next.values.scene.includes('"x":7') && next.message.includes('Moved 1 point'));
   assert.equal(geometry.onCodeEdit(base, code), null, 'unchanged code: nothing to do');
+  // an angle's arrowhead points at the chosen arm, whichever way TikZ draws the arc
+  const arrowed = parseScene(base.scene);
+  const ang = arrowed.items.find((i) => i.type === 'angle');
+  ang.arrow = ang.b;
+  const one = sceneToTikz(arrowed).code;
+  ang.arrow = ang.a;
+  const other = sceneToTikz(arrowed).code;
+  assert.ok(one.includes('arrows.meta') && /Stealth\[length=4pt\]\}?-?/.test(one));
+  assert.notEqual(one.includes(', -{Stealth'), other.includes(', -{Stealth'), 'opposite arms give opposite ends');
   // angles measure the smaller turn unless reflex
   const v = { x: 0, y: 0 }, a = { x: 1, y: 0 }, b = { x: 0, y: -1 };
   assert.equal(Math.round(angleSpan(v, a, b, false).size), 90);

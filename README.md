@@ -105,7 +105,9 @@ Delete, zoom and Fit.
 - Angles: click two lines that meet, or three points (arm, vertex, arm). A line
   ending on another line (such as an altitude) counts as meeting it. The label
   is the measured size unless you type your own (e.g. `35^\\circ`, `\\theta`);
-  angles can be reflex and have one to three arcs.
+  angles can be reflex, have one to three arcs, and have an arrowhead pointing
+  at either arm. Right-angle marks follow the two lines, so they slant in 3D
+  drawings (see the pyramid in the gallery).
 - New points are named from a chosen letter onwards (A, B, C… by default;
   lower case gives a, b, c…).
 - Lines show their measured length (to 0, 1 or 2 decimal places) unless you

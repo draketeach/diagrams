@@ -83,14 +83,22 @@ const FILLS = [
 const WIDTHS = ['very thin', 'thin', 'semithick', 'thick', 'very thick'];
 
 /** LaTeX-ish label text -> what the canvas shows (the preview shows the real thing). */
+const SYMBOLS = {
+  pi: 'π', theta: 'θ', alpha: 'α', beta: 'β', gamma: 'γ', delta: 'δ', epsilon: 'ε', varepsilon: 'ε',
+  lambda: 'λ', mu: 'μ', sigma: 'σ', tau: 'τ', phi: 'φ', varphi: 'φ', omega: 'ω', rho: 'ρ', psi: 'ψ',
+  Delta: 'Δ', Omega: 'Ω', Sigma: 'Σ', Theta: 'Θ', Phi: 'Φ', ell: 'ℓ', times: '×', cdot: '·', pm: '±',
+  circ: '°', infty: '∞', angle: '∠', triangle: '△', parallel: '∥', perp: '⊥', le: '≤', ge: '≥', ne: '≠',
+};
 function display(t) {
   return String(t ?? '')
     .replace(/\$/g, '')
     .replace(/\^\{?\\circ\}?/g, '°')
-    .replace(/\\(pi|theta|alpha|beta|gamma|phi)\b/g, (m, g) => ({ pi: 'π', theta: 'θ', alpha: 'α', beta: 'β', gamma: 'γ', phi: 'φ' })[g])
+    .replace(/\\(?:mathrm|text|textrm|mathit|mathbf|boldsymbol|operatorname)\{([^}]*)\}/g, '$1')
     .replace(/\\sqrt\{([^}]*)\}/g, '√$1')
-    .replace(/\\[a-zA-Z]+/g, '')
-    .replace(/[{}]/g, '');
+    .replace(/\\[ ,;:!]/g, ' ')
+    .replace(/\\([a-zA-Z]+)/g, (m, g) => SYMBOLS[g] ?? '')
+    .replace(/[{}]/g, '')
+    .replace(/~/g, ' ');
 }
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -950,9 +958,10 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
       const cx = sx(v0.x);
       const cy = sy(v0.y);
       if (it.type === 'right') {
+        // like TikZ: along each arm, so it slants when the arms aren't at 90°
         const s = (it.size ?? 0.25) * PX;
         const u = (sp.start * Math.PI) / 180;
-        const w = ((sp.start + 90) * Math.PI) / 180;
+        const w = ((sp.start + sp.size) * Math.PI) / 180;
         const p1 = [cx + s * Math.cos(u), cy - s * Math.sin(u)];
         const p2 = [p1[0] + s * Math.cos(w), p1[1] - s * Math.sin(w)];
         const p3 = [cx + s * Math.cos(w), cy - s * Math.sin(w)];
@@ -967,6 +976,23 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
         const large = sp.size > 180 ? 1 : 0;
         const d = `M ${cx + r * Math.cos(s)} ${cy - r * Math.sin(s)} A ${r} ${r} 0 ${large} 0 ${cx + r * Math.cos(e)} ${cy - r * Math.sin(e)}`;
         parts.push(`<path d="${d}" class="${cls}"/>`);
+      }
+      if (it.arrow === it.a || it.arrow === it.b) {
+        // which end of the arc: the start arm is a when sp.first is 'a'
+        const atStart = (it.arrow === it.a) === (sp.first === 'a');
+        const r = ((it.radius ?? 0.7) + ((it.arcs || 1) - 1) * 0.08) * PX;
+        const g = atStart ? s : e;
+        const tx = cx + r * Math.cos(g);
+        const ty = cy - r * Math.sin(g);
+        // tangent, pointing along the arc towards the tip (screen y is down)
+        const dir = atStart ? -1 : 1;
+        const vx = -Math.sin(g) * dir;
+        const vy = -Math.cos(g) * dir;
+        const L = 8;
+        const W = 3.2;
+        parts.push(
+          `<path d="M ${tx} ${ty} L ${tx - vx * L - vy * W} ${ty - vy * L + vx * W} L ${tx - vx * L + vy * W} ${ty - vy * L - vx * W} Z" class="arrow-tip${sel('item', it.id) ? ' is-sel' : ''}"/>`
+        );
       }
       const r = (it.radius ?? 0.7) * PX;
       const large = sp.size > 180 ? 1 : 0;
@@ -1250,6 +1276,12 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
         row(
           field('Arcs', selectInput([[1, 'One'], [2, 'Two'], [3, 'Three']], it.arcs, (v) => (it.arcs = Number(v)))),
           field('Radius (cm)', numberInput(it.radius, 0.1, (v) => (it.radius = Math.max(0.1, v))))
+        ),
+        row(
+          field(
+            'Arrowhead',
+            selectInput([['', 'None'], [it.a, `Pointing at ${nm(it.v)}${nm(it.a)}`], [it.b, `Pointing at ${nm(it.v)}${nm(it.b)}`]], it.arrow ?? '', (v) => (it.arrow = v || null))
+          )
         ),
         row(
           checkbox('Reflex angle', it.reflex, (v) => (it.reflex = v)),

@@ -310,6 +310,8 @@ a.button:hover { filter: brightness(1.1); }
 .geo-svg .shape.is-sel, .geo-svg .poly.is-sel { stroke: var(--accent); stroke-width: 2.4; }
 .geo-svg .poly { stroke: none; }
 .geo-svg .marks { fill: none; stroke: #111; stroke-width: 1.2; }
+.geo-svg .arrow-tip { fill: #111; stroke: none; }
+.geo-svg .arrow-tip.is-sel { fill: var(--accent); }
 .geo-svg .marks.is-sel { stroke: var(--accent); stroke-width: 2; }
 .geo-svg .hit { fill: none; stroke: transparent; stroke-width: 12; cursor: pointer; }
 .geo-svg .hit-fill { fill: transparent; cursor: pointer; }

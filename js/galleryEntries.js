@@ -367,4 +367,37 @@ export const GALLERY = [
       }),
     },
   },
+  {
+    id: 'geometry-pyramid',
+    type: 'geometry',
+    title: 'Square-based pyramid',
+    description: 'A 3D shape drawn flat: hidden edges dashed, O the centre of the base (the midpoint of AC), a right angle at O and an angle θ with an arrowhead.',
+    values: {
+      scene: JSON.stringify({
+        settings: { grid: 0.25, snap: true, showGrid: true, lineWidth: 'thin', fontSize: '', notToScale: false, view: { x0: -1.2, y0: -1, w: 10.6, h: 7 } },
+        points: [
+          { id: 'A', name: 'A', x: 0, y: 0 },
+          { id: 'B', name: 'B', x: 5.2, y: 0 },
+          { id: 'C', name: 'C', x: 8.1, y: 1.3 },
+          { id: 'D', name: 'D', x: 2.75, y: 1.3 },
+          { id: 'O', name: 'O', x: 0, y: 0, dep: { kind: 'mid', a: 'A', b: 'C' } },
+          { id: 'M', name: 'M', x: 4.05, y: 5 },
+        ],
+        items: [
+          { id: 'ab', type: 'segment', a: 'A', b: 'B', label: '' },
+          { id: 'bc', type: 'segment', a: 'B', b: 'C', label: '' },
+          { id: 'cd', type: 'segment', a: 'C', b: 'D', label: '', style: 'dashed' },
+          { id: 'da', type: 'segment', a: 'D', b: 'A', label: '', style: 'dashed' },
+          { id: 'ma', type: 'segment', a: 'M', b: 'A', label: '\\ell\\ \\mathrm{cm}' },
+          { id: 'mb', type: 'segment', a: 'M', b: 'B', label: '' },
+          { id: 'mc', type: 'segment', a: 'M', b: 'C', label: '' },
+          { id: 'md', type: 'segment', a: 'M', b: 'D', label: '', style: 'dashed' },
+          { id: 'mo', type: 'segment', a: 'M', b: 'O', label: '', style: 'dashed' },
+          { id: 'ao', type: 'segment', a: 'A', b: 'O', label: '', style: 'dashed' },
+          { id: 'rt', type: 'right', v: 'O', a: 'M', b: 'A', size: 0.3 },
+          { id: 'th', type: 'angle', v: 'A', a: 'M', b: 'O', label: '\\theta', radius: 1.1, arrow: 'O', labelPos: { dx: 0.72, dy: 0.33 } },
+        ],
+      }),
+    },
+  },
 ];
