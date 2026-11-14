@@ -8,6 +8,7 @@
 //       { kind: 'mid', a, b }       the midpoint of a and b
 //       { kind: 'foot', p, a, b }   the foot of the perpendicular from p to line ab
 //       { kind: 'ray', a, b, ext }  on the line from a through b, ext cm beyond b (a ray's end)
+//       { kind: 'north', a, len }   len cm straight up from a (the top of a North line)
 //   items: [
 //     { id, type: 'segment', a, b, style, label, labelPos, ticks, arrows, tip, sloped },
 //       tip: 'none' | 'a' | 'b' | 'both' (arrowheads at the ends); sloped: label turned along the line
@@ -94,6 +95,7 @@ export function parseScene(text) {
 
 /** The points a constructed point is made from. */
 export const depSources = (d) => (d ? [d.p, d.a, d.b].filter(Boolean) : []);
+// (a North line's top depends on a only)
 
 /** Constructed points in an order where each comes after what it's made from (cycles left out). */
 export function dependentOrder(scene) {
@@ -123,7 +125,10 @@ export function resolvePoints(scene) {
     const d = q.dep;
     const a = pts.get(d.a);
     const b = pts.get(d.b);
-    if (d.kind === 'mid') {
+    if (d.kind === 'north') {
+      q.x = a.x;
+      q.y = r4(a.y + (d.len ?? 2.5));
+    } else if (d.kind === 'mid') {
       q.x = r4((a.x + b.x) / 2);
       q.y = r4((a.y + b.y) / 2);
     } else if (d.kind === 'ray') {
@@ -650,8 +655,10 @@ export function sceneToTikz(scene) {
           ? `$(${name(d.a)})!0.5!(${name(d.b)})$`
           : d.kind === 'ray'
             ? `$(${name(d.b)})!-${fmt(d.ext ?? 1.2)}cm!(${name(d.a)})$`
+            : d.kind === 'north'
+              ? `$(${name(d.a)})+(0,${fmt(d.len ?? 2.5)})$`
             : `$(${name(d.a)})!(${name(d.p)})!(${name(d.b)})$`;
-      const note = { mid: 'midpoint', ray: `end of ray ${name(d.a)}${name(d.b)}`, foot: 'foot of perpendicular' }[d.kind];
+      const note = { mid: 'midpoint', ray: `end of ray ${name(d.a)}${name(d.b)}`, north: `north of ${name(d.a)}`, foot: 'foot of perpendicular' }[d.kind];
       b.add(`\\coordinate (${p.name}) at (${expr}); % ${note}`);
     }
     for (const p of scene.points) {

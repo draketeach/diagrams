@@ -95,7 +95,7 @@ Fractions in labels are drawn full size (`\\displaystyle`), as on exam papers.
 ### Geometry (visual editor)
 
 Draw on a grid instead of filling in options. The toolbar's icons are Select, Point,
-Line, Ray, Polygon, Angle, Right angle, Label, Text, Midpoint, Perpendicular, Circle
+Line, Ray, North line, Polygon, Angle, Right angle, Label, Text, Midpoint, Perpendicular, Circle
 and Arc (each with a
 one-key shortcut while the canvas has focus), plus Undo/Redo (Ctrl+Z / Ctrl+Y),
 Delete, zoom and Fit.
@@ -128,6 +128,9 @@ Delete, zoom and Fit.
   that direction, set how far it runs past the point, and choose what goes at
   its end: nothing, its bearing (e.g. 056°) or your own text. Rays have no
   length label.
+- North line: click a point for a dashed arrow straight up from it with a
+  bold N at the top (`($(O)+(0,2.5)$)`); it moves with the point, and its
+  length and top label can be changed.
 - Labels place themselves: each side length, angle size and point name tries
   a few spots near its usual place and takes the one clear of other labels,
   lines, arcs and points. Drag a label to place it yourself (Reset label

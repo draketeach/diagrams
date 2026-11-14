@@ -472,6 +472,17 @@ test('geometry: scene to TikZ', () => {
   const rc = sceneToTikz(rs).code;
   assert.ok(rc.includes('\\coordinate (E) at ($(P)!-1cm!(O)$);'), rc);
   assert.ok(rc.includes('{$037^\\circ$}'), 'bearing of (3, 4) from O is 037°');
+  // a North line's top stays straight above its point
+  const ns = parseScene({
+    points: [
+      { id: 'o', name: 'O', x: 1, y: 2 },
+      { id: 't', name: 'T', x: 0, y: 0, hidden: true, dep: { kind: 'north', a: 'o', len: 3 } },
+    ],
+    items: [{ id: 'n', type: 'segment', a: 'o', b: 't', label: '', style: 'dashed', tip: 'b', endMode: 'custom', endText: '\\mathbf{N}' }],
+  });
+  assert.deepEqual([ns.points[1].x, ns.points[1].y], [1, 5]);
+  const nc = sceneToTikz(ns).code;
+  assert.ok(nc.includes('\\coordinate (T) at ($(O)+(0,3)$);') && nc.includes('{$\\mathbf{N}$}'), nc);
   // an angle's arrowhead points at the chosen arm, whichever way TikZ draws the arc
   const arrowed = parseScene(base.scene);
   const ang = arrowed.items.find((i) => i.type === 'angle');

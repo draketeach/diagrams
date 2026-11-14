@@ -40,6 +40,7 @@ const TOOLS = [
   { id: 'point', label: 'Point', key: 'p', hint: 'Click to add a point (snaps to the grid, other points and lines).' },
   { id: 'segment', label: 'Line', key: 's', hint: 'Click two points (new or existing) to join them.' },
   { id: 'ray', label: 'Ray', key: 'y', hint: 'Click the start, then a point the ray passes through. Set its bearing and the label at its end in the panel below.' },
+  { id: 'north', label: 'North line', key: 'n', hint: 'Click a point: draws a dashed arrow straight up from it, labelled N.' },
   { id: 'polygon', label: 'Polygon', key: 'g', hint: 'Click the corners, then click the first one again to close it (Enter finishes an open path).' },
   { id: 'angle', label: 'Angle', key: 'a', hint: 'Click two lines that meet (or three points: arm, vertex, arm).' },
   { id: 'right', label: 'Right angle', key: 'r', hint: 'Click two lines that meet (or three points: arm, vertex, arm).' },
@@ -58,6 +59,7 @@ const ICONS = {
   point: `${DOT(12, 12, 3)}<path d="M12 3v4M12 17v4M3 12h4M17 12h4" stroke-width="1.4"/>`,
   segment: `<path d="M5.5 18.5 18.5 5.5"/>${DOT(5.5, 18.5)}${DOT(18.5, 5.5)}`,
   ray: `<path d="M5 19 19.5 4.5"/><path d="M19.8 4.2 13.4 6.6M19.8 4.2l-2.4 6.4" stroke-linejoin="round"/>${DOT(5, 19)}${DOT(10.5, 13.5, 1.6)}`,
+  north: '<path d="M12 21V8" stroke-dasharray="2.6 2"/><path d="M8.5 11.5 12 7l3.5 4.5" stroke-linejoin="round"/><path d="M9 6.2V1.8l6 4.4V1.8" stroke-width="1.6" stroke-linejoin="round" transform="translate(0 -0.3)"/>',
   polygon: `<path d="M4 19 12 5l8 14z" stroke-linejoin="round"/>${DOT(4, 19)}${DOT(12, 5)}${DOT(20, 19)}`,
   angle: '<path d="M4 19h17M4 19 15 6"/><path d="M11 19a7 7 0 0 0-2.3-5.2" stroke-width="1.5"/>',
   right: '<path d="M5 4v15h15"/><path d="M5 13h6v6" stroke-width="1.5"/>',
@@ -418,6 +420,12 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
       showProps();
       return;
     }
+    if (tool === 'north') {
+      const sp = snap(raw);
+      change(() => addNorth(pointAt(sp)));
+      showProps();
+      return;
+    }
     if (tool === 'ray') {
       const sp = snap(raw);
       begin();
@@ -633,6 +641,28 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     scene.items.push(it);
     selection = { kind: 'item', id: it.id };
   }
+  /** A North line: a hidden point straight above p, a dashed arrow up to it, and N at the top. */
+  function addNorth(p) {
+    const dup = scene.points.find((q) => q.dep?.kind === 'north' && q.dep.a === p);
+    if (dup) {
+      const it = scene.items.find((i) => i.type === 'segment' && i.b === dup.id);
+      selection = it ? { kind: 'item', id: it.id } : null;
+      return;
+    }
+    const top = normalPoint({ id: newId('p'), name: `${findPoint(p).name}_N`.replace(/[^A-Za-z0-9_']/g, ''), x: 0, y: 0, hidden: true, dep: { kind: 'north', a: p, len: 2.5 } });
+    while (scene.points.some((q) => q.name === top.name)) top.name += "'";
+    scene.points.push(top);
+    resolvePoints(scene);
+    const it = normalItem({ id: newId('i'), type: 'segment', a: p, b: top.id, label: '', style: 'dashed', tip: 'b', endMode: 'custom', endText: '\\mathbf{N}' });
+    scene.items.push(it);
+    selection = { kind: 'item', id: it.id };
+  }
+  /** The North line a segment draws, if it is one. */
+  function northOf(it) {
+    const e = it?.type === 'segment' ? findPoint(it.b) : null;
+    return e?.dep?.kind === 'north' && e.dep.a === it.a ? e.dep : null;
+  }
+
   /** The ray a segment draws, if it is one: its end point's construction. */
   function rayOf(it) {
     const e = it?.type === 'segment' ? findPoint(it.b) : null;
@@ -1273,7 +1303,9 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
         h.textContent +=
           p.dep.kind === 'mid'
             ? ` \u2014 midpoint of ${nm(p.dep.a)}${nm(p.dep.b)}`
-            : p.dep.kind === 'ray'
+            : p.dep.kind === 'north'
+              ? ` \u2014 the top of the North line at ${nm(p.dep.a)}`
+              : p.dep.kind === 'ray'
               ? ` \u2014 the end of the ray from ${nm(p.dep.a)} through ${nm(p.dep.b)}`
               : ` \u2014 foot of the perpendicular from ${nm(p.dep.p)} to ${nm(p.dep.a)}${nm(p.dep.b)}`;
         props.append(
@@ -1311,8 +1343,9 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     const nm = (id) => pts.get(id)?.name ?? '?';
     const del = actionButton('Delete', deleteSelection);
     if (it.type === 'segment') {
-      const ray = rayOf(it);
-      h.textContent = ray ? `Ray from ${nm(ray.a)} through ${nm(ray.b)}` : `Line ${nm(it.a)}${nm(it.b)}`;
+      const north = northOf(it);
+      const ray = rayOf(it) || north; // neither has a length worth labelling
+      h.textContent = north ? `North line at ${nm(north.a)}` : ray ? `Ray from ${nm(ray.a)} through ${nm(ray.b)}` : `Line ${nm(it.a)}${nm(it.b)}`;
       const measured = segmentText({ ...it, label: null }, pts, scene.settings);
       // a ray goes on for ever, so it has no length to show
       const mode = it.label === null || it.label === undefined ? (ray ? 'none' : 'measured') : it.label === '' ? 'none' : 'custom';
@@ -1333,8 +1366,8 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
           mode === 'custom' ? field('Text', labelBox, 'label') : el('span'),
           field('Style', selectInput(LINE_STYLES, it.style, (v) => (it.style = v)))
         ),
-        ray ? rayRow(it, ray) : el('span'),
-        ray ? endRow(it) : el('span'),
+        north ? row(field('Length (cm)', numberInput(north.len ?? 2.5, 0.25, (v) => (north.len = Math.max(0.5, v))))) : ray ? rayRow(it, ray) : el('span'),
+        north ? row(field('Label at the top', textInput(it.endText, (v) => (it.endText = v), { placeholder: '\\mathbf{N}' }))) : ray ? endRow(it) : el('span'),
         row(
           field(
             'Arrowheads',
