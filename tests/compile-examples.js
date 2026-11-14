@@ -80,7 +80,7 @@ const jobs = [
     return network.generate({ scene: JSON.stringify(sc) });
   })()],
   ['realgraph-loan', realgraph.generate(defaultValues(realgraph.schema))],
-  ['realgraph-travel', realgraph.generate({ ...defaultValues(realgraph.schema), curves: '0,0 -- 2,40 -- 3,40 -- 5,0; label: Car\n0,10 1,15 2,30* | 2,35o 4,38; dashed; label: Bus\n1,5:P', xTitle: 'Time (hours)', yTitle: 'Distance from home (km)', yTitlePos: 'top', xmax: 6, ymax: 45, xStep: 1, yStep: 10, yNumbers: '', gridX: 0.5, gridY: 5, gridColour: 'grey', origin: 'both' })],
+  ['realgraph-travel', realgraph.generate({ ...defaultValues(realgraph.schema), curves: '0,0 -- 2,40 -- 3,40 -- 5,0; label above right: Car\n0,10 1,15 2,30* | 2,35o 4,38; dashed; label: Bus\n1,5:P', xTitle: 'Time (hours)', yTitle: 'Distance from home (km)', yTitlePos: 'top', xmax: 6, ymax: 45, xStep: 1, yStep: 10, yNumbers: '', gridX: 0.5, gridY: 5, gridColour: 'grey', origin: 'both' })],
   ['blank-trig', blank.generate({ ...defaultValues(blank.schema), xPreset: 'radians', xCustomTicks: '', originLabel: true })],
   ['blank-degrees-grid', blank.generate({ ...defaultValues(blank.schema), xPreset: 'degrees', yCustomTicks: '1, -1', showGrid: true })],
 ];

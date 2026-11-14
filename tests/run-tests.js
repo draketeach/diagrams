@@ -654,7 +654,21 @@ test('real-world graphs: curves from points, titles', () => {
   const { code, warnings } = realgraph.generate(base);
   assert.deepEqual(warnings, []);
   assert.ok(code.includes('(10,6.6) -- (10,5.85)'), 'the vertical drop');
-  assert.ok(code.includes('plot[smooth, tension=0.5] coordinates {(0,8) (5,7.47) (10,6.6)}'));
+  assert.ok(code.includes('(0,8) .. controls (1.7656,8) and'), 'level start: the first control point is at the same height');
+  // a direction at any point, measured on the page; and where labels go
+  const dirs = parseCurve('0,0@45 5,5@0:T 10,0@-90; label start below left: A', 0);
+  assert.deepEqual(dirs.points.map((p) => p.dir), [45, 0, -90]);
+  assert.equal(dirs.points[1].text, 'T');
+  assert.deepEqual([dirs.labelAt, dirs.labelSide, dirs.label], ['start', 'below left', 'A']);
+  assert.deepEqual([parseCurve('0,0 1,1; label: B', 0).labelAt, parseCurve('0,0 1,1; label middle: B', 0).labelAt], ['end', 'middle']);
+  const dc = realgraph.generate({ ...base, curves: '0,0@45 5,5@0 10,0; label start below left: A\n0,1 2,3; label below: Z' }).code;
+  assert.ok(/\(0,0\) \.\. controls \(([\d.]+),([\d.]+)\)/.test(dc), dc);
+  const [, cx, cy] = dc.match(/\(0,0\) \.\. controls \(([\d.]+),([\d.]+)\)/);
+  const xu = 8 / 38;
+  const yu = 7.5 / 10.8;
+  assert.ok(Math.abs(Math.atan2(cy * yu, cx * xu) * 180 / Math.PI - 45) < 0.1, '45° on the page, whatever the scales');
+  assert.ok(dc.includes('node[anchor=north east, inner sep=3pt] at (0,0) {A}'), 'label at the start, below left');
+  assert.ok(dc.includes('node[anchor=north, inner sep=3pt] at (2,3) {Z}'), 'label below the end');
   assert.ok(code.includes('node[rotate=90, anchor=south, align=center]'), 'turned y title');
   assert.ok(code.includes('{$8$}') && !code.includes('{$2$}'), 'only the chosen y numbers');
   const out = realgraph.generate({ ...base, curves: '0,8 50,1' });

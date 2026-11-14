@@ -26,9 +26,11 @@ function num(s, where) {
 /**
  * One curve per line: points "x,y" separated by spaces are joined smoothly,
  * "--" between two points joins them with a straight line, and "|" leaves a
- * gap. A point ending in * gets a filled dot, in o an open dot; ":text" after
- * a point labels it. Settings follow ";": dashed, dotted, a line width,
- * straight (every join straight), label: text (at the end of the curve).
+ * gap. After a point: > makes the curve level there (or @30 sets its direction
+ * on the page in degrees), * gives a filled dot and o an open one, and ":text"
+ * labels it. Settings follow ";": dashed, dotted, a line width, straight
+ * (every join straight), and label: text — at the end of the curve, or e.g.
+ * "label below: text", "label start above: text", "label middle: text".
  */
 export function parseCurve(line, index) {
   const where = `Curve ${index + 1}`;
@@ -40,10 +42,17 @@ export function parseCurve(line, index) {
     .trim()
     .split(/\s+/)
     .filter(Boolean);
-  const curve = { points: [], joins: [], style: '', width: '', straight: false, label: '' };
+  const curve = { points: [], joins: [], style: '', width: '', straight: false, label: '', labelAt: 'end', labelSide: '' };
   for (const st of settings.map((x) => x.trim()).filter(Boolean)) {
-    const m = st.match(/^label\s*:\s*(.*)$/i);
-    if (m) curve.label = m[1].trim();
+    const m = st.match(/^label((?:\s+(?:at|start|end|middle|above|below|left|right))*)\s*:\s*(.*)$/i);
+    if (m) {
+      const words = m[1].toLowerCase().split(/\s+/).filter((w) => w && w !== 'at');
+      curve.label = m[2].trim();
+      curve.labelAt = words.find((w) => ['start', 'end', 'middle'].includes(w)) || 'end';
+      const v = words.find((w) => w === 'above' || w === 'below') || '';
+      const h = words.find((w) => w === 'left' || w === 'right') || '';
+      curve.labelSide = [v, h].filter(Boolean).join(' ');
+    }
     else if (/^(dashed|dotted|densely dashed|densely dotted|loosely dashed|loosely dotted)$/i.test(st)) curve.style = st.toLowerCase();
     else if (SETTINGS_WIDTHS.includes(st.toLowerCase())) curve.width = st.toLowerCase();
     else if (/^straight$/i.test(st)) curve.straight = true;
@@ -56,9 +65,15 @@ export function parseCurve(line, index) {
       join = t === '--' ? 'line' : 'gap';
       continue;
     }
-    const m = t.match(/^([^,:]+),([^,:*]+?)([*o])?(?::(.+))?$/);
-    if (!m) throw new Error(`${where}: "${t}" isn't a point. Write points like 0,8 (or 10,5.8* for a dot).`);
-    const p = { x: num(m[1], where), y: num(m[2], where), dot: m[3] === '*' ? 'filled' : m[3] === 'o' ? 'open' : '', text: m[4] || '' };
+    const m = t.match(/^([^,:]+),([^,:*@>]+?)(>|@-?[\d.]+)?([*o])?(?::(.+))?$/);
+    if (!m) throw new Error(`${where}: "${t}" isn't a point. Write points like 0,8 (or 0,8> for a level start, 10,5.8* for a dot).`);
+    const p = {
+      x: num(m[1], where),
+      y: num(m[2], where),
+      dir: m[3] ? (m[3] === '>' ? 0 : Number(m[3].slice(1))) : null,
+      dot: m[4] === '*' ? 'filled' : m[4] === 'o' ? 'open' : '',
+      text: m[5] || '',
+    };
     if (curve.points.length) curve.joins.push(join || (curve.straight ? 'line' : 'smooth'));
     curve.points.push(p);
     join = null;
@@ -85,6 +100,39 @@ export function curveRuns(curve) {
     }
   });
   return runs;
+}
+
+/**
+ * A smooth run as cubic Bézier sections through its points (Catmull–Rom, as
+ * TikZ's smooth plots), in TikZ "(a) .. controls (c1) and (c2) .. (b)" form.
+ * A point's dir (degrees on the page; 0 = level) fixes the curve's direction
+ * there, so xu and yu (cm per unit) are needed to measure angles on the page.
+ */
+export function smoothPath(points, tension, xu, yu) {
+  const P = points;
+  const k = (2 / 3) * tension; // control points: k × the velocity at each point
+  const vel = P.map((p, i) => {
+    const a = P[Math.max(0, i - 1)];
+    const b = P[Math.min(P.length - 1, i + 1)];
+    const span = i === 0 || i === P.length - 1 ? 1 : 2;
+    let v = { x: (b.x - a.x) / span, y: (b.y - a.y) / span };
+    if (p.dir !== null && p.dir !== undefined) {
+      // same speed on the page, in the given direction (along the way the curve travels)
+      const len = Math.hypot(v.x * xu, v.y * yu);
+      let ux = Math.cos((p.dir * Math.PI) / 180);
+      let uy = Math.sin((p.dir * Math.PI) / 180);
+      if (ux * v.x * xu + uy * v.y * yu < 0) [ux, uy] = [-ux, -uy];
+      v = { x: (ux * len) / xu, y: (uy * len) / yu };
+    }
+    return v;
+  });
+  let out = pt(P[0].x, P[0].y);
+  for (let i = 0; i + 1 < P.length; i++) {
+    const c1 = { x: P[i].x + k * vel[i].x, y: P[i].y + k * vel[i].y };
+    const c2 = { x: P[i + 1].x - k * vel[i + 1].x, y: P[i + 1].y - k * vel[i + 1].y };
+    out += ` .. controls ${pt(c1.x, c1.y)} and ${pt(c2.x, c2.y)} .. ${pt(P[i + 1].x, P[i + 1].y)}`;
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------- text
@@ -213,9 +261,11 @@ function generate(v) {
   curves.forEach((c, i) => {
     b.comment(`curve ${i + 1}`);
     const opts = [c.width || width, c.style, 'line join=round', 'line cap=round'].filter(Boolean).join(', ');
+    const tension = v.tension === undefined || v.tension === null || v.tension === '' ? 0.5 : Number(v.tension);
     for (const run of curveRuns(c)) {
-      if (run.kind === 'line' || run.points.length === 2) b.add(`\\draw[${opts}] ${run.points.map((p) => pt(p.x, p.y)).join(' -- ')};`);
-      else b.add(`\\draw[${opts}] plot[smooth, tension=${n(Number(v.tension) || 0.5, 2)}] coordinates {${run.points.map((p) => pt(p.x, p.y)).join(' ')}};`);
+      const bent = run.kind === 'smooth' && (run.points.length > 2 || run.points.some((p) => p.dir !== null));
+      if (!bent) b.add(`\\draw[${opts}] ${run.points.map((p) => pt(p.x, p.y)).join(' -- ')};`);
+      else b.add(`\\draw[${opts}] ${smoothPath(run.points, tension, xu, yu)};`);
     }
     for (const p of c.points) {
       if (p.dot === 'filled') b.add(`\\fill ${pt(p.x, p.y)} circle[radius=${R}];`);
@@ -223,8 +273,11 @@ function generate(v) {
       if (p.text) b.add(`\\node[anchor=south west, inner sep=2pt] at ${pt(p.x, p.y)} {${mathLabel(p.text)}};`);
     }
     if (c.label) {
-      const last = c.points[c.points.length - 1];
-      b.add(`\\node[anchor=west, inner sep=3pt] at ${pt(last.x, last.y)} {${titleText(c.label)}};`);
+      const at = c.labelAt === 'start' ? c.points[0] : c.labelAt === 'middle' ? c.points[Math.floor((c.points.length - 1) / 2)] : c.points[c.points.length - 1];
+      // beside the end it's on: right of the end, left of the start, above the middle
+      const side = c.labelSide || (c.labelAt === 'start' ? 'left' : c.labelAt === 'middle' ? 'above' : 'right');
+      const anchor = { right: 'west', left: 'east', above: 'south', below: 'north', 'above right': 'south west', 'above left': 'south east', 'below right': 'north west', 'below left': 'north east' }[side];
+      b.add(`\\node[anchor=${anchor}, inner sep=3pt] at ${pt(at.x, at.y)} {${titleText(c.label)}};`);
     }
     for (const p of c.points) {
       if (p.x < xmin || p.x > xmax || p.y < ymin || p.y > ymax) {
@@ -246,9 +299,13 @@ const CURVE_EXAMPLES = {
     ['0,0 -- 2,40 -- 3,40 -- 5,0', 'Straight lines between points (a travel graph)'],
     ['0,0 2,40 3,40; straight', 'Every join straight'],
     ['10,6.6 -- 10,5.8', 'A vertical drop (a jump joined by a line)'],
+    ['0,8> 10,6.6 20,3', 'Level at the start (> after a point)'],
+    ['0,0@60 5,8 10,0@-60', 'Set the direction there (degrees on the page)'],
     ['0,2 4,2* | 4,5o 8,5', 'A gap; filled (*) and open (o) dots'],
     ['3,4:P', 'A point labelled P'],
     ['0,20 6,35 12,22; dashed; label: Melbourne', 'A dashed curve with a label at its end'],
+    ['…; label below: Car', 'Label below the end (also above, left, right)'],
+    ['…; label start above: Car', 'Label at the start (or middle) of the curve'],
   ],
   notes: 'One curve per line. Points are x,y and are joined in the order you type them.',
 };
@@ -261,7 +318,7 @@ const schema = [
     key: 'curves',
     label: 'Curves (one per line)',
     rows: 4,
-    default: '0,8 5,7.47 10,6.6 -- 10,5.85 15,4.75 20,2.95 22.5,1.66 25,0',
+    default: '0,8> 5,7.47 10,6.6 -- 10,5.85 15,4.75 20,2.95 22.5,1.66 25,0',
     help: 'Points x,y: spaces join smoothly, -- straight, | leaves a gap. Press ? for examples.',
     examples: CURVE_EXAMPLES,
   },

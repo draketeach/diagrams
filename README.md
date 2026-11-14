@@ -113,9 +113,14 @@ Graphs of real quantities (money, temperature, distance against time) drawn
 through points instead of from an equation. One curve per line: points `x,y`
 separated by spaces are joined by a smooth curve, `--` between two points
 joins them with a straight line (`10,6.6 -- 10,5.8` is a vertical drop) and `|`
-leaves a gap. A point ending in `*` gets a filled dot, in `o` an open dot, and
-`:P` labels it. Settings follow `;`: `dashed`, `dotted`, a line width,
-`straight` (all joins straight) and `label: text` at the end of the curve.
+leaves a gap. After a point, `>` makes the curve level there (`0,8>`) and
+`@30` sets its direction on the page in degrees (`@-90` straight down), `*`
+gives a filled dot, `o` an open dot, and `:P` labels it. Settings follow `;`:
+`dashed`, `dotted`, a line width, `straight` (all joins straight) and a label:
+`label: text` goes right of the end; `label below: text`, `label start: text`,
+`label middle above: text` and the like put it elsewhere (start or middle or
+end, then above, below, left, right or a mix). Smooth sections are written as
+Bézier curves (`.. controls … ..`) so the directions can be set.
 
 The axes meet at the corner, with numbers every so often (or only the ones you
 list), one 0 at the corner (or one on each axis, or none), and an optional
