@@ -816,12 +816,20 @@ export function markOffsets(it) {
 
 function markings(it) {
   const { ticks, arrows } = markOffsets(it);
-  const draws = [
-    ...ticks.map((x) => `\\draw (${fmt(x)}pt,-3pt) -- (${fmt(x)}pt,3pt);`),
-    // an arrow tip ends at the mark, so shift it on by half its length
-    // Straight Barb: an open chevron, the same mark as the editor draws (centred on the mark)
-    ...arrows.map((x) => `\\arrow[xshift=${fmt(x + 2)}pt]{Straight Barb[length=4pt, width=4pt]}`),
-  ];
+  const draws = [];
+  if (ticks.length) {
+    // equal-length ticks: one arrow of Bars. Its front bar sits 0.2pt (half a 0.4pt line) behind the
+    // shift, and each further bar 2.5pt (sep + line width) behind that, so shift to centre the group.
+    const k = ticks.length;
+    const centre = ticks.reduce((t, x) => t + x, 0) / k;
+    const bar = (last) => `Bar[width=6pt, line width=0.4pt${last ? '' : ', sep=2.1pt'}]`;
+    const spec = Array.from({ length: k }, (_, i) => bar(i === k - 1)).join(' ');
+    draws.push(`\\arrow[xshift=${fmt(centre + 0.2 + (k - 1) * 1.25)}pt]{${spec}}`);
+  }
+  draws.push(
+    // Straight Barb: an open chevron, the same mark as the editor draws (shifted on by half its length, to centre it)
+    ...arrows.map((x) => `\\arrow[xshift=${fmt(x + 2)}pt]{Straight Barb[length=4pt, width=4pt]}`)
+  );
   const marks = draws.length ? [`mark=at position 0.5 with {${draws.join(' ')}}`] : [];
   return marks.length ? `postaction={decorate}, decoration={markings, ${marks.join(', ')}}` : '';
 }
@@ -963,7 +971,7 @@ export function sceneToTikz(sceneIn) {
   }
   for (const s of marked) {
     if (s.ticks || s.arrows) usedLibs.add('decorations.markings');
-    if (s.arrows || tipOption(s)) usedLibs.add('arrows.meta');
+    if (s.arrows || s.ticks || tipOption(s)) usedLibs.add('arrows.meta');
     const gap = labelGap(s, pts, segmentText(s, pts, S));
     if (gap) {
       // two pieces either side of the label, each with its own end's arrowhead
@@ -1008,6 +1016,7 @@ export function sceneToTikz(sceneIn) {
   const tickMarks = scene.items.filter((it) => it.type === 'ticks' && it.ticks > 0 && known(it.a, it.b));
   if (tickMarks.length) {
     usedLibs.add('decorations.markings');
+    usedLibs.add('arrows.meta');
     b.comment('equal lengths');
     for (const it of tickMarks) b.add(`\\path[${[lw, markings({ ticks: it.ticks })].filter(Boolean).join(', ')}] (${name(it.a)}) -- (${name(it.b)});`);
   }

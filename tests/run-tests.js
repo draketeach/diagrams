@@ -442,6 +442,9 @@ test('geometry: scene to TikZ', () => {
   scene.settings.notToScale = true;
   const more = sceneToTikz(parseScene(JSON.stringify(scene))).code;
   assert.ok(more.includes('decorations.markings'), 'markings library');
+  assert.ok(/\\arrow\[xshift=-?[\d.]+pt\]\{Bar\[width=6pt, line width=0\.4pt, sep=2\.1pt\] Bar\[width=6pt, line width=0\.4pt\]\}/.test(more), 'two ticks: one arrow of Bars');
+  const lone = sceneToTikz(parseScene({ points: [{ id: 'a', name: 'A', x: 0, y: 0 }, { id: 'b', name: 'B', x: 3, y: 0 }], items: [{ id: 's', type: 'segment', a: 'a', b: 'b', label: '', ticks: 3 }] })).code;
+  assert.ok(lone.includes('\\arrow[xshift=2.7pt]{Bar[width=6pt, line width=0.4pt, sep=2.1pt] Bar[width=6pt, line width=0.4pt, sep=2.1pt] Bar[width=6pt, line width=0.4pt]}'), 'three ticks, centred');
   assert.ok(/\\draw\[dashed\] \(A\) circle/.test(more), 'circle');
   assert.ok(more.includes(' arc['), 'arc');
   assert.ok(more.includes('NOT TO'), 'not to scale');
