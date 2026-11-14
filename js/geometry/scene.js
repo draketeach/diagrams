@@ -8,8 +8,9 @@
 //       { kind: 'mid', a, b }       the midpoint of a and b
 //       { kind: 'foot', p, a, b }   the foot of the perpendicular from p to line ab
 //   items: [
-//     { id, type: 'segment', a, b, style, label, labelPos, ticks, arrows },
-//     { id, type: 'polygon', pts: [ids], fill },              (shading only)
+//     { id, type: 'segment', a, b, style, label, labelPos, ticks, arrows, tip, sloped },
+//       tip: 'none' | 'a' | 'b' | 'both' (arrowheads at the ends); sloped: label turned along the line
+//     { id, type: 'polygon', pts: [ids], fill },              (shading only: a grey, or a pattern in PATTERNS)
 //     { id, type: 'angle', v, a, b, label, labelPos, arcs, radius, reflex, arrow },
 //       arrow: null, or the id of the arm (a or b) the arc's arrowhead points at
 //     { id, type: 'right', v, a, b, size },
@@ -67,7 +68,7 @@ export function normalPoint(p) {
 
 export function normalItem(it) {
   const base = {
-    segment: { style: 'solid', label: '', labelPos: null, ticks: 0, arrows: 0 },
+    segment: { style: 'solid', label: '', labelPos: null, ticks: 0, arrows: 0, tip: 'none', sloped: false },
     polygon: { fill: 'gray!20' },
     angle: { label: null, labelPos: null, arcs: 1, radius: 0.7, reflex: false, arrow: null },
     right: { size: 0.25 },
@@ -448,16 +449,20 @@ export function labelPositions(scene, pts = pointMap(scene)) {
     } else {
       const a = pts.get(it.a);
       const b = pts.get(it.b);
-      const box = labelBox(text);
       const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
       const ux = (b.x - a.x) / len;
       const uy = (b.y - a.y) / len;
+      const flat = labelBox(text);
+      // a label turned along the line takes up a slanted box: use the box around it
+      const box = it.sloped
+        ? { w: flat.w * Math.abs(ux) + flat.h * Math.abs(uy), h: flat.w * Math.abs(uy) + flat.h * Math.abs(ux) }
+        : flat;
       const d0 = segmentLabelOffset(scene, it, pts);
       // the default side, then the other one
       let nx = -uy;
       let ny = ux;
       if (nx * d0.dx + ny * d0.dy < 0) [nx, ny] = [-nx, -ny];
-      const reach = (box.w / 2) * Math.abs(nx) + (box.h / 2) * Math.abs(ny) + 0.07;
+      const reach = it.sloped ? flat.h / 2 + 0.07 : (box.w / 2) * Math.abs(nx) + (box.h / 2) * Math.abs(ny) + 0.07;
       const along0 = d0.dx * ux + d0.dy * uy;
       const cands = [];
       for (const side of [1, -1]) {
@@ -484,6 +489,26 @@ export function labelPositions(scene, pts = pointMap(scene)) {
 // ---------------------------------------------------------------- TikZ
 
 const STYLE = { solid: '', dashed: 'dashed', dotted: 'dotted' };
+
+/** Pattern fills (patterns.meta), the same stipples as the normal distribution's shading. */
+export const PATTERNS = {
+  dots: 'Dots[radius=0.33pt, distance=1.5pt, angle=45]',
+  'dots-sparse': 'Dots[radius=0.42pt, distance=3pt, angle=45]',
+  hatch: 'Hatch[angle=45, distance=3pt, line width=0.3pt]',
+};
+
+const TIP = '{Stealth[length=5pt]}';
+function tipOption(it) {
+  return { a: `${TIP}-`, b: `-${TIP}`, both: `${TIP}-${TIP}` }[it.tip] || '';
+}
+
+/** The angle (degrees) to turn a label so it runs along a line, kept upright. */
+export function slopeDeg(a, b) {
+  let g = (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI;
+  if (g > 90) g -= 180;
+  if (g <= -90) g += 180;
+  return g;
+}
 
 /** Where tick and arrow marks sit, in pt along the line from its middle. */
 export function markOffsets(it) {
@@ -588,13 +613,18 @@ export function sceneToTikz(scene) {
   const fills = scene.items.filter((it) => it.type === 'polygon' && it.fill && it.fill !== 'none' && known(...it.pts));
   if (fills.length) {
     b.comment('shading');
-    for (const it of fills) b.add(`\\fill[${it.fill}] ${it.pts.map((id) => `(${name(id)})`).join(' -- ')} -- cycle;`);
+    for (const it of fills) {
+      const pat = PATTERNS[it.fill];
+      if (pat) usedLibs.add('patterns.meta');
+      b.add(`\\fill[${pat ? `pattern={${pat}}` : it.fill}] ${it.pts.map((id) => `(${name(id)})`).join(' -- ')} -- cycle;`);
+    }
   }
 
   // ---- lines: plain ones chained into paths, marked ones on their own
   const segs = scene.items.filter((it) => it.type === 'segment' && known(it.a, it.b));
-  const plain = segs.filter((s) => !s.ticks && !s.arrows);
-  const marked = segs.filter((s) => s.ticks || s.arrows);
+  const special = (s) => s.ticks || s.arrows || (s.tip && s.tip !== 'none');
+  const plain = segs.filter((s) => !special(s));
+  const marked = segs.filter(special);
   if (segs.length) b.comment('lines');
   for (const ch of chainSegments(plain)) {
     const closed = ch.pts.length > 3 && ch.pts[0] === ch.pts[ch.pts.length - 1];
@@ -603,9 +633,9 @@ export function sceneToTikz(scene) {
     b.add(`\\draw${opts ? `[${opts}]` : ''} ${ids.map((id) => `(${name(id)})`).join(' -- ')}${closed ? ' -- cycle' : ''};`);
   }
   for (const s of marked) {
-    usedLibs.add('decorations.markings');
-    if (s.arrows) usedLibs.add('arrows.meta');
-    const opts = [lw, STYLE[s.style], markings(s)].filter(Boolean).join(', ');
+    if (s.ticks || s.arrows) usedLibs.add('decorations.markings');
+    if (s.arrows || tipOption(s)) usedLibs.add('arrows.meta');
+    const opts = [tipOption(s), lw, STYLE[s.style], markings(s)].filter(Boolean).join(', ');
     b.add(`\\draw[${opts}] (${name(s.a)}) -- (${name(s.b)});`);
   }
 
@@ -684,7 +714,8 @@ export function sceneToTikz(scene) {
     const text = segmentText(s, pts, S);
     if (!text) continue;
     const off = placed.get(`s:${s.id}`) ?? segmentLabelOffset(scene, s, pts);
-    labels.push(`\\path (${name(s.a)}) -- (${name(s.b)}) node[midway, xshift=${fmt(off.dx)}cm, yshift=${fmt(off.dy)}cm] {${mathLabel(text)}};`);
+    const turn = s.sloped ? `, rotate=${fmt(slopeDeg(pts.get(s.a), pts.get(s.b)))}` : '';
+    labels.push(`\\path (${name(s.a)}) -- (${name(s.b)}) node[midway, xshift=${fmt(off.dx)}cm, yshift=${fmt(off.dy)}cm${turn}] {${mathLabel(text)}};`);
   }
   for (const p of scene.points) {
     if (p.hidden || !p.showLabel || !p.name) continue;
@@ -705,11 +736,7 @@ export function sceneToTikz(scene) {
     labels.forEach((l) => b.add(l));
   }
   if (S.notToScale) {
-    // to the right of the drawing, near the top
-    const xs = scene.points.map((p) => p.x);
-    const ys = scene.points.map((p) => p.y);
-    const x = xs.length ? Math.max(...xs) + 0.8 : 0;
-    const y = ys.length ? Math.max(...ys) : 0;
+    const { x, y } = notToScalePlace(scene);
     b.comment('note');
     b.add(`\\node[anchor=north west, align=center] at (${fmt(x)},${fmt(y)}) {NOT TO\\\\SCALE};`);
   }
@@ -717,6 +744,29 @@ export function sceneToTikz(scene) {
   if (usedLibs.size) b.usePreamble(`\\usetikzlibrary{${[...usedLibs].sort().join(', ')}}`);
   const opts = S.fontSize ? [`font=${S.fontSize}`] : [];
   return { code: b.toString(opts), warnings };
+}
+
+/**
+ * Where the NOT TO SCALE note goes (its top-left corner): to the right of
+ * everything drawn, including free text, level with the top of the visible points.
+ */
+export function notToScalePlace(scene) {
+  const pts = pointMap(scene);
+  const xs = [];
+  for (const p of scene.points) xs.push(p.x);
+  for (const it of scene.items) {
+    if (it.type === 'text' && String(it.text ?? '').trim()) {
+      const longest = String(it.text).split(/\n|\\\\/).reduce((m, l) => (l.length > m.length ? l : m), '');
+      xs.push(it.x + labelBox(longest).w / 2);
+    }
+    if (it.type === 'circle' && pts.get(it.c) && pts.get(it.p)) {
+      const c = pts.get(it.c);
+      xs.push(c.x + Math.hypot(pts.get(it.p).x - c.x, pts.get(it.p).y - c.y));
+    }
+  }
+  const shown = scene.points.filter((p) => !p.hidden);
+  const ys = (shown.length ? shown : scene.points).map((p) => p.y);
+  return { x: xs.length ? Math.max(...xs) + 0.6 : 0, y: ys.length ? Math.max(...ys) : 0 };
 }
 
 /** Read "\coordinate (NAME) at (x,y);" lines from code: Map name -> {x, y}. */

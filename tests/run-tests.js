@@ -448,6 +448,17 @@ test('geometry: scene to TikZ', () => {
   const next = geometry.onCodeEdit(base, edited);
   assert.ok(next.values.scene.includes('"x":7') && next.message.includes('Moved 1 point'));
   assert.equal(geometry.onCodeEdit(base, code), null, 'unchanged code: nothing to do');
+  // arrowheads on lines, labels along the line, dotted shading
+  const fancy = parseScene(base.scene);
+  const seg = fancy.items.find((i) => i.type === 'segment');
+  seg.tip = 'b';
+  seg.sloped = true;
+  seg.label = 'x';
+  fancy.items.push({ id: 'poly', type: 'polygon', pts: fancy.points.map((p) => p.id), fill: 'dots' });
+  const fc = sceneToTikz(parseScene(JSON.stringify(fancy))).code;
+  assert.ok(fc.includes('\\draw[-{Stealth[length=5pt]}] (A) -- (B);'), 'arrowhead at the end');
+  assert.ok(/node\[midway, [^\]]*rotate=0\] \{\$x\$\}/.test(fc), 'label along a level line: rotate=0');
+  assert.ok(fc.includes('pattern={Dots') && fc.includes('patterns.meta'), 'dotted shading');
   // an angle's arrowhead points at the chosen arm, whichever way TikZ draws the arc
   const arrowed = parseScene(base.scene);
   const ang = arrowed.items.find((i) => i.type === 'angle');

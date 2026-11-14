@@ -111,8 +111,10 @@ Delete, zoom and Fit.
 - New points are named from a chosen letter onwards (A, B, C… by default;
   lower case gives a, b, c…).
 - Lines show their measured length (to 0, 1 or 2 decimal places) unless you
-  type your own label or choose none. They can be dashed or dotted, with
-  equal-length ticks or parallel arrows. Polygons can be shaded.
+  type your own label or choose none; the label can be turned to run along the
+  line. Lines can be dashed or dotted, with arrowheads at either or both ends
+  (bearings, a North line), equal-length ticks or parallel arrows. Polygons can
+  be shaded grey, dotted (the exam-paper stipple) or hatched.
 - Midpoint (click a line, or two points; equal-length ticks go on both halves)
   and Perpendicular (click a point and a line: a dashed line to the foot, with
   a right angle there, and the line extended dashed if the foot is beyond its

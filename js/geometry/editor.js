@@ -20,6 +20,8 @@ import {
   dirDeg,
   fmt,
   markOffsets,
+  slopeDeg,
+  notToScalePlace,
   segmentText,
   resolvePoints,
   dependentsOf,
@@ -79,7 +81,17 @@ const FILLS = [
   ['gray!15', 'Light grey'],
   ['gray!30', 'Grey'],
   ['gray!50', 'Dark grey'],
+  ['dots', 'Dots'],
+  ['dots-sparse', 'Sparse dots'],
+  ['hatch', 'Hatching'],
 ];
+// how the canvas shows the pattern fills (the preview shows the real ones)
+const CANVAS_PATTERNS =
+  '<defs>' +
+  '<pattern id="geo-dots" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><circle cx="2" cy="2" r="0.75" fill="#333"/></pattern>' +
+  '<pattern id="geo-dots-sparse" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><circle cx="3.5" cy="3.5" r="0.9" fill="#333"/></pattern>' +
+  '<pattern id="geo-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="#333" stroke-width="0.8"/></pattern>' +
+  '</defs>';
 const WIDTHS = ['very thin', 'thin', 'semithick', 'thick', 'very thick'];
 
 /** LaTeX-ish label text -> what the canvas shows (the preview shows the real thing). */
@@ -881,7 +893,14 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     for (const it of scene.items.filter((i) => i.type === 'polygon')) {
       const ps = it.pts.map((id) => pts.get(id)).filter(Boolean);
       if (ps.length < 3) continue;
-      const fill = { 'gray!15': '#e2e2e2', 'gray!30': '#c8c8c8', 'gray!50': '#a3a3a3' }[it.fill];
+      const fill = {
+        'gray!15': '#e2e2e2',
+        'gray!30': '#c8c8c8',
+        'gray!50': '#a3a3a3',
+        dots: 'url(#geo-dots)',
+        'dots-sparse': 'url(#geo-dots-sparse)',
+        hatch: 'url(#geo-hatch)',
+      }[it.fill];
       parts.push(
         `<polygon data-kind="item" data-id="${it.id}" points="${ps.map((p) => `${sx(p.x)},${sy(p.y)}`).join(' ')}" class="poly${sel('item', it.id) ? ' is-sel' : ''}" style="fill:${fill || 'transparent'}"/>`
       );
@@ -918,6 +937,19 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
       const cls = `shape ls-${it.style}${sel('item', it.id) || pendingSet.has(it.id) ? ' is-sel' : ''}`;
       const xy = `x1="${sx(a.x)}" y1="${sy(a.y)}" x2="${sx(b.x)}" y2="${sy(b.y)}"`;
       parts.push(`<line ${xy} class="${cls}"/>`);
+      // arrowheads at the ends
+      for (const [end, from] of [[b, a], [a, b]]) {
+        const want = end === b ? ['b', 'both'] : ['a', 'both'];
+        if (!want.includes(it.tip)) continue;
+        const ex = sx(end.x);
+        const ey = sy(end.y);
+        const L = Math.hypot(sx(end.x) - sx(from.x), sy(end.y) - sy(from.y)) || 1;
+        const ux = (ex - sx(from.x)) / L;
+        const uy = (ey - sy(from.y)) / L;
+        parts.push(
+          `<path d="M ${ex} ${ey} L ${ex - ux * 9 - uy * 3.5} ${ey - uy * 9 + ux * 3.5} L ${ex - ux * 9 + uy * 3.5} ${ey - uy * 9 - ux * 3.5} Z" class="arrow-tip${sel('item', it.id) ? ' is-sel' : ''}"/>`
+        );
+      }
       // marks at the middle
       const mx = (sx(a.x) + sx(b.x)) / 2;
       const my = (sy(a.y) + sy(b.y)) / 2;
@@ -1013,7 +1045,7 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
       const text = segmentText(it, pts, scene.settings);
       if (!a || !b || !text) continue;
       const off = placed.get(`s:${it.id}`) ?? segmentLabelOffset(scene, it, pts);
-      parts.push(labelSvg('item', it.id, (a.x + b.x) / 2 + off.dx, (a.y + b.y) / 2 + off.dy, display(text), false, sel('item', it.id)));
+      parts.push(labelSvg('item', it.id, (a.x + b.x) / 2 + off.dx, (a.y + b.y) / 2 + off.dy, display(text), false, sel('item', it.id), it.sloped ? slopeDeg(a, b) : 0));
     }
 
     // text
@@ -1036,8 +1068,7 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
 
     // NOT TO SCALE (as in the TikZ)
     if (scene.settings.notToScale && scene.points.length) {
-      const x = Math.max(...scene.points.map((p) => p.x)) + 0.8;
-      const y = Math.max(...scene.points.map((p) => p.y));
+      const { x, y } = notToScalePlace(scene);
       parts.push(`<text x="${sx(x)}" y="${sy(y)}" class="free-text" dominant-baseline="hanging"><tspan x="${sx(x)}">NOT TO</tspan><tspan x="${sx(x)}" dy="1.2em">SCALE</tspan></text>`);
     }
 
@@ -1069,7 +1100,7 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
       parts.push(`<circle cx="${sx(hover.x)}" cy="${sy(hover.y)}" r="${hover.point ? 8 : 4}" class="${cls}"/>`);
     }
 
-    svg.innerHTML = parts.join('');
+    svg.innerHTML = CANVAS_PATTERNS + parts.join('');
     svg.dataset.tool = tool;
     svg.dataset.view = `${v.x0},${v.y0},${v.w},${v.h}`;
     undoBtn.disabled = !undo.length;
@@ -1077,8 +1108,9 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     delBtn.disabled = !selection;
   }
 
-  function labelSvg(kind, id, x, y, text, italic, selected) {
-    return `<text data-kind="${kind}" data-id="${id}" data-part="label" x="${sx(x)}" y="${sy(y)}" class="lbl${italic ? ' is-math' : ''}${selected ? ' is-sel' : ''}" text-anchor="middle" dominant-baseline="central">${esc(text)}</text>`;
+  function labelSvg(kind, id, x, y, text, italic, selected, turn = 0) {
+    const rot = turn ? ` transform="rotate(${-turn} ${sx(x)} ${sy(y)})"` : '';
+    return `<text data-kind="${kind}" data-id="${id}" data-part="label" x="${sx(x)}" y="${sy(y)}"${rot} class="lbl${italic ? ' is-math' : ''}${selected ? ' is-sel' : ''}" text-anchor="middle" dominant-baseline="central">${esc(text)}</text>`;
   }
 
   // ---------------------------------------------------------------- properties panel
@@ -1247,6 +1279,13 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
           ),
           mode === 'custom' ? field('Text', labelBox, 'label') : el('span'),
           field('Style', selectInput(LINE_STYLES, it.style, (v) => (it.style = v)))
+        ),
+        row(
+          field(
+            'Arrowheads',
+            selectInput([['none', 'None'], ['b', `At ${nm(it.b)}`], ['a', `At ${nm(it.a)}`], ['both', 'Both ends']], it.tip || 'none', (v) => (it.tip = v))
+          ),
+          checkbox('Label along the line', it.sloped, (v) => (it.sloped = v))
         ),
         row(
           field('Equal-length ticks', selectInput([[0, 'None'], [1, '|'], [2, '||'], [3, '|||']], it.ticks, (v) => (it.ticks = Number(v)))),
