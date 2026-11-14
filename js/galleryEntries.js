@@ -49,9 +49,9 @@ export const GALLERY = [
     id: 'line-first-quadrant',
     type: 'function',
     title: 'Straight line in the first quadrant',
-    description: 't = 4 − p for 0 ≤ p ≤ 4 on axes that start at O, with no intercepts marked.',
+    description: 't = 4 − p on axes that start at O, stopping just short of both axes, with no intercepts marked.',
     values: {
-      graphs: 'y = 4 - x; from 0 to 4',
+      graphs: 'y = 4 - x; from 0.1 to 3.95',
       leftEnd: 'plain',
       rightEnd: 'plain',
       labelX: false,
