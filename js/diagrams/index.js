@@ -11,5 +11,6 @@ import blank from './blank.js';
 import scatter from './scatter.js';
 import slopefield from './slopefield.js';
 import geometry from './geometry.js';
+import probtree from './probtree.js';
 
-[fn, sketch, blank, normal, scatter, slopefield, geometry].forEach(registerDiagram);
+[fn, sketch, blank, normal, scatter, slopefield, geometry, probtree].forEach(registerDiagram);

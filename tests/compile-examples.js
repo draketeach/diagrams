@@ -13,6 +13,7 @@ import blank from '../js/diagrams/blank.js';
 import scatter from '../js/diagrams/scatter.js';
 import slopefield from '../js/diagrams/slopefield.js';
 import geometry from '../js/diagrams/geometry.js';
+import probtree from '../js/diagrams/probtree.js';
 import { GALLERY } from '../js/galleryEntries.js';
 
 const base = defaultValues(fn.schema);
@@ -65,6 +66,8 @@ const jobs = [
   ...['geometry-efg', 'geometry-pyramid', 'geometry-bearings'].map((id) => [id, geometry.generate(GALLERY.find((e) => e.id === id).values)]),
   ['geometry-marks', geometry.generate({ scene: JSON.stringify({ points: [{ id: 'P', name: 'P', x: 0, y: 0 }, { id: 'Q', name: 'Q', x: 4, y: 0 }, { id: 'R', name: 'R', x: 5, y: 3 }, { id: 'S', name: 'S', x: 1, y: 3 }], items: [{ id: 'p', type: 'polygon', pts: ['P', 'Q', 'R', 'S'], fill: 'gray!15' }, { id: 'a', type: 'segment', a: 'P', b: 'Q', arrows: 2, ticks: 1 }, { id: 'b', type: 'segment', a: 'S', b: 'R', arrows: 2, ticks: 1 }, { id: 'c', type: 'segment', a: 'Q', b: 'R', ticks: 2 }, { id: 'd', type: 'segment', a: 'P', b: 'S', ticks: 2 }, { id: 'e', type: 'circle', c: 'P', p: 'Q', style: 'dotted' }, { id: 'f', type: 'arc', c: 'R', a: 'Q', b: 'S' }, { id: 'g', type: 'angle', v: 'Q', a: 'R', b: 'P', arcs: 2 }, { id: 'h', type: 'text', x: 2.5, y: -1, text: 'parallelogram' }] }) })],
   ['geometry-constructed', geometry.generate({ scene: JSON.stringify({ points: [{ id: 'a', name: 'A', x: 0, y: 0 }, { id: 'b', name: 'B', x: 7, y: 0 }, { id: 'c', name: 'C', x: 2, y: 4 }, { id: 'm', name: 'M', x: 0, y: 0, dep: { kind: 'mid', a: 'a', b: 'b' } }, { id: 'h', name: 'H', x: 0, y: 0, dep: { kind: 'foot', p: 'c', a: 'a', b: 'b' } }], items: [{ id: 'p', type: 'polygon', pts: ['a', 'b', 'c'], fill: 'none' }, { id: 's1', type: 'segment', a: 'a', b: 'b', label: null }, { id: 's2', type: 'segment', a: 'b', b: 'c', label: null }, { id: 's3', type: 'segment', a: 'c', b: 'a', label: null }, { id: 's4', type: 'segment', a: 'c', b: 'h', style: 'dashed', label: null }, { id: 's5', type: 'segment', a: 'c', b: 'm', label: '' }, { id: 'r', type: 'right', v: 'h', a: 'b', b: 'c' }, { id: 't1', type: 'ticks', a: 'a', b: 'm', ticks: 1 }, { id: 't2', type: 'ticks', a: 'm', b: 'b', ticks: 1 }] }) })],
+  ...['probtree-uniform', 'probtree-counters'].map((id) => [id, probtree.generate({ ...defaultValues(probtree.schema), ...GALLERY.find((e) => e.id === id).values })]),
+  ['probtree-lines', probtree.generate({ ...defaultValues(probtree.schema), stages: 'H : p; T : ?\nH : ?; T : 1-p', blankStyle: 'line', outcomes: 'probs' })],
   ['blank-trig', blank.generate({ ...defaultValues(blank.schema), xPreset: 'radians', xCustomTicks: '', originLabel: true })],
   ['blank-degrees-grid', blank.generate({ ...defaultValues(blank.schema), xPreset: 'degrees', yCustomTicks: '1, -1', showGrid: true })],
 ];

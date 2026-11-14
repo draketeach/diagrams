@@ -12,6 +12,7 @@ export const GALLERY_GROUPS = [
   { type: 'scatter', heading: 'Scatterplots' },
   { type: 'slopefield', heading: 'Slope fields' },
   { type: 'geometry', heading: 'Geometry' },
+  { type: 'probtree', heading: 'Probability trees' },
 ];
 
 export const GALLERY = [
@@ -410,4 +411,25 @@ export const GALLERY = [
     },
   },
 
+  {
+    id: 'probtree-uniform',
+    type: 'probtree',
+    title: 'Probability tree',
+    description: 'Two stages entered as stages: walk or not, then correct uniform or not.',
+    values: {},
+  },
+  {
+    id: 'probtree-counters',
+    type: 'probtree',
+    title: 'Without replacement, with blanks',
+    description: 'Entered as an outline: two counters drawn without replacement, blanks to fill in, stage headings and an outcome column.',
+    values: {
+      input: 'outline',
+      outline: 'Red : 3/7\n> Red : 2/6\n> Blue : ?\nBlue : 4/7\n> Red : ?\n> Blue : 3/6',
+      headings: 'First counter; Second counter',
+      outcomes: 'both',
+      productStyle: 'both',
+      branchLength: 2.4,
+    },
+  },
 ];

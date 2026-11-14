@@ -21,6 +21,7 @@ import scatter, { parseData, regression } from '../js/diagrams/scatter.js';
 import slopefield, { solutionCurve, contour } from '../js/diagrams/slopefield.js';
 import normal, { normalProbability } from '../js/diagrams/normal.js';
 import geometry from '../js/diagrams/geometry.js';
+import probtree, { treeFromStages, treeFromOutline, pathProduct } from '../js/diagrams/probtree.js';
 import { parseScene, sceneToTikz, coordinatesFromCode, angleSpan, labelPositions, pointMap } from '../js/geometry/scene.js';
 import { GALLERY } from '../js/galleryEntries.js';
 import { existsSync } from 'node:fs';
@@ -579,8 +580,35 @@ test('geometry: overlapping labels are moved apart', () => {
   assert.deepEqual(labelPositions(scene, pts).get('s:ge'), { dx: 0.2, dy: 0.1 });
 });
 
+test('probability trees: input, products, blanks', () => {
+  const st = treeFromStages('A : 1/2; B : 1/2\nX : 0.3, Y : 0.7');
+  assert.equal(st.length, 2);
+  assert.equal(st[0].children[1].name, 'Y');
+  const ol = treeFromOutline('A : 1/3\n> X : 1/4\n  > Deep : p\nB : 2/3\n\tY : ?');
+  assert.equal(ol[0].children[0].children[0].name, 'Deep', '">" and spaces mix');
+  assert.equal(ol[1].children[0].prob, '?', 'a tab is one level');
+  assert.throws(() => treeFromOutline('A : 1/2\n>> X : 1/2'), /more than one level/);
+  assert.throws(() => treeFromStages('Walk 3/10'), /outcome and its probability/);
+  assert.deepEqual(pathProduct(['3/10', '9/10']), { expr: '\\frac{3}{10} \\times \\frac{9}{10}', value: '\\frac{27}{100}' });
+  assert.equal(pathProduct(['3/7', '2/6']).value, '\\frac{1}{7}', 'simplified');
+  assert.equal(pathProduct(['0.3', '0.5']).value, '0.15', 'decimals stay decimals');
+  assert.equal(pathProduct(['p', '1/2']).value, '', 'letters: no value');
+  assert.equal(pathProduct(['?', '1/2']).expr, '', 'a blank: nothing');
+  const base = defaultValues(probtree.schema);
+  const { code, warnings } = probtree.generate(base);
+  assert.deepEqual(warnings, []);
+  assert.equal((code.match(/\\draw /g) || []).length, 6, 'six branches');
+  assert.ok(code.includes('node[midway, above left] {$\\displaystyle \\frac{3}{10}$}'));
+  const blanks = probtree.generate({ ...base, stages: 'A : ?; ? : 1/2', blankStyle: 'box' }).code;
+  assert.ok(blanks.includes('draw, minimum width=0.9cm'), 'blank probability box');
+  assert.ok(blanks.includes('draw, minimum width=2.2cm'), 'blank outcome box');
+  const col = probtree.generate({ ...base, outcomes: 'both', headings: 'First; Second' }).code;
+  assert.ok(col.includes('{Walk, Correct uniform}') && col.includes('= \\frac{27}{100}$}'), 'outcome column');
+  assert.ok(col.includes('{First}') && col.includes('{Outcome}') && col.includes('{Probability}'), 'headings');
+});
+
 test('gallery: every entry generates cleanly and has its image', () => {
-  const modules = { function: fn, sketch, blank, normal, scatter, slopefield, geometry };
+  const modules = { function: fn, sketch, blank, normal, scatter, slopefield, geometry, probtree };
   const ids = new Set();
   for (const e of GALLERY) {
     assert.ok(!ids.has(e.id), `duplicate gallery id ${e.id}`);

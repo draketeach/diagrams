@@ -92,6 +92,21 @@ usual axis labels, scale ticks and NOT TO SCALE note.
 
 Fractions in labels are drawn full size (`\\displaystyle`), as on exam papers.
 
+### Probability tree
+
+Trees grow left to right, with each stage's names in a column so every branch
+of a stage is the same length. Enter the tree as **stages** (one line per
+stage, outcomes separated by `;`, e.g. `Walk : 3/10; Not walk : 7/10`; each
+stage repeats under every branch) or as an **outline** (one branch per line,
+each `>` or two spaces at the start going one level deeper), which allows
+uneven trees and different probabilities on each branch. Probabilities are
+shown as typed (`3/10` as a full-size fraction, `0.3`, `p`, `1-p`); `?` leaves
+a blank (a box, a line or space), for a probability or an outcome. An optional
+outcome column lists each path and/or the product of its probabilities
+(`3/10 × 9/10 = 27/100`, simplified; decimals stay decimals), and stage
+headings can go above. A third field (`Walk : 3/10 : W`) gives a short name
+for the outcome column.
+
 ### Geometry (visual editor)
 
 Draw on a grid instead of filling in options. The toolbar's icons are Select, Point,
@@ -163,7 +178,7 @@ Use either:
   then open http://localhost:8000.
 
 You can open a diagram type directly, e.g. `?type=function`, `?type=sketch`,
-`?type=blank`, `?type=normal`, `?type=scatter`, `?type=slopefield` or `?type=geometry`.
+`?type=blank`, `?type=normal`, `?type=scatter`, `?type=slopefield`, `?type=geometry` or `?type=probtree`.
 
 The **Gallery** (`gallery.html`, linked from the top bar) shows example
 diagrams made with the site, grouped by type; each opens in the editor with
@@ -231,6 +246,7 @@ js/diagrams/
   scatter.js             scatterplots (click the preview to add points)
   slopefield.js          slope fields, solution curves, isoclines
   geometry.js            geometry drawn in the visual editor
+  probtree.js            probability trees
 js/geometry/
   scene.js               the drawing's data, label placement, and TikZ output
   editor.js              the editor: canvas, toolbar, snapping, properties, undo
