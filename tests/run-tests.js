@@ -483,6 +483,10 @@ test('geometry: measured lengths and constructed points', () => {
   assert.ok(code.includes('calc'), 'calc library');
   assert.ok(code.includes('{$5$}') && code.includes('{$3$}'), 'measured lengths');
   assert.ok(!coordinatesFromCode(code).has('M'), 'constructed points are not read back');
+  scene.items.push({ id: 't1', type: 'ticks', a: 'a', b: 'm', ticks: 2 });
+  const marked = sceneToTikz(parseScene(JSON.stringify(scene))).code;
+  assert.ok(/\\path\[postaction=\{decorate\}[^\n]*\] \(A\) -- \(M\);/.test(marked), 'tick marks without a line');
+  assert.ok(marked.includes('decorations.markings'));
   scene.settings.lengthDecimals = 2;
   scene.points[1].x = 3.333;
   assert.ok(sceneToTikz(scene).code.includes('{$5.21$}'), 'two decimal places');

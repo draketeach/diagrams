@@ -513,6 +513,11 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     const p = normalPoint({ id: newId('p'), name: nextName(), x: 0, y: 0, dep: { kind: 'mid', a, b } });
     scene.points.push(p);
     resolvePoints(scene);
+    // equal-length marks on the two halves, with a count not used yet
+    const used = new Set(scene.items.filter((i) => i.type === 'ticks' || i.type === 'segment').map((i) => i.ticks || 0));
+    const k = [1, 2, 3].find((n) => !used.has(n)) ?? 1;
+    scene.items.push(normalItem({ id: newId('i'), type: 'ticks', a, b: p.id, ticks: k }));
+    scene.items.push(normalItem({ id: newId('i'), type: 'ticks', a: p.id, b, ticks: k }));
     selection = { kind: 'point', id: p.id };
   }
 
@@ -531,7 +536,15 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     // the right angle sits on the side of the foot with more of the line
     const A = findPoint(line.a);
     const B = findPoint(line.b);
-    const far = Math.hypot(A.x - foot.x, A.y - foot.y) >= Math.hypot(B.x - foot.x, B.y - foot.y) ? line.a : line.b;
+    const dA = Math.hypot(A.x - foot.x, A.y - foot.y);
+    const dB = Math.hypot(B.x - foot.x, B.y - foot.y);
+    const far = dA >= dB ? line.a : line.b;
+    // a foot beyond the end of the line: extend the line to it, dashed
+    const L = Math.hypot(B.x - A.x, B.y - A.y);
+    if (Math.max(dA, dB) > L + 1e-6) {
+      const ext = addSegment(dA < dB ? line.a : line.b, foot.id);
+      findItem(ext).style = 'dashed';
+    }
     scene.items.push(normalItem({ id: newId('i'), type: 'right', v: foot.id, a: far, b: p }));
     selection = { kind: 'point', id: foot.id };
   }
@@ -878,6 +891,21 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
       parts.push(`<line data-kind="item" data-id="${it.id}" ${xy} class="hit"/>`);
     }
 
+    // equal-length marks on their own
+    for (const it of scene.items.filter((i) => i.type === 'ticks')) {
+      const a = pts.get(it.a);
+      const b = pts.get(it.b);
+      if (!a || !b) continue;
+      const mx = (sx(a.x) + sx(b.x)) / 2;
+      const my = (sy(a.y) + sy(b.y)) / 2;
+      const ang = (Math.atan2(sy(b.y) - sy(a.y), sx(b.x) - sx(a.x)) * 180) / Math.PI;
+      const marks = markOffsets({ ticks: it.ticks }).ticks.map((o) => `<line x1="${2 * o}" y1="-6" x2="${2 * o}" y2="6"/>`);
+      parts.push(
+        `<g class="marks${sel('item', it.id) ? ' is-sel' : ''}" transform="translate(${mx} ${my}) rotate(${ang})">${marks.join('')}</g>`,
+        `<circle data-kind="item" data-id="${it.id}" cx="${mx}" cy="${my}" r="9" class="hit-fill"/>`
+      );
+    }
+
     // angles
     for (const it of scene.items.filter((i) => i.type === 'angle' || i.type === 'right')) {
       const v0 = pts.get(it.v);
@@ -1197,6 +1225,9 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
         )
       );
       if (mode !== 'custom') propInputs.set('label', labelBox);
+    } else if (it.type === 'ticks') {
+      h.textContent = `Equal-length marks on ${nm(it.a)}${nm(it.b)}`;
+      props.append(row(field('Ticks', selectInput([[1, '|'], [2, '||'], [3, '|||']], it.ticks, (v) => (it.ticks = Number(v)))), del));
     } else if (it.type === 'right') {
       h.textContent = `Right angle at ${nm(it.v)}`;
       props.append(row(field('Size (cm)', numberInput(it.size, 0.05, (v) => (it.size = Math.max(0.05, v)))), del));

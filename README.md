@@ -111,8 +111,10 @@ Delete, zoom and Fit.
 - Lines show their measured length (to 0, 1 or 2 decimal places) unless you
   type your own label or choose none. They can be dashed or dotted, with
   equal-length ticks or parallel arrows. Polygons can be shaded.
-- Midpoint (click a line, or two points) and Perpendicular (click a point and
-  a line: a dashed line to the foot, with a right angle there) make constructed
+- Midpoint (click a line, or two points; equal-length ticks go on both halves)
+  and Perpendicular (click a point and a line: a dashed line to the foot, with
+  a right angle there, and the line extended dashed if the foot is beyond its
+  end) make constructed
   points, which stay in place as the other points move. In the TikZ they are
   `\\coordinate (M) at ($(A)!0.5!(B)$);` and `($(A)!(P)!(B)$)` (calc library).
   "Make it free" turns one into an ordinary point.

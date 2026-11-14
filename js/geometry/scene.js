@@ -15,6 +15,7 @@
 //     { id, type: 'circle', c, p, style },                    (centre, a point on it)
 //     { id, type: 'arc', c, a, b, style },                    (centre, from a to b anticlockwise)
 //     { id, type: 'text', x, y, text },
+//     { id, type: 'ticks', a, b, ticks },                     (equal-length marks only, e.g. the halves of a midpoint)
 //   ],
 //   settings: { grid, snap, showGrid, lineWidth, fontSize, notToScale, firstLetter,
 //               lengthDecimals, view: {x0, y0, w, h} },
@@ -72,6 +73,7 @@ export function normalItem(it) {
     circle: { style: 'solid' },
     arc: { style: 'solid' },
     text: { text: 'Text' },
+    ticks: { ticks: 1 },
   }[it.type];
   return { ...base, ...it };
 }
@@ -407,6 +409,14 @@ export function sceneToTikz(scene) {
     if (s.arrows) usedLibs.add('arrows.meta');
     const opts = [lw, STYLE[s.style], markings(s)].filter(Boolean).join(', ');
     b.add(`\\draw[${opts}] (${name(s.a)}) -- (${name(s.b)});`);
+  }
+
+  // ---- equal-length marks on their own (the line itself is drawn elsewhere)
+  const tickMarks = scene.items.filter((it) => it.type === 'ticks' && it.ticks > 0 && known(it.a, it.b));
+  if (tickMarks.length) {
+    usedLibs.add('decorations.markings');
+    b.comment('equal lengths');
+    for (const it of tickMarks) b.add(`\\path[${[lw, markings({ ticks: it.ticks })].filter(Boolean).join(', ')}] (${name(it.a)}) -- (${name(it.b)});`);
   }
 
   // ---- circles and arcs
