@@ -458,6 +458,36 @@ test('geometry: scene to TikZ', () => {
   assert.ok(sceneToTikz(bad).warnings.length > 0, 'duplicate names warn');
 });
 
+test('geometry: measured lengths and constructed points', () => {
+  const scene = parseScene({
+    points: [
+      { id: 'a', name: 'A', x: 0, y: 0 },
+      { id: 'b', name: 'B', x: 3, y: 4 },
+      { id: 'c', name: 'C', x: 6, y: 0 },
+      { id: 'm', name: 'M', x: 9, y: 9, dep: { kind: 'mid', a: 'a', b: 'c' } },
+      { id: 'h', name: 'H', x: 9, y: 9, dep: { kind: 'foot', p: 'c', a: 'a', b: 'b' } },
+    ],
+    items: [
+      { id: 's1', type: 'segment', a: 'a', b: 'b', label: null },
+      { id: 's2', type: 'segment', a: 'b', b: 'c', label: '' },
+      { id: 's3', type: 'segment', a: 'a', b: 'm', label: null },
+    ],
+    settings: { lengthDecimals: 1 },
+  });
+  assert.deepEqual([scene.points[3].x, scene.points[3].y], [3, 0], 'midpoint placed');
+  assert.deepEqual([scene.points[4].x, scene.points[4].y], [2.16, 2.88], 'foot placed');
+  const { code, warnings } = sceneToTikz(scene);
+  assert.deepEqual(warnings, []);
+  assert.ok(code.includes('\\coordinate (M) at ($(A)!0.5!(C)$);'), code);
+  assert.ok(code.includes('\\coordinate (H) at ($(A)!(C)!(B)$);'), code);
+  assert.ok(code.includes('calc'), 'calc library');
+  assert.ok(code.includes('{$5$}') && code.includes('{$3$}'), 'measured lengths');
+  assert.ok(!coordinatesFromCode(code).has('M'), 'constructed points are not read back');
+  scene.settings.lengthDecimals = 2;
+  scene.points[1].x = 3.333;
+  assert.ok(sceneToTikz(scene).code.includes('{$5.21$}'), 'two decimal places');
+});
+
 test('gallery: every entry generates cleanly and has its image', () => {
   const modules = { function: fn, sketch, blank, normal, scatter, slopefield, geometry };
   const ids = new Set();

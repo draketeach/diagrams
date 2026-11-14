@@ -3,7 +3,10 @@
 //
 // A scene is plain JSON (it is stored in share links):
 // {
-//   points: [{ id, name, x, y, showLabel, dot, hidden, label: {dx, dy} | null }],
+//   points: [{ id, name, x, y, showLabel, dot, hidden, label: {dx, dy} | null, dep? }],
+//     dep (a constructed point, kept in place as the others move):
+//       { kind: 'mid', a, b }       the midpoint of a and b
+//       { kind: 'foot', p, a, b }   the foot of the perpendicular from p to line ab
 //   items: [
 //     { id, type: 'segment', a, b, style, label, labelPos, ticks, arrows },
 //     { id, type: 'polygon', pts: [ids], fill },              (shading only)
@@ -13,7 +16,9 @@
 //     { id, type: 'arc', c, a, b, style },                    (centre, from a to b anticlockwise)
 //     { id, type: 'text', x, y, text },
 //   ],
-//   settings: { grid, snap, showGrid, lineWidth, fontSize, notToScale, view: {x0, y0, w, h} },
+//   settings: { grid, snap, showGrid, lineWidth, fontSize, notToScale, firstLetter,
+//               lengthDecimals, view: {x0, y0, w, h} },
+// A side's or angle's label of null means "its measured size"; '' means none.
 // }
 // Coordinates are in cm. In the TikZ every point is a named \coordinate and
 // everything else refers to the names, so editing a coordinate moves all of it.
@@ -27,6 +32,8 @@ export const DEFAULT_SETTINGS = {
   lineWidth: 'thin',
   fontSize: '',
   notToScale: false,
+  firstLetter: 'A',
+  lengthDecimals: 1,
   view: { x0: -1, y0: -5, w: 14, h: 8 },
 };
 
@@ -44,8 +51,8 @@ export function defaultScene() {
     ].map(normalPoint),
     items: [
       { id: 'i1', type: 'segment', a: 'p1', b: 'p2', label: '6' },
-      { id: 'i2', type: 'segment', a: 'p2', b: 'p3' },
-      { id: 'i3', type: 'segment', a: 'p3', b: 'p1' },
+      { id: 'i2', type: 'segment', a: 'p2', b: 'p3', label: '' },
+      { id: 'i3', type: 'segment', a: 'p3', b: 'p1', label: '' },
       { id: 'i4', type: 'angle', v: 'p1', a: 'p2', b: 'p3', label: null },
     ].map(normalItem),
     settings: { ...structuredClone(DEFAULT_SETTINGS), view: { x0: -1.5, y0: -1.5, w: 9, h: 6 } },
@@ -72,16 +79,79 @@ export function normalItem(it) {
 export function parseScene(text) {
   if (!text) return defaultScene();
   const s = typeof text === 'string' ? JSON.parse(text) : text;
-  return {
+  return resolvePoints({
     points: (s.points || []).map(normalPoint),
     items: (s.items || []).map(normalItem),
     settings: { ...structuredClone(DEFAULT_SETTINGS), ...(s.settings || {}) },
-  };
+  });
+}
+
+/** The points a constructed point is made from. */
+export const depSources = (d) => (d ? [d.p, d.a, d.b].filter(Boolean) : []);
+
+/** Constructed points in an order where each comes after what it's made from (cycles left out). */
+export function dependentOrder(scene) {
+  const byId = pointMap(scene);
+  const done = new Set(scene.points.filter((p) => !p.dep).map((p) => p.id));
+  const order = [];
+  let grew = true;
+  while (grew) {
+    grew = false;
+    for (const p of scene.points) {
+      if (done.has(p.id) || !p.dep) continue;
+      const src = depSources(p.dep);
+      if (src.every((id) => done.has(id) && byId.has(id))) {
+        done.add(p.id);
+        order.push(p);
+        grew = true;
+      }
+    }
+  }
+  return order;
+}
+
+/** Move every constructed point to where its construction puts it (in place). */
+export function resolvePoints(scene) {
+  const pts = pointMap(scene);
+  for (const q of dependentOrder(scene)) {
+    const d = q.dep;
+    const a = pts.get(d.a);
+    const b = pts.get(d.b);
+    if (d.kind === 'mid') {
+      q.x = r4((a.x + b.x) / 2);
+      q.y = r4((a.y + b.y) / 2);
+    } else if (d.kind === 'foot') {
+      const p = pts.get(d.p);
+      const L2 = (b.x - a.x) ** 2 + (b.y - a.y) ** 2;
+      const t = L2 ? ((p.x - a.x) * (b.x - a.x) + (p.y - a.y) * (b.y - a.y)) / L2 : 0;
+      q.x = r4(a.x + t * (b.x - a.x));
+      q.y = r4(a.y + t * (b.y - a.y));
+    }
+  }
+  return scene;
+}
+
+/** Ids of the points built (directly or not) from the given one. */
+export function dependentsOf(scene, id) {
+  const out = new Set();
+  let grew = true;
+  while (grew) {
+    grew = false;
+    for (const p of scene.points) {
+      if (out.has(p.id) || !p.dep) continue;
+      if (depSources(p.dep).some((s) => s === id || out.has(s))) {
+        out.add(p.id);
+        grew = true;
+      }
+    }
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------- geometry
 
 const r3 = (v) => Math.round(v * 1000) / 1000;
+const r4 = (v) => Math.round(v * 10000) / 10000;
 export const fmt = (v) => String(r3(v) === 0 ? 0 : r3(v));
 const deg = (rad) => (rad * 180) / Math.PI;
 const norm360 = (a) => ((a % 360) + 360) % 360;
@@ -195,6 +265,16 @@ export function angleLabelOffset(it, pts) {
   return { dx: r3(Math.cos(mid) * dist), dy: r3(Math.sin(mid) * dist) };
 }
 
+/** A side's label: its own text, or its measured length (null), or nothing (''). */
+export function segmentText(it, pts, settings = DEFAULT_SETTINGS) {
+  if (it.label !== null && it.label !== undefined) return it.label;
+  const a = pts.get(it.a);
+  const b = pts.get(it.b);
+  if (!a || !b) return '';
+  const d = Math.max(0, Math.min(4, Number(settings.lengthDecimals ?? 1)));
+  return String(Number(Math.hypot(b.x - a.x, b.y - a.y).toFixed(d)));
+}
+
 export function angleText(it, pts) {
   if (it.label !== null && it.label !== undefined) return it.label;
   const { size } = angleSpan(pts.get(it.v), pts.get(it.a), pts.get(it.b), it.reflex);
@@ -266,6 +346,7 @@ const textNode = (t) => String(t ?? '').replace(/\n/g, '\\\\');
 
 export function sceneToTikz(scene) {
   const warnings = [];
+  resolvePoints(scene);
   const pts = pointMap(scene);
   const S = scene.settings;
   const b = new TikzBuilder();
@@ -287,7 +368,20 @@ export function sceneToTikz(scene) {
 
   if (scene.points.length) {
     b.comment('points');
-    for (const p of scene.points) b.add(`\\coordinate (${p.name}) at (${fmt(p.x)},${fmt(p.y)});`);
+    for (const p of scene.points) if (!p.dep) b.add(`\\coordinate (${p.name}) at (${fmt(p.x)},${fmt(p.y)});`);
+    const deps = dependentOrder(scene);
+    for (const p of deps) {
+      usedLibs.add('calc');
+      const d = p.dep;
+      const expr = d.kind === 'mid' ? `$(${name(d.a)})!0.5!(${name(d.b)})$` : `$(${name(d.a)})!(${name(d.p)})!(${name(d.b)})$`;
+      b.add(`\\coordinate (${p.name}) at (${expr});${d.kind === 'mid' ? ' % midpoint' : ' % foot of perpendicular'}`);
+    }
+    for (const p of scene.points) {
+      if (p.dep && !deps.includes(p)) {
+        warnings.push(`${p.name} is built from points that are missing.`);
+        b.add(`\\coordinate (${p.name}) at (${fmt(p.x)},${fmt(p.y)});`);
+      }
+    }
   }
 
   // ---- shading
@@ -371,9 +465,10 @@ export function sceneToTikz(scene) {
 
   // ---- labels: side lengths, angle sizes, point names, text
   for (const s of segs) {
-    if (!s.label) continue;
+    const text = segmentText(s, pts, S);
+    if (!text) continue;
     const off = segmentLabelOffset(scene, s, pts);
-    labels.push(`\\path (${name(s.a)}) -- (${name(s.b)}) node[midway, xshift=${fmt(off.dx)}cm, yshift=${fmt(off.dy)}cm] {${mathLabel(s.label)}};`);
+    labels.push(`\\path (${name(s.a)}) -- (${name(s.b)}) node[midway, xshift=${fmt(off.dx)}cm, yshift=${fmt(off.dy)}cm] {${mathLabel(text)}};`);
   }
   for (const p of scene.points) {
     if (p.hidden || !p.showLabel || !p.name) continue;

@@ -19,6 +19,9 @@ import {
   dirDeg,
   fmt,
   markOffsets,
+  segmentText,
+  resolvePoints,
+  dependentsOf,
 } from './scene.js';
 
 const PX = 40; // pixels per cm at zoom 1
@@ -34,6 +37,8 @@ const TOOLS = [
   { id: 'right', label: 'Right angle', key: 'r', hint: 'Click two lines that meet (or three points: arm, vertex, arm).' },
   { id: 'label', label: 'Label', key: 'l', hint: 'Click a line to give it a length label, or a point or angle to rename it.' },
   { id: 'text', label: 'Text', key: 't', hint: 'Click to place text.' },
+  { id: 'midpoint', label: 'Midpoint', key: 'm', hint: 'Click a line (or two points) to mark its midpoint. It stays in the middle when the ends move.' },
+  { id: 'perp', label: 'Perpendicular', key: 'f', hint: 'Click a point and a line: draws the perpendicular from the point to the line, with a right angle at its foot.' },
   { id: 'circle', label: 'Circle', key: 'c', hint: 'Click the centre, then a point on the circle.' },
   { id: 'arc', label: 'Arc', key: 'k', hint: 'Click the centre, the start, then the end (anticlockwise).' },
 ];
@@ -193,7 +198,7 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     const k = pxPerCm();
     let best = null;
     for (const p of scene.points) {
-      if (p.id === exclude) continue;
+      if (exclude && (exclude === p.id || exclude.has?.(p.id))) continue;
       const d = Math.hypot(p.x - raw.x, p.y - raw.y) * k;
       if (d < SNAP_POINT && (!best || d < best.d)) best = { d, x: p.x, y: p.y, point: p.id };
     }
@@ -243,7 +248,11 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
 
   function nextName() {
     const used = new Set(scene.points.map((p) => p.name));
-    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const first = String(scene.settings.firstLetter || 'A').trim();
+    const lower = first === first.toLowerCase() && first !== first.toUpperCase();
+    const start = Math.max(0, ALPHA.indexOf(first.toUpperCase()));
+    const letters = [...ALPHA.slice(start) + ALPHA.slice(0, start)].map((L) => (lower ? L.toLowerCase() : L));
     for (let round = 0; ; round++) {
       for (const L of letters) {
         const nm = round ? `${L}_${round}` : L;
@@ -409,8 +418,58 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
       render();
       return;
     }
+    if (tool === 'midpoint') {
+      if (target?.kind === 'item' && findItem(target.id)?.type === 'segment') {
+        const sg = findItem(target.id);
+        change(() => addMidpoint(sg.a, sg.b));
+        clearPending();
+        showProps();
+        return;
+      }
+      const sp = snap(raw, { lines: false });
+      if (!sp.point) return flash('Click a line, or two points.');
+      if (pending[0] && pending[0] !== sp.point) {
+        const a = pending[0];
+        change(() => addMidpoint(a, sp.point));
+        clearPending();
+        showProps();
+      } else pending = [sp.point];
+      render();
+      return;
+    }
+    if (tool === 'perp') {
+      const seg = target?.kind === 'item' && findItem(target.id)?.type === 'segment' ? findItem(target.id) : null;
+      const sp = seg ? null : snap(raw, { lines: false });
+      if (!seg && !sp.point) return flash('Click a point and a line.');
+      const kind = seg ? 'segment' : 'point';
+      pending = pending.filter((q) => q.kind !== kind);
+      pending.push(seg ? { kind, id: seg.id } : { kind, id: sp.point });
+      const P = pending.find((q) => q.kind === 'point');
+      const L = pending.find((q) => q.kind === 'segment');
+      if (P && L) {
+        const line = findItem(L.id);
+        if (line.a === P.id || line.b === P.id) {
+          flash('Pick a point that isn\u2019t on the line.');
+          clearPending();
+        } else {
+          change(() => addPerpendicular(P.id, line));
+          clearPending();
+          showProps();
+        }
+      }
+      render();
+      return;
+    }
     if (tool === 'label') {
       if (target) {
+        const it = target.kind === 'item' ? findItem(target.id) : null;
+        // a measured or empty label becomes your own text, ready to type over
+        if (it && (it.type === 'segment' || it.type === 'angle') && !it.label) {
+          change(() => {
+            const pts = pointMap(scene);
+            it.label = it.type === 'segment' ? segmentText({ ...it, label: null }, pts, scene.settings) : angleText({ ...it, label: null }, pts);
+          });
+        }
         select({ kind: target.kind, id: target.id });
         setTimeout(() => focusProp(target.kind === 'point' ? 'name' : 'label'), 0);
       }
@@ -445,10 +504,42 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     }
   }
 
+  function addMidpoint(a, b) {
+    const dup = scene.points.find((q) => q.dep?.kind === 'mid' && new Set([q.dep.a, q.dep.b, a, b]).size === 2);
+    if (dup) {
+      selection = { kind: 'point', id: dup.id };
+      return;
+    }
+    const p = normalPoint({ id: newId('p'), name: nextName(), x: 0, y: 0, dep: { kind: 'mid', a, b } });
+    scene.points.push(p);
+    resolvePoints(scene);
+    selection = { kind: 'point', id: p.id };
+  }
+
+  /** The perpendicular from point p to a line: its foot, the line to it, and a right angle. */
+  function addPerpendicular(p, line) {
+    const foot = normalPoint({ id: newId('p'), name: nextName(), x: 0, y: 0, dep: { kind: 'foot', p, a: line.a, b: line.b } });
+    scene.points.push(foot);
+    resolvePoints(scene);
+    const P = findPoint(p);
+    if (Math.hypot(P.x - foot.x, P.y - foot.y) < 1e-6) {
+      scene.points.pop();
+      return flash('That point is on the line.');
+    }
+    const segId = addSegment(p, foot.id);
+    findItem(segId).style = 'dashed';
+    // the right angle sits on the side of the foot with more of the line
+    const A = findPoint(line.a);
+    const B = findPoint(line.b);
+    const far = Math.hypot(A.x - foot.x, A.y - foot.y) >= Math.hypot(B.x - foot.x, B.y - foot.y) ? line.a : line.b;
+    scene.items.push(normalItem({ id: newId('i'), type: 'right', v: foot.id, a: far, b: p }));
+    selection = { kind: 'point', id: foot.id };
+  }
+
   function addSegment(a, b) {
     const dup = scene.items.find((i) => i.type === 'segment' && ((i.a === a && i.b === b) || (i.a === b && i.b === a)));
     if (dup) return dup.id;
-    const it = normalItem({ id: newId('i'), type: 'segment', a, b });
+    const it = normalItem({ id: newId('i'), type: 'segment', a, b, label: null });
     scene.items.push(it);
     selection = { kind: 'item', id: it.id };
     return it.id;
@@ -484,10 +575,10 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     if (!selection) return;
     change(() => {
       if (selection.kind === 'point') {
-        const id = selection.id;
-        scene.points = scene.points.filter((p) => p.id !== id);
+        const gone = dependentsOf(scene, selection.id).add(selection.id);
+        scene.points = scene.points.filter((p) => !gone.has(p.id));
         scene.items = scene.items.filter(
-          (i) => ![i.a, i.b, i.v, i.c, i.p, ...(i.pts || [])].includes(id) || i.type === 'text'
+          (i) => i.type === 'text' || ![i.a, i.b, i.v, i.c, i.p, ...(i.pts || [])].some((x) => gone.has(x))
         );
       } else {
         scene.items = scene.items.filter((i) => i.id !== selection.id);
@@ -523,9 +614,13 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
       drag = { type: 'label', target, moved: false };
       begin();
     } else if (target?.kind === 'point') {
-      drag = { type: 'point', id: target.id, moved: false };
-      begin();
       select({ kind: 'point', id: target.id });
+      if (findPoint(target.id).dep) {
+        flash('This point is constructed, so it moves with the points it\u2019s made from. Use \u201cMake it free\u201d to move it yourself.');
+        return;
+      }
+      drag = { type: 'point', id: target.id, moved: false, exclude: dependentsOf(scene, target.id).add(target.id) };
+      begin();
     } else if (target?.kind === 'item' && findItem(target.id)?.type === 'text') {
       const it = findItem(target.id);
       drag = { type: 'text', id: it.id, dx: it.x - raw.x, dy: it.y - raw.y, moved: false };
@@ -544,7 +639,7 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     if (drag) {
       drag.moved = true;
       if (drag.type === 'point') {
-        const s = snap(raw, { exclude: drag.id, lines: false });
+        const s = snap(raw, { exclude: drag.exclude, lines: false });
         const p = findPoint(drag.id);
         p.x = round(s.point ? raw.x : s.x);
         p.y = round(s.point ? raw.y : s.y);
@@ -570,7 +665,7 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
       return;
     }
     if (tool !== 'select') {
-      hover = snap(raw, { lines: !['angle', 'right', 'label', 'text'].includes(tool) });
+      hover = snap(raw, { lines: !['angle', 'right', 'label', 'text', 'midpoint', 'perp'].includes(tool) });
       render();
     }
   });
@@ -703,6 +798,7 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
 
   // ---------------------------------------------------------------- drawing the canvas
   function render() {
+    resolvePoints(scene);
     const v = view();
     const W = v.w * PX;
     const H = v.h * PX;
@@ -824,12 +920,13 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     }
 
     // side labels
-    for (const it of scene.items.filter((i) => i.type === 'segment' && i.label)) {
+    for (const it of scene.items.filter((i) => i.type === 'segment')) {
       const a = pts.get(it.a);
       const b = pts.get(it.b);
-      if (!a || !b) continue;
+      const text = segmentText(it, pts, scene.settings);
+      if (!a || !b || !text) continue;
       const off = segmentLabelOffset(scene, it, pts);
-      parts.push(labelSvg('item', it.id, (a.x + b.x) / 2 + off.dx, (a.y + b.y) / 2 + off.dy, display(it.label), false, sel('item', it.id)));
+      parts.push(labelSvg('item', it.id, (a.x + b.x) / 2 + off.dx, (a.y + b.y) / 2 + off.dy, display(text), false, sel('item', it.id)));
     }
 
     // text
@@ -873,7 +970,7 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
 
     // points (handles on top)
     for (const p of scene.points) {
-      const cls = ['pt', p.hidden ? 'is-hidden' : '', p.dot ? 'is-dot' : '', sel('point', p.id) || pendingSet.has(p.id) ? 'is-sel' : '']
+      const cls = ['pt', p.hidden ? 'is-hidden' : '', p.dot ? 'is-dot' : '', p.dep ? 'is-dep' : '', sel('point', p.id) || pendingSet.has(p.id) ? 'is-sel' : '']
         .filter(Boolean)
         .join(' ');
       parts.push(`<circle data-kind="point" data-id="${p.id}" cx="${sx(p.x)}" cy="${sy(p.y)}" r="${p.hidden ? 3 : 4.5}" class="${cls}"/>`);
@@ -988,6 +1085,10 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
           checkbox('Snap to grid', S.snap, (v) => (S.snap = v)),
           checkbox('Show grid', S.showGrid, (v) => (S.showGrid = v)),
           checkbox('NOT TO SCALE', S.notToScale, (v) => (S.notToScale = v))
+        ),
+        row(
+          field('New points start at', letterInput()),
+          field('Lengths shown to', selectInput([[0, 'Whole numbers'], [1, '1 decimal place'], [2, '2 decimal places']], S.lengthDecimals, (v) => (S.lengthDecimals = Number(v))))
         )
       );
       const p = el('p', 'geo-note');
@@ -999,6 +1100,28 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     if (selection.kind === 'point') {
       const p = findPoint(selection.id);
       h.textContent = `Point ${p.name}`;
+      if (p.dep) {
+        const pts = pointMap(scene);
+        const nm = (id) => pts.get(id)?.name ?? '?';
+        h.textContent +=
+          p.dep.kind === 'mid'
+            ? ` \u2014 midpoint of ${nm(p.dep.a)}${nm(p.dep.b)}`
+            : ` \u2014 foot of the perpendicular from ${nm(p.dep.p)} to ${nm(p.dep.a)}${nm(p.dep.b)}`;
+        props.append(
+          row(
+            field('Name', textInput(p.name, (v) => (p.name = v.trim())), 'name'),
+            checkbox('Show its name', p.showLabel, (v) => (p.showLabel = v)),
+            checkbox('Dot', p.dot, (v) => (p.dot = v)),
+            checkbox('Hidden (helper point)', p.hidden, (v) => (p.hidden = v))
+          ),
+          row(
+            actionButton('Make it free', () => change(() => delete p.dep)),
+            actionButton('Reset label position', () => change(() => (p.label = null))),
+            actionButton('Delete point', deleteSelection)
+          )
+        );
+        return;
+      }
       props.append(
         row(
           field('Name', textInput(p.name, (v) => (p.name = v.trim())), 'name'),
@@ -1020,9 +1143,22 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     const del = actionButton('Delete', deleteSelection);
     if (it.type === 'segment') {
       h.textContent = `Line ${nm(it.a)}${nm(it.b)}`;
+      const measured = segmentText({ ...it, label: null }, pts, scene.settings);
+      const mode = it.label === null || it.label === undefined ? 'measured' : it.label === '' ? 'none' : 'custom';
+      const labelBox = textInput(mode === 'custom' ? it.label : '', (v) => (it.label = v), { placeholder: 'e.g. 81 or x' });
       props.append(
         row(
-          field('Label', textInput(it.label, (v) => (it.label = v), { placeholder: 'e.g. 81 or x' }), 'label'),
+          field(
+            'Label',
+            selectInput([['measured', `Its length (${measured})`], ['custom', 'My own'], ['none', 'None']], mode, (v) => {
+              it.label = v === 'measured' ? null : v === 'none' ? '' : measured;
+              queueMicrotask(() => {
+                showProps();
+                if (v === 'custom') focusProp('label');
+              });
+            })
+          ),
+          mode === 'custom' ? field('Text', labelBox, 'label') : el('span'),
           field('Style', selectInput(LINE_STYLES, it.style, (v) => (it.style = v)))
         ),
         row(
@@ -1078,6 +1214,25 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
         )
       );
     }
+  }
+
+  /** One letter, A–Z or a–z: the name of the next new point (then onwards). */
+  function letterInput() {
+    const i = el('input');
+    i.type = 'text';
+    i.maxLength = 1;
+    i.className = 'geo-letter';
+    i.value = scene.settings.firstLetter || 'A';
+    i.title = 'New points are named from this letter onwards (lower case gives a, b, c…)';
+    i.addEventListener('change', () => {
+      const v = i.value.trim();
+      if (!/^[A-Za-z]$/.test(v)) {
+        i.value = scene.settings.firstLetter || 'A';
+        return;
+      }
+      change(() => (scene.settings.firstLetter = v));
+    });
+    return i;
   }
 
   function focusProp(key) {

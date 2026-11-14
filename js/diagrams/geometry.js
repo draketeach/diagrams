@@ -20,7 +20,7 @@ function onCodeEdit(values, code) {
   let moved = 0;
   for (const p of scene.points) {
     const c = coords.get(p.name);
-    if (c && (c.x !== p.x || c.y !== p.y)) {
+    if (c && !p.dep && (c.x !== p.x || c.y !== p.y)) {
       p.x = c.x;
       p.y = c.y;
       moved++;

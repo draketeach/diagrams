@@ -95,7 +95,8 @@ Fractions in labels are drawn full size (`\\displaystyle`), as on exam papers.
 ### Geometry (visual editor)
 
 Draw on a grid instead of filling in options. The toolbar has Select, Point,
-Line, Polygon, Angle, Right angle, Label, Text, Circle and Arc (each with a
+Line, Polygon, Angle, Right angle, Label, Text, Midpoint, Perpendicular, Circle
+and Arc (each with a
 one-key shortcut while the canvas has focus), plus Undo/Redo (Ctrl+Z / Ctrl+Y),
 Delete, zoom and Fit.
 
@@ -105,8 +106,16 @@ Delete, zoom and Fit.
   ending on another line (such as an altitude) counts as meeting it. The label
   is the measured size unless you type your own (e.g. `35^\\circ`, `\\theta`);
   angles can be reflex and have one to three arcs.
-- Lines can be dashed or dotted, with a length label and equal-length ticks or
-  parallel arrows. Polygons can be shaded.
+- New points are named from a chosen letter onwards (A, B, C… by default;
+  lower case gives a, b, c…).
+- Lines show their measured length (to 0, 1 or 2 decimal places) unless you
+  type your own label or choose none. They can be dashed or dotted, with
+  equal-length ticks or parallel arrows. Polygons can be shaded.
+- Midpoint (click a line, or two points) and Perpendicular (click a point and
+  a line: a dashed line to the foot, with a right angle there) make constructed
+  points, which stay in place as the other points move. In the TikZ they are
+  `\\coordinate (M) at ($(A)!0.5!(B)$);` and `($(A)!(P)!(B)$)` (calc library).
+  "Make it free" turns one into an ordinary point.
 - Drag points, labels and text to move them; drag empty space to pan.
 - Click something to edit it in the properties panel; with nothing selected
   the panel holds the drawing settings (grid, line width, font size, NOT TO
