@@ -177,6 +177,7 @@ export const GRAPH_EXAMPLES = {
   rows: [
     ['y = x^3 - 7x + 6', 'A function of x ("y =" is optional)'],
     ['y = 2sin(x) + e^(-x)', 'sin cos tan, sqrt, ln, log, e^, pi, |x| or abs(x)'],
+    ['t = 4 - p', 'Other letters: the first graph\'s letters name the axes (p across, t up)'],
     ['y = -1/2(x+2)(x-3)^2', 'Brackets multiply; 2x, 3(x+1), x(x-1) all work'],
     ['x^2 - 1, -2 <= x < 3', 'Restricted domain: filled dot for ≤, open dot for <'],
     ['{ x/4, 0 <= x <= 2; 0, otherwise }', 'Piecewise: pieces separated by ; inside { }'],

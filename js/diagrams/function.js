@@ -9,7 +9,7 @@
 // The first graph gets the labels (intercepts, turning points, endpoints);
 // the others are drawn with their own settings.
 
-import { parseGraphList } from '../lib/graphList.js';
+import { parseGraphList, renameVariables, restoreVariables } from '../lib/graphList.js';
 import { drawYSquared, ySquaredTurningPoints, positiveIntervals } from '../lib/ySquared.js';
 import { findRoots, findTurningPoints, niceLatex } from '../lib/numeric.js';
 import { TikzBuilder, pt, mathLabel } from '../lib/tikz.js';
@@ -47,7 +47,7 @@ import {
 import { row, curveEndFields, basicLabelFields, moreOptions, legacyValues, GRAPH_EXAMPLES } from '../lib/graphOptions.js';
 
 // what the first graph is, from the text of the box (for showing options)
-const firstLine = (v) => String(v.graphs ?? '').split('\n').map((l) => l.trim()).find(Boolean) || '';
+const firstLine = (v) => renameVariables(v.graphs).text.split('\n').map((l) => l.trim()).find(Boolean) || '';
 const isPiecewise = (v) => {
   const t = firstLine(v).split(';')[0];
   return t.startsWith('{') || /,|\bfor\b|\bif\b|\bwhen\b/.test(t);
@@ -56,7 +56,7 @@ const isYSquared = (v) => /^y\s*(\^\s*2|²)\s*=/i.test(firstLine(v));
 const isFormula = (v) => !isPiecewise(v) && !isYSquared(v);
 const manyGraphs = (v) => {
   try {
-    return parseGraphList(v.graphs).length > 1;
+    return parseGraphList(renameVariables(v.graphs).text).length > 1;
   } catch {
     return true;
   }
@@ -119,8 +119,17 @@ const schema = [
 // ------------------------------------------------------------------ generate
 
 function generate(input) {
-  const values = legacyValues(input);
-  const graphs = parseGraphList(values.graphs);
+  const values = { ...legacyValues(input) };
+  // graphs in other letters (t = 4 - p): read as x and y, and name the axes after them
+  const names = renameVariables(values.graphs);
+  const graphs = parseGraphList(names.text);
+  for (const g of graphs) {
+    if (g.label) g.label = restoreVariables(g.label, names);
+    if (g.latex) g.latex = restoreVariables(g.latex, names);
+  }
+  if (names.xName && (values.xAxisLabel ?? 'x') === 'x') values.xAxisLabel = names.xName;
+  if (names.yName && (values.yAxisLabel ?? 'y') === 'y') values.yAxisLabel = names.yName;
+  values.yName = names.yName;
   if (!graphs.length) throw new Error('Type a graph, e.g. y = x^3 - 7x + 6');
   const [main, ...others] = graphs;
   if (main.kind === 'vertical') throw new Error('The first graph should be a function of x, e.g. y = x^2 (put x = … lines after it).');
@@ -205,7 +214,7 @@ function generateFormula(values, main, others, style) {
 
   const { options, xUnit, yUnit } = scaleOptions(win, values);
   const b = new TikzBuilder();
-  b.comment(`y = ${main.latex}`);
+  b.comment(`${values.yName ?? 'y'} = ${main.latex}`);
   const bg = background(b, win, values, f, [{ a: lo, b: hi, f }]);
   warnings.push(...bg.warnings);
   warnings.push(

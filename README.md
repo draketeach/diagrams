@@ -18,6 +18,7 @@ Type one graph per line in the **Graphs** box:
 | Line | Draws |
 |---|---|
 | `y = x^3 - 7x + 6` | a function of x (`y =` is optional; `2sin(x)`, `1/x`, `e^x` … work too) |
+| `t = 4 - p` | other single letters: the first graph's letters name the axes (p across, t up) unless you've typed your own axis labels |
 | `x^2 - 1, -2 <= x < 3` | a function on a restricted domain, with filled/open end dots |
 | `{ x/4, 0 <= x <= 2sqrt(2); 0, otherwise }` | a piecewise function (pieces may also go on separate lines inside the braces) |
 | `x = 3` | a vertical line |

@@ -675,6 +675,19 @@ test('real-world graphs: curves from points, titles', () => {
   assert.ok(out.warnings.some((w) => /outside the axes/.test(w)));
 });
 
+test('function graphs in other letters name the axes', () => {
+  const base = defaultValues(fn.schema);
+  const { code, warnings } = fn.generate({ ...base, graphs: 't = 4 - p; from 0.1 to 3.9; label' });
+  assert.deepEqual(warnings, []);
+  assert.ok(code.includes('{$p$}') && code.includes('{$t$}'), 'axes named p and t');
+  assert.ok(code.includes('domain=0.1:3.9'));
+  assert.ok(code.includes('t = 4 - p'), 'the label keeps the letters');
+  const own = fn.generate({ ...base, graphs: 'h = 45 + 12t - 2t^2', xAxisLabel: 'time', yAxisLabel: 'height' }).code;
+  assert.ok(own.includes('{$time$}') && own.includes('{$height$}'), 'labels you typed win');
+  const xy = fn.generate({ ...base, graphs: 'y = 2sin(x) + e^(-x)' }).code;
+  assert.ok(xy.includes('{$x$}') && xy.includes('{$y$}'), 'x and y unchanged');
+});
+
 test('gallery: every entry generates cleanly and has its image', () => {
   const modules = { realgraph, function: fn, sketch, blank, normal, scatter, slopefield, geometry, network, probtree };
   const ids = new Set();

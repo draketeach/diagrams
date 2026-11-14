@@ -85,6 +85,55 @@ function parseOptions(text, g, where) {
   }
 }
 
+// ---------------------------------------------------------------- other letters
+
+const lone = (ch) => new RegExp(`(?<![A-Za-z\\\\])${ch}(?![A-Za-z])`, 'g');
+
+/**
+ * Graphs in letters other than x and y, e.g. "t = 4 - p": the first graph's
+ * letters are swapped for y and x throughout the box, so the rest of the
+ * parser sees ordinary graphs. Returns { text, xName, yName } (names null when
+ * the graphs already use x and y). Only single letters count; e and pi are
+ * constants, and words like sin stay as they are.
+ */
+export function renameVariables(src) {
+  const text = String(src ?? '');
+  const first = text.split('\n').map((l) => l.trim()).find((l) => l && !/^[{}]/.test(l)) ?? '';
+  const m = first.split(';')[0].match(/^\s*([A-Za-z])\s*(?:\^\s*2\s*)?=\s*(.+)$/);
+  let yName = null;
+  let rhs = first.split(';')[0];
+  if (m && m[1] !== 'y' && m[1] !== 'x' && m[1] !== 'e') {
+    yName = m[1];
+    rhs = m[2];
+  } else if (m) rhs = m[2];
+  // the one free letter on the right is the variable across
+  const letters = new Set((rhs.match(/(?<![A-Za-z\\])[A-Za-z](?![A-Za-z])/g) || []).filter((c) => c !== 'e'));
+  letters.delete(yName ?? 'y');
+  let xName = null;
+  if (letters.size === 1) {
+    const [c] = letters;
+    if (c !== 'x' && c !== 'y') xName = c;
+  }
+  if (!xName && !yName) return { text, xName: null, yName: null };
+  if (xName === yName) return { text, xName: null, yName: null };
+  // swap with placeholders so p→x and x→p (if both appear) don't collide
+  let out = text;
+  if (xName) out = out.replace(lone(xName), '\u0001');
+  if (yName) out = out.replace(lone(yName), '\u0002');
+  if (xName) out = out.replace(lone('x'), xName);
+  if (yName) out = out.replace(lone('y'), yName);
+  out = out.replace(/\u0001/g, 'x').replace(/\u0002/g, 'y');
+  return { text: out, xName, yName };
+}
+
+/** Put the letters back in LaTeX shown on the graph (equation labels). */
+export function restoreVariables(latex, { xName, yName }) {
+  let out = String(latex ?? '');
+  if (xName) out = out.replace(lone('x'), '\u0001');
+  if (yName) out = out.replace(lone('y'), '\u0002');
+  return out.replace(/\u0001/g, xName ?? 'x').replace(/\u0002/g, yName ?? 'y');
+}
+
 /**
  * Parse the box. Each graph:
  *   { kind: 'expr', f, pgf, latex }            y = …
