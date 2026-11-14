@@ -190,6 +190,8 @@ Delete, zoom and Fit.
   0.7 cm away from the shape (change the distance, or flip it to the other
   side, in its settings). Any line can have its label in a gap or bars at its
   ends. Give the drawing a unit (e.g. m) and measured lengths read "16 m".
+- Text, angle labels and line labels can have a white background (a tick box
+  in their settings), so they read clearly over shading.
 - Scale on the page (drawing settings): 1 cm a unit by default; × 0.5 draws a
   16-unit side 8 cm long. Text, arrowheads, angle arcs, gaps and how far a
   measurement line stands off stay full size, and measured lengths stay in the

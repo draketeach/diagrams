@@ -1286,7 +1286,7 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
       const text = angleText(it, pts);
       if (text) {
         const off = placed.get(`a:${it.id}`) ?? angleLabelOffset(it, pts);
-        parts.push(labelSvg('item', it.id, v0.x + off.dx, v0.y + off.dy, display(text), false, sel('item', it.id)));
+        parts.push(labelSvg('item', it.id, v0.x + off.dx, v0.y + off.dy, display(text), false, sel('item', it.id), 0, it.bg));
       }
     }
 
@@ -1299,7 +1299,7 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
       const off = placed.get(`s:${it.id}`) ?? segmentLabelOffset(scene, it, pts);
       const m = segmentMid(it, pts, scene);
       const turn = it.sloped ? slopeDeg({ x: 0, y: 0 }, shapeTangent(edgeShape(it, pts, scene))) : 0;
-      parts.push(labelSvg('item', it.id, m.x + off.dx, m.y + off.dy, display(text), false, sel('item', it.id), turn));
+      parts.push(labelSvg('item', it.id, m.x + off.dx, m.y + off.dy, display(text), false, sel('item', it.id), turn, it.bg));
     }
 
     // text beyond the ends of lines (a ray's bearing)
@@ -1319,7 +1319,7 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
         .map((l, k) => `<tspan x="${sx(it.x)}" dy="${k === 0 ? -((lines.length - 1) * 0.6) + 'em' : '1.2em'}">${esc(display(l))}</tspan>`)
         .join('');
       parts.push(
-        `<text data-kind="item" data-id="${it.id}" x="${sx(it.x)}" y="${sy(it.y)}" class="free-text${sel('item', it.id) ? ' is-sel' : ''}" dominant-baseline="middle" text-anchor="middle">${tsp}</text>`
+        `<text data-kind="item" data-id="${it.id}" x="${sx(it.x)}" y="${sy(it.y)}" class="free-text${sel('item', it.id) ? ' is-sel' : ''}${it.bg ? ' has-bg' : ''}" dominant-baseline="middle" text-anchor="middle">${tsp}</text>`
       );
     }
 
@@ -1372,9 +1372,9 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     delBtn.disabled = !selection;
   }
 
-  function labelSvg(kind, id, x, y, text, italic, selected, turn = 0) {
+  function labelSvg(kind, id, x, y, text, italic, selected, turn = 0, bg = false) {
     const rot = turn ? ` transform="rotate(${-turn} ${sx(x)} ${sy(y)})"` : '';
-    return `<text data-kind="${kind}" data-id="${id}" data-part="label" x="${sx(x)}" y="${sy(y)}"${rot} class="lbl${italic ? ' is-math' : ''}${selected ? ' is-sel' : ''}" text-anchor="middle" dominant-baseline="central">${esc(text)}</text>`;
+    return `<text data-kind="${kind}" data-id="${id}" data-part="label" x="${sx(x)}" y="${sy(y)}"${rot} class="lbl${italic ? ' is-math' : ''}${selected ? ' is-sel' : ''}${bg ? ' has-bg' : ''}" text-anchor="middle" dominant-baseline="central">${esc(text)}</text>`;
   }
 
   // ---------------------------------------------------------------- properties panel
@@ -1576,7 +1576,8 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
             'Arrowheads',
             selectInput([['none', 'None'], ['b', ray ? 'At the far end' : `At ${nm(it.b)}`], ['a', `At ${nm(it.a)}`], ['both', 'Both ends']], it.tip || 'none', (v) => (it.tip = v))
           ),
-          checkbox('Label along the line', it.sloped, (v) => (it.sloped = v))
+          checkbox('Label along the line', it.sloped, (v) => (it.sloped = v)),
+          checkbox('White background', it.bg, (v) => (it.bg = v))
         ),
         row(
           checkbox('Label in a gap in the line', it.gap, (v) => (it.gap = v)),
@@ -1626,6 +1627,7 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
         ),
         row(
           checkbox('Reflex angle', it.reflex, (v) => (it.reflex = v)),
+          checkbox('White background', it.bg, (v) => (it.bg = v)),
           actionButton('Reset label position', () => change(() => (it.labelPos = null))),
           del
         )
@@ -1669,6 +1671,7 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
         row(
           field('x', numberInput(it.x, scene.settings.grid, (v) => (it.x = v))),
           field('y', numberInput(it.y, scene.settings.grid, (v) => (it.y = v))),
+          checkbox('White background', it.bg, (v) => (it.bg = v)),
           del
         )
       );

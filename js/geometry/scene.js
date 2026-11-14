@@ -17,6 +17,7 @@
 //       bend: degrees (0 straight; + bends left going a→b, as TikZ's bend left)
 //       gap: the label sits in a break in the line; bars: short bars across the ends (measurement lines)
 //       a === b makes a loop: loopDir (degrees, null = away from the other edges), loopSize (cm)
+//   bg: true on a text, angle or line gives its label a white background (to read over shading)
 //   settings.scale: the drawing's size on the page (1 = 1 cm a unit); text, marks and gaps stay full size
 //   settings.mode: 'geometry' or 'network' (network: dots, no lengths, edges can repeat)
 //     { id, type: 'polygon', pts: [ids], fill },              (shading only: a grey, or a pattern in PATTERNS)
@@ -673,6 +674,8 @@ export const PATTERNS = {
 };
 
 const TIP = '{Stealth[length=5pt]}';
+/** A white patch behind a label, so it reads over shading. */
+const BG = 'fill=white, inner sep=1.5pt';
 function tipOption(it) {
   return { a: `${TIP}-`, b: `-${TIP}`, both: `${TIP}-${TIP}` }[it.tip] || '';
 }
@@ -1055,7 +1058,7 @@ export function sceneToTikz(sceneIn) {
     const text = angleText(it, pts);
     if (text) {
       const off = placed.get(`a:${it.id}`) ?? angleLabelOffset(it, pts);
-      labels.push(`\\path (${v.name}) ++(${fmt(off.dx)},${fmt(off.dy)}) node {${mathLabel(text)}};`);
+      labels.push(`\\path (${v.name}) ++(${fmt(off.dx)},${fmt(off.dy)}) node${it.bg ? `[${BG}]` : ''} {${mathLabel(text)}};`);
     }
   }
 
@@ -1074,7 +1077,7 @@ export function sceneToTikz(sceneIn) {
     const off = placed.get(`s:${s.id}`) ?? segmentLabelOffset(scene, s, pts);
     const tan = shapeTangent(edgeShape(s, pts, scene));
     const turn = s.sloped ? `, rotate=${fmt(slopeDeg({ x: 0, y: 0 }, tan))}` : '';
-    labels.push(`\\path ${segPath(s, pts, name, scene, `node[midway, xshift=${fmt(off.dx)}cm, yshift=${fmt(off.dy)}cm${turn}] {${mathLabel(text)}}`)};`);
+    labels.push(`\\path ${segPath(s, pts, name, scene, `node[midway, xshift=${fmt(off.dx)}cm, yshift=${fmt(off.dy)}cm${turn}${s.bg ? `, ${BG}` : ''}] {${mathLabel(text)}}`)};`);
   }
   for (const p of scene.points) {
     if (p.hidden || !p.showLabel || !p.name) continue;
@@ -1084,7 +1087,7 @@ export function sceneToTikz(sceneIn) {
   const dots = scene.points.filter((p) => p.dot && !p.hidden);
   for (const it of scene.items.filter((i) => i.type === 'text')) {
     if (!String(it.text ?? '').trim()) continue;
-    labels.push(`\\node[align=center] at (${fmt(it.x)},${fmt(it.y)}) {${textNode(it.text)}};`);
+    labels.push(`\\node[align=center${it.bg ? `, ${BG}` : ''}] at (${fmt(it.x)},${fmt(it.y)}) {${textNode(it.text)}};`);
   }
   if (dots.length) {
     b.comment('dots');
