@@ -21,7 +21,7 @@ import scatter, { parseData, regression } from '../js/diagrams/scatter.js';
 import slopefield, { solutionCurve, contour } from '../js/diagrams/slopefield.js';
 import normal, { normalProbability } from '../js/diagrams/normal.js';
 import geometry from '../js/diagrams/geometry.js';
-import { parseScene, sceneToTikz, coordinatesFromCode, angleSpan } from '../js/geometry/scene.js';
+import { parseScene, sceneToTikz, coordinatesFromCode, angleSpan, labelPositions, pointMap } from '../js/geometry/scene.js';
 import { GALLERY } from '../js/galleryEntries.js';
 import { existsSync } from 'node:fs';
 import { encodeShareHash, decodeShareHash, changedValues } from '../js/core/shareLink.js';
@@ -490,6 +490,49 @@ test('geometry: measured lengths and constructed points', () => {
   scene.settings.lengthDecimals = 2;
   scene.points[1].x = 3.333;
   assert.ok(sceneToTikz(scene).code.includes('{$5.21$}'), 'two decimal places');
+});
+
+test('geometry: overlapping labels are moved apart', () => {
+  // the obtuse triangle where the altitude's "3" sat beside side GE's "3.2"
+  const scene = parseScene({
+    points: [
+      { id: 'e', name: 'E', x: 0, y: 0 },
+      { id: 'f', name: 'F', x: 7, y: 0 },
+      { id: 'g', name: 'G', x: -1, y: 3 },
+      { id: 'i', name: 'I', x: 0, y: 0, dep: { kind: 'foot', p: 'g', a: 'e', b: 'f' } },
+    ],
+    items: [
+      { id: 'ef', type: 'segment', a: 'e', b: 'f', label: null },
+      { id: 'fg', type: 'segment', a: 'f', b: 'g', label: null },
+      { id: 'ge', type: 'segment', a: 'g', b: 'e', label: null },
+      { id: 'gi', type: 'segment', a: 'g', b: 'i', label: null },
+      { id: 'ie', type: 'segment', a: 'i', b: 'e', label: null },
+    ],
+  });
+  const pts = pointMap(scene);
+  const placed = labelPositions(scene, pts);
+  const box = (key, ax, ay, chars) => {
+    const o = placed.get(key);
+    return { x: ax + o.dx, y: ay + o.dy, w: chars * 0.19 + 0.08, h: 0.38 };
+  };
+  const all = [
+    box('s:ge', -0.5, 1.5, 3),
+    box('s:gi', -1, 1.5, 1),
+    box('s:ie', -0.5, 0, 1),
+    box('s:ef', 3.5, 0, 1),
+    box('p:e', 0, 0, 1),
+    box('p:i', -1, 0, 1),
+  ];
+  for (let i = 0; i < all.length; i++)
+    for (let j = i + 1; j < all.length; j++) {
+      const a = all[i];
+      const b = all[j];
+      const apart = Math.abs(a.x - b.x) >= (a.w + b.w) / 2 - 1e-6 || Math.abs(a.y - b.y) >= (a.h + b.h) / 2 - 1e-6;
+      assert.ok(apart, `labels ${i} and ${j} overlap`);
+    }
+  // a label placed by hand stays where it was put
+  scene.items[2].labelPos = { dx: 0.2, dy: 0.1 };
+  assert.deepEqual(labelPositions(scene, pts).get('s:ge'), { dx: 0.2, dy: 0.1 });
 });
 
 test('gallery: every entry generates cleanly and has its image', () => {

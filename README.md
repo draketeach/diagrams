@@ -94,7 +94,7 @@ Fractions in labels are drawn full size (`\\displaystyle`), as on exam papers.
 
 ### Geometry (visual editor)
 
-Draw on a grid instead of filling in options. The toolbar has Select, Point,
+Draw on a grid instead of filling in options. The toolbar's icons are Select, Point,
 Line, Polygon, Angle, Right angle, Label, Text, Midpoint, Perpendicular, Circle
 and Arc (each with a
 one-key shortcut while the canvas has focus), plus Undo/Redo (Ctrl+Z / Ctrl+Y),
@@ -118,6 +118,10 @@ Delete, zoom and Fit.
   points, which stay in place as the other points move. In the TikZ they are
   `\\coordinate (M) at ($(A)!0.5!(B)$);` and `($(A)!(P)!(B)$)` (calc library).
   "Make it free" turns one into an ordinary point.
+- Labels place themselves: each side length, angle size and point name tries
+  a few spots near its usual place and takes the one clear of other labels,
+  lines, arcs and points. Drag a label to place it yourself (Reset label
+  position puts it back).
 - Drag points, labels and text to move them; drag empty space to pan.
 - Click something to edit it in the properties panel; with nothing selected
   the panel holds the drawing settings (grid, line width, font size, NOT TO

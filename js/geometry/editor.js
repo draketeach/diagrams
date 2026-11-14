@@ -14,6 +14,7 @@ import {
   pointLabelOffset,
   segmentLabelOffset,
   angleLabelOffset,
+  labelPositions,
   angleSpan,
   angleText,
   dirDeg,
@@ -42,6 +43,31 @@ const TOOLS = [
   { id: 'circle', label: 'Circle', key: 'c', hint: 'Click the centre, then a point on the circle.' },
   { id: 'arc', label: 'Arc', key: 'k', hint: 'Click the centre, the start, then the end (anticlockwise).' },
 ];
+
+// toolbar icons: 24×24, drawn with the button's text colour
+const DOT = (x, y, r = 1.9) => `<circle cx="${x}" cy="${y}" r="${r}" fill="currentColor" stroke="none"/>`;
+const ICONS = {
+  select: '<path d="M6 3.5v15.5l4.2-4.1 2.7 6.1 2.6-1.1-2.7-6h5.9z" fill="currentColor" stroke-linejoin="round"/>',
+  point: `${DOT(12, 12, 3)}<path d="M12 3v4M12 17v4M3 12h4M17 12h4" stroke-width="1.4"/>`,
+  segment: `<path d="M5.5 18.5 18.5 5.5"/>${DOT(5.5, 18.5)}${DOT(18.5, 5.5)}`,
+  polygon: `<path d="M4 19 12 5l8 14z" stroke-linejoin="round"/>${DOT(4, 19)}${DOT(12, 5)}${DOT(20, 19)}`,
+  angle: '<path d="M4 19h17M4 19 15 6"/><path d="M11 19a7 7 0 0 0-2.3-5.2" stroke-width="1.5"/>',
+  right: '<path d="M5 4v15h15"/><path d="M5 13h6v6" stroke-width="1.5"/>',
+  label: '<path d="M3.5 20.5h17"/><text x="12" y="15.5" text-anchor="middle" font-size="10" font-family="serif" font-style="italic" fill="currentColor" stroke="none">12</text>',
+  text: '<path d="M5 6V4h14v2M12 4v16M9 20h6" stroke-linejoin="round"/>',
+  midpoint: `<path d="M3 12h18M7.5 9v6M16.5 9v6" />${DOT(12, 12, 2.4)}`,
+  perp: `<path d="M3 19h18"/><path d="M12 5v14" stroke-dasharray="2.5 2"/><path d="M12 15h4v4" stroke-width="1.4"/>${DOT(12, 5)}`,
+  circle: `<circle cx="12" cy="12" r="8"/>${DOT(12, 12, 1.6)}`,
+  arc: `<path d="M19.31 14.77A8.5 8.5 0 0 0 7.41 5.3"/>${DOT(19.31, 14.77)}${DOT(7.41, 5.3)}${DOT(11, 13, 1.6)}<path d="M11 13 19.31 14.77M11 13 7.41 5.3" stroke-width="1.1" stroke-dasharray="1.4 1.8"/>`,
+  undo: '<path d="M9 7 4.5 11.5 9 16"/><path d="M4.5 11.5H14a5.5 5.5 0 0 1 0 11h-2" transform="translate(0 -3.5)"/>',
+  redo: '<path d="M15 7l4.5 4.5L15 16"/><path d="M19.5 11.5H10a5.5 5.5 0 0 0 0 11h2" transform="translate(0 -3.5)"/>',
+  delete: '<path d="M4 7h16M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13M10 11v5.5M14 11v5.5"/>',
+  zoomOut: '<circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 5.5 5.5M8 10.5h5"/>',
+  zoomIn: '<circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 5.5 5.5M8 10.5h5M10.5 8v5"/>',
+  fit: '<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/><rect x="8.5" y="8.5" width="7" height="7" rx="1"/>',
+};
+const icon = (name) =>
+  `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">${ICONS[name]}</svg>`;
 
 const LINE_STYLES = [
   ['solid', 'Solid'],
@@ -90,19 +116,20 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
   for (const t of TOOLS) {
     const b = el('button', 'geo-tool');
     b.type = 'button';
-    b.textContent = t.label;
+    b.innerHTML = icon(t.id);
     b.title = `${t.label} (${t.key.toUpperCase()})`;
+    b.setAttribute('aria-label', t.label);
     b.addEventListener('click', () => setTool(t.id));
     toolButtons.set(t.id, b);
     toolbar.append(b);
   }
   toolbar.append(el('span', 'geo-sep'));
-  const undoBtn = button('Undo', 'Undo (Ctrl+Z)', () => doUndo());
-  const redoBtn = button('Redo', 'Redo (Ctrl+Y)', () => doRedo());
-  const delBtn = button('Delete', 'Delete the selection (Delete)', () => deleteSelection());
-  const zoomOut = button('−', 'Zoom out', () => zoom(1.25));
-  const zoomIn = button('+', 'Zoom in', () => zoom(0.8));
-  const fitBtn = button('Fit', 'Fit the drawing in view', () => fit());
+  const undoBtn = button('undo', 'Undo (Ctrl+Z)', () => doUndo());
+  const redoBtn = button('redo', 'Redo (Ctrl+Y)', () => doRedo());
+  const delBtn = button('delete', 'Delete the selection (Delete)', () => deleteSelection());
+  const zoomOut = button('zoomOut', 'Zoom out', () => zoom(1.25));
+  const zoomIn = button('zoomIn', 'Zoom in', () => zoom(0.8));
+  const fitBtn = button('fit', 'Fit the drawing in view', () => fit());
   toolbar.append(undoBtn, redoBtn, delBtn, el('span', 'geo-sep'), zoomOut, zoomIn, fitBtn);
 
   const hint = el('div', 'geo-hint');
@@ -120,11 +147,12 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     if (cls) e.className = cls;
     return e;
   }
-  function button(text, title, fn) {
+  function button(iconName, title, fn) {
     const b = el('button', 'geo-tool');
     b.type = 'button';
-    b.textContent = text;
+    b.innerHTML = icon(iconName);
     b.title = title;
+    b.setAttribute('aria-label', title.replace(/ \(.*\)$/, ''));
     b.addEventListener('click', fn);
     return b;
   }
@@ -275,8 +303,12 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     tool = id;
     clearPending();
     for (const [k, b] of toolButtons) b.classList.toggle('is-active', k === id);
-    hint.textContent = TOOLS.find((t) => t.id === id).hint;
+    hint.textContent = toolHint(id);
     render();
+  }
+  function toolHint(id) {
+    const t = TOOLS.find((x) => x.id === id);
+    return `${t.label} (${t.key.toUpperCase()}): ${t.hint}`;
   }
   function clearPending() {
     pending = [];
@@ -608,7 +640,7 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     clearTimeout(flashTimer);
     flashTimer = setTimeout(() => {
       hint.classList.remove('is-flash');
-      hint.textContent = TOOLS.find((t) => t.id === tool).hint;
+      hint.textContent = toolHint(tool);
     }, 2500);
   }
 
@@ -817,6 +849,7 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     const H = v.h * PX;
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
     const pts = pointMap(scene);
+    const placed = labelPositions(scene, pts);
     const parts = [];
     const sel = (kind, id) => selection && selection.kind === kind && selection.id === id;
     const pendingSet = new Set(pending.map((q) => (typeof q === 'object' ? q.id : q)));
@@ -942,7 +975,7 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
       );
       const text = angleText(it, pts);
       if (text) {
-        const off = angleLabelOffset(it, pts);
+        const off = placed.get(`a:${it.id}`) ?? angleLabelOffset(it, pts);
         parts.push(labelSvg('item', it.id, v0.x + off.dx, v0.y + off.dy, display(text), false, sel('item', it.id)));
       }
     }
@@ -953,7 +986,7 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
       const b = pts.get(it.b);
       const text = segmentText(it, pts, scene.settings);
       if (!a || !b || !text) continue;
-      const off = segmentLabelOffset(scene, it, pts);
+      const off = placed.get(`s:${it.id}`) ?? segmentLabelOffset(scene, it, pts);
       parts.push(labelSvg('item', it.id, (a.x + b.x) / 2 + off.dx, (a.y + b.y) / 2 + off.dy, display(text), false, sel('item', it.id)));
     }
 
@@ -971,7 +1004,7 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     // point labels
     for (const p of scene.points) {
       if (p.hidden || !p.showLabel) continue;
-      const off = pointLabelOffset(scene, p, pts);
+      const off = placed.get(`p:${p.id}`) ?? pointLabelOffset(scene, p, pts);
       parts.push(labelSvg('point', p.id, p.x + off.dx, p.y + off.dy, display(p.name), true, sel('point', p.id)));
     }
 

@@ -283,6 +283,203 @@ export function angleText(it, pts) {
   return `${Math.round(size)}^\\circ`;
 }
 
+// ---------------------------------------------------------------- spacing labels out
+
+/** Rough printed size of a label (cm): about 0.19 cm a character, 0.36 cm tall. */
+function labelBox(text) {
+  const shown = String(text ?? '')
+    .replace(/\^\{?\\circ\}?/g, '°')
+    .replace(/\\(?:frac|dfrac)\{([^}]*)\}\{([^}]*)\}/g, '$1/$2')
+    .replace(/\\[a-zA-Z]+/g, 'x')
+    .replace(/[${}_^]/g, '');
+  return { w: Math.max(1, shown.length) * 0.19 + 0.08, h: 0.38 };
+}
+
+/**
+ * Where every label goes, as { dx, dy } from its anchor (cm), keyed
+ * 'p:<point id>', 's:<segment id>' and 'a:<angle id>'.
+ *
+ * Each label tries a few places near its default one: a side's length on
+ * either side of its line and slid along it, an angle's size further in or
+ * out along the bisector, a point's name around the point. It takes the place
+ * that clashes least with lines, arcs, points and the labels already placed,
+ * preferring places nearest its default. Labels placed by hand stay put.
+ */
+export function labelPositions(scene, pts = pointMap(scene)) {
+  const S = scene.settings || DEFAULT_SETTINGS;
+  const placed = []; // boxes: { x, y, w, h }
+  const out = new Map();
+
+  // ---- what labels keep clear of: points, lines, arcs, free text
+  const dots = scene.points.filter((p) => !p.hidden).map((p) => ({ x: p.x, y: p.y }));
+  const samples = []; // { x, y, seg }
+  const sampleLine = (a, b, seg = null) => {
+    const n = Math.max(2, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / 0.08));
+    for (let i = 0; i <= n; i++) samples.push({ x: a.x + ((b.x - a.x) * i) / n, y: a.y + ((b.y - a.y) * i) / n, seg });
+  };
+  for (const it of scene.items) {
+    if (it.type === 'segment' && pts.get(it.a) && pts.get(it.b)) sampleLine(pts.get(it.a), pts.get(it.b), it.id);
+    if (it.type === 'angle' && pts.get(it.v) && pts.get(it.a) && pts.get(it.b)) {
+      const v = pts.get(it.v);
+      const sp = angleSpan(v, pts.get(it.a), pts.get(it.b), it.reflex);
+      const r = (it.radius ?? 0.7) + ((it.arcs || 1) - 1) * 0.08;
+      for (let t = 0; t <= sp.size; t += 6) {
+        const g = ((sp.start + t) * Math.PI) / 180;
+        samples.push({ x: v.x + r * Math.cos(g), y: v.y + r * Math.sin(g) });
+      }
+    }
+    if (it.type === 'right' && pts.get(it.v) && pts.get(it.a) && pts.get(it.b)) {
+      const v = pts.get(it.v);
+      const sp = angleSpan(v, pts.get(it.a), pts.get(it.b), false);
+      const z = it.size ?? 0.25;
+      const u = (sp.start * Math.PI) / 180;
+      const w = u + Math.PI / 2;
+      const p1 = { x: v.x + z * Math.cos(u), y: v.y + z * Math.sin(u) };
+      const p3 = { x: v.x + z * Math.cos(w), y: v.y + z * Math.sin(w) };
+      const p2 = { x: p1.x + p3.x - v.x, y: p1.y + p3.y - v.y };
+      sampleLine(p1, p2);
+      sampleLine(p2, p3);
+      samples.push({ x: (v.x + p2.x) / 2, y: (v.y + p2.y) / 2 });
+    }
+    if (it.type === 'circle' && pts.get(it.c) && pts.get(it.p)) {
+      const c = pts.get(it.c);
+      const r = Math.hypot(pts.get(it.p).x - c.x, pts.get(it.p).y - c.y);
+      const n = Math.max(24, Math.ceil((2 * Math.PI * r) / 0.1));
+      for (let i = 0; i < n; i++) samples.push({ x: c.x + r * Math.cos((2 * Math.PI * i) / n), y: c.y + r * Math.sin((2 * Math.PI * i) / n) });
+    }
+    if (it.type === 'text' && String(it.text ?? '').trim()) {
+      const lines = String(it.text).split(/\n|\\\\/);
+      const box = labelBox(lines.reduce((m, l) => (l.length > m.length ? l : m), ''));
+      placed.push({ x: it.x, y: it.y, w: box.w, h: lines.length * 0.42 });
+    }
+  }
+
+  /** How badly a box at (x, y) clashes with what's there. */
+  const clash = (x, y, box, ownSeg, ownPoint) => {
+    let c = 0;
+    const hw = box.w / 2;
+    const hh = box.h / 2;
+    for (const q of placed) {
+      const ox = hw + q.w / 2 + 0.04 - Math.abs(x - q.x);
+      const oy = hh + q.h / 2 + 0.04 - Math.abs(y - q.y);
+      if (ox > 0 && oy > 0) c += 6 + 40 * ox * oy;
+    }
+    for (const sm of samples) {
+      if (sm.seg && sm.seg === ownSeg) continue;
+      if (Math.abs(sm.x - x) < hw + 0.02 && Math.abs(sm.y - y) < hh + 0.02) c += 1.5;
+    }
+    for (const d of dots) {
+      if (ownPoint && d.x === ownPoint.x && d.y === ownPoint.y) continue;
+      if (Math.abs(d.x - x) < hw + 0.08 && Math.abs(d.y - y) < hh + 0.08) c += 5;
+    }
+    return c;
+  };
+
+  /** Take the cheapest candidate: cost = clash + how far it is from the default. */
+  const choose = (key, anchor, box, cands, own = {}) => {
+    let best = null;
+    for (const cd of cands) {
+      const cost = clash(anchor.x + cd.dx, anchor.y + cd.dy, box, own.seg, own.point) + cd.penalty;
+      if (!best || cost < best.cost - 1e-9) best = { ...cd, cost };
+    }
+    out.set(key, { dx: r3(best.dx), dy: r3(best.dy) });
+    placed.push({ x: anchor.x + best.dx, y: anchor.y + best.dy, ...box });
+  };
+
+  // labels placed by hand first: they don't move, and the rest avoid them
+  const later = [];
+  for (const p of scene.points) {
+    if (p.hidden || !p.showLabel || !p.name) continue;
+    if (p.label) {
+      out.set(`p:${p.id}`, p.label);
+      placed.push({ x: p.x + p.label.dx, y: p.y + p.label.dy, ...labelBox(p.name) });
+    } else later.push(['point', p]);
+  }
+  for (const it of scene.items) {
+    if (it.type === 'angle') {
+      const v = pts.get(it.v);
+      if (!v || !pts.get(it.a) || !pts.get(it.b)) continue;
+      const text = angleText(it, pts);
+      if (!text) continue;
+      if (it.labelPos) {
+        out.set(`a:${it.id}`, it.labelPos);
+        placed.push({ x: v.x + it.labelPos.dx, y: v.y + it.labelPos.dy, ...labelBox(text) });
+      } else later.push(['angle', it, text]);
+    } else if (it.type === 'segment') {
+      const a = pts.get(it.a);
+      const b = pts.get(it.b);
+      const text = a && b ? segmentText(it, pts, S) : '';
+      if (!text) continue;
+      if (it.labelPos) {
+        out.set(`s:${it.id}`, it.labelPos);
+        placed.push({ x: (a.x + b.x) / 2 + it.labelPos.dx, y: (a.y + b.y) / 2 + it.labelPos.dy, ...labelBox(text) });
+      } else later.push(['segment', it, text]);
+    }
+  }
+  const order = { point: 0, angle: 1, segment: 2 };
+  later.sort((x, y) => order[x[0]] - order[y[0]]);
+
+  for (const [kind, it, text] of later) {
+    if (kind === 'point') {
+      const box = labelBox(it.name);
+      const d0 = pointLabelOffset(scene, it, pts);
+      const g0 = Math.atan2(d0.dy, d0.dx);
+      const cands = [];
+      for (let k = 0; k < 12; k++) {
+        const step = Math.ceil(k / 2) * (k % 2 ? 1 : -1); // 0, 1, -1, 2, -2, …
+        const g = g0 + (step * Math.PI) / 6;
+        const dist = 0.24 + box.w / 2 * Math.abs(Math.cos(g)) * 0.6 + 0.04;
+        cands.push({ dx: Math.cos(g) * Math.max(0.32, dist), dy: Math.sin(g) * Math.max(0.32, dist), penalty: Math.abs(step) * 0.35 });
+      }
+      choose(`p:${it.id}`, it, box, cands, { point: it });
+    } else if (kind === 'angle') {
+      const v = pts.get(it.v);
+      const box = labelBox(text);
+      const d0 = angleLabelOffset(it, pts);
+      const d = Math.hypot(d0.dx, d0.dy) || 1;
+      const u = { x: d0.dx / d, y: d0.dy / d };
+      const r = (it.radius ?? 0.7) + ((it.arcs || 1) - 1) * 0.08;
+      const cands = [];
+      for (const extra of [0, 0.15, 0.3, 0.5, 0.75, 1]) cands.push({ dx: u.x * (d + extra), dy: u.y * (d + extra), penalty: extra * 1.2 });
+      // just inside the arc, if that's where it isn't already
+      if (d > r) cands.push({ dx: u.x * r * 0.6, dy: u.y * r * 0.6, penalty: 0.8 });
+      choose(`a:${it.id}`, v, box, cands);
+    } else {
+      const a = pts.get(it.a);
+      const b = pts.get(it.b);
+      const box = labelBox(text);
+      const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+      const ux = (b.x - a.x) / len;
+      const uy = (b.y - a.y) / len;
+      const d0 = segmentLabelOffset(scene, it, pts);
+      // the default side, then the other one
+      let nx = -uy;
+      let ny = ux;
+      if (nx * d0.dx + ny * d0.dy < 0) [nx, ny] = [-nx, -ny];
+      const reach = (box.w / 2) * Math.abs(nx) + (box.h / 2) * Math.abs(ny) + 0.07;
+      const along0 = d0.dx * ux + d0.dy * uy;
+      const cands = [];
+      for (const side of [1, -1]) {
+        for (const off of [0, 0.15, 0.3]) {
+          const dist = Math.max(0.26, reach) + off;
+          for (const t of [0, 0.25, -0.25, 0.5, -0.5, 0.8, -0.8, 1.2, -1.2]) {
+            const along = along0 + t;
+            if (Math.abs(along) > len / 2 - 0.1) continue;
+            cands.push({
+              dx: nx * side * dist + ux * along,
+              dy: ny * side * dist + uy * along,
+              penalty: (side < 0 ? 1 : 0) + Math.abs(t) * 0.9 + off * 2,
+            });
+          }
+        }
+      }
+      if (!cands.length) cands.push({ ...d0, penalty: 0 });
+      choose(`s:${it.id}`, { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, box, cands, { seg: it.id });
+    }
+  }
+  return out;
+}
+
 // ---------------------------------------------------------------- TikZ
 
 const STYLE = { solid: '', dashed: 'dashed', dotted: 'dotted' };
@@ -445,6 +642,7 @@ export function sceneToTikz(scene) {
     b.comment('angles');
   }
   const labels = [];
+  const placed = labelPositions(scene, pts);
   for (const it of angles) {
     const v = pts.get(it.v);
     const A = pts.get(it.a);
@@ -468,7 +666,7 @@ export function sceneToTikz(scene) {
     }
     const text = angleText(it, pts);
     if (text) {
-      const off = angleLabelOffset(it, pts);
+      const off = placed.get(`a:${it.id}`) ?? angleLabelOffset(it, pts);
       labels.push(`\\path (${v.name}) ++(${fmt(off.dx)},${fmt(off.dy)}) node {${mathLabel(text)}};`);
     }
   }
@@ -477,12 +675,12 @@ export function sceneToTikz(scene) {
   for (const s of segs) {
     const text = segmentText(s, pts, S);
     if (!text) continue;
-    const off = segmentLabelOffset(scene, s, pts);
+    const off = placed.get(`s:${s.id}`) ?? segmentLabelOffset(scene, s, pts);
     labels.push(`\\path (${name(s.a)}) -- (${name(s.b)}) node[midway, xshift=${fmt(off.dx)}cm, yshift=${fmt(off.dy)}cm] {${mathLabel(text)}};`);
   }
   for (const p of scene.points) {
     if (p.hidden || !p.showLabel || !p.name) continue;
-    const off = pointLabelOffset(scene, p, pts);
+    const off = placed.get(`p:${p.id}`) ?? pointLabelOffset(scene, p, pts);
     labels.push(`\\path (${p.name}) ++(${fmt(off.dx)},${fmt(off.dy)}) node {${mathLabel(p.name)}};`);
   }
   const dots = scene.points.filter((p) => p.dot && !p.hidden);

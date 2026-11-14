@@ -285,14 +285,16 @@ a.button:hover { filter: brightness(1.1); }
 .geo-host { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
 .geo-toolbar { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
 .geo-tool {
-  padding: 4px 9px; font-size: 13px; border-radius: 5px; border: 1px solid var(--border);
-  background: #fff; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; padding: 0; border-radius: 6px; border: 1px solid var(--border);
+  background: #fff; color: #2b2f36; cursor: pointer;
 }
+.geo-tool svg { display: block; }
 .geo-tool:hover { border-color: var(--accent); }
 .geo-tool.is-active { background: var(--accent); border-color: var(--accent); color: #fff; }
 .geo-tool:disabled { opacity: 0.45; cursor: default; border-color: var(--border); }
 .geo-sep { width: 1px; align-self: stretch; background: var(--border); margin: 0 4px; }
-.geo-hint { font-size: 12.5px; color: var(--muted); min-height: 1.3em; }
+.geo-hint { font-size: 12.5px; line-height: 1.35; color: var(--muted); min-height: 1.3em; }
 .geo-hint.is-flash { color: var(--err-text); }
 .geo-canvas { border: 1px solid var(--border); border-radius: 6px; background: #fff; overflow: hidden; }
 .geo-svg { display: block; width: 100%; height: auto; max-height: 62vh; touch-action: none; user-select: none; outline: none; }
