@@ -459,6 +459,19 @@ test('geometry: scene to TikZ', () => {
   assert.ok(fc.includes('\\draw[-{Stealth[length=5pt]}] (A) -- (B);'), 'arrowhead at the end');
   assert.ok(/node\[midway, [^\]]*rotate=0\] \{\$x\$\}/.test(fc), 'label along a level line: rotate=0');
   assert.ok(fc.includes('pattern={Dots') && fc.includes('patterns.meta'), 'dotted shading');
+  // a ray: its end stays in line, past the point it goes through; its bearing labels its end
+  const rs = parseScene({
+    points: [
+      { id: 'o', name: 'O', x: 0, y: 0 },
+      { id: 'p', name: 'P', x: 3, y: 4 },
+      { id: 'e', name: 'E', x: 0, y: 0, hidden: true, dep: { kind: 'ray', a: 'o', b: 'p', ext: 1 } },
+    ],
+    items: [{ id: 'r', type: 'segment', a: 'o', b: 'e', label: '', tip: 'b', endMode: 'bearing' }],
+  });
+  assert.deepEqual([rs.points[2].x, rs.points[2].y], [3.6, 4.8]);
+  const rc = sceneToTikz(rs).code;
+  assert.ok(rc.includes('\\coordinate (E) at ($(P)!-1cm!(O)$);'), rc);
+  assert.ok(rc.includes('{$037^\\circ$}'), 'bearing of (3, 4) from O is 037°');
   // an angle's arrowhead points at the chosen arm, whichever way TikZ draws the arc
   const arrowed = parseScene(base.scene);
   const ang = arrowed.items.find((i) => i.type === 'angle');

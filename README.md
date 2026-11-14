@@ -95,7 +95,7 @@ Fractions in labels are drawn full size (`\\displaystyle`), as on exam papers.
 ### Geometry (visual editor)
 
 Draw on a grid instead of filling in options. The toolbar's icons are Select, Point,
-Line, Polygon, Angle, Right angle, Label, Text, Midpoint, Perpendicular, Circle
+Line, Ray, Polygon, Angle, Right angle, Label, Text, Midpoint, Perpendicular, Circle
 and Arc (each with a
 one-key shortcut while the canvas has focus), plus Undo/Redo (Ctrl+Z / Ctrl+Y),
 Delete, zoom and Fit.
@@ -122,6 +122,12 @@ Delete, zoom and Fit.
   points, which stay in place as the other points move. In the TikZ they are
   `\\coordinate (M) at ($(A)!0.5!(B)$);` and `($(A)!(P)!(B)$)` (calc library).
   "Make it free" turns one into an ordinary point.
+- Ray: click the start, then a point it passes through. It runs on past that
+  point with an arrowhead and stays in line as things move (its hidden end is
+  `($(B)!-1.2cm!(A)$)`). In its settings, type a bearing to swing it to exactly
+  that direction, set how far it runs past the point, and choose what goes at
+  its end: nothing, its bearing (e.g. 056°) or your own text. Rays have no
+  length label.
 - Labels place themselves: each side length, angle size and point name tries
   a few spots near its usual place and takes the one clear of other labels,
   lines, arcs and points. Drag a label to place it yourself (Reset label

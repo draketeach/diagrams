@@ -7,9 +7,11 @@
 //     dep (a constructed point, kept in place as the others move):
 //       { kind: 'mid', a, b }       the midpoint of a and b
 //       { kind: 'foot', p, a, b }   the foot of the perpendicular from p to line ab
+//       { kind: 'ray', a, b, ext }  on the line from a through b, ext cm beyond b (a ray's end)
 //   items: [
 //     { id, type: 'segment', a, b, style, label, labelPos, ticks, arrows, tip, sloped },
 //       tip: 'none' | 'a' | 'b' | 'both' (arrowheads at the ends); sloped: label turned along the line
+//       endMode: 'none' | 'bearing' | 'custom', endText: a label beyond the b end (rays: their bearing)
 //     { id, type: 'polygon', pts: [ids], fill },              (shading only: a grey, or a pattern in PATTERNS)
 //     { id, type: 'angle', v, a, b, label, labelPos, arcs, radius, reflex, arrow },
 //       arrow: null, or the id of the arm (a or b) the arc's arrowhead points at
@@ -68,7 +70,7 @@ export function normalPoint(p) {
 
 export function normalItem(it) {
   const base = {
-    segment: { style: 'solid', label: '', labelPos: null, ticks: 0, arrows: 0, tip: 'none', sloped: false },
+    segment: { style: 'solid', label: '', labelPos: null, ticks: 0, arrows: 0, tip: 'none', sloped: false, endMode: 'none', endText: '' },
     polygon: { fill: 'gray!20' },
     angle: { label: null, labelPos: null, arcs: 1, radius: 0.7, reflex: false, arrow: null },
     right: { size: 0.25 },
@@ -124,6 +126,11 @@ export function resolvePoints(scene) {
     if (d.kind === 'mid') {
       q.x = r4((a.x + b.x) / 2);
       q.y = r4((a.y + b.y) / 2);
+    } else if (d.kind === 'ray') {
+      const L = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+      const e = d.ext ?? 1.2;
+      q.x = r4(b.x + ((b.x - a.x) / L) * e);
+      q.y = r4(b.y + ((b.y - a.y) / L) * e);
     } else if (d.kind === 'foot') {
       const p = pts.get(d.p);
       const L2 = (b.x - a.x) ** 2 + (b.y - a.y) ** 2;
@@ -388,6 +395,14 @@ export function labelPositions(scene, pts = pointMap(scene)) {
     placed.push({ x: anchor.x + best.dx, y: anchor.y + best.dy, ...box });
   };
 
+  // text beyond the ends of lines (bearings) is fixed; the rest avoid it
+  for (const it of scene.items) {
+    const t = it.type === 'segment' && pts.get(it.a) && pts.get(it.b) ? endText(it, pts) : '';
+    if (!t) continue;
+    const o = endOffset(it, pts, t);
+    placed.push({ x: pts.get(it.b).x + o.dx, y: pts.get(it.b).y + o.dy, ...labelBox(t) });
+  }
+
   // labels placed by hand first: they don't move, and the rest avoid them
   const later = [];
   for (const p of scene.points) {
@@ -502,6 +517,38 @@ function tipOption(it) {
   return { a: `${TIP}-`, b: `-${TIP}`, both: `${TIP}-${TIP}` }[it.tip] || '';
 }
 
+/** The bearing (degrees clockwise from north, 0–360) from a to b. */
+export function bearingDeg(a, b) {
+  return norm360(90 - (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI);
+}
+/** A bearing as exams write it: three digits and a degree sign, e.g. 056^\circ. */
+export function bearingText(deg) {
+  const n = Math.round(norm360(deg)) % 360;
+  return `${String(n).padStart(3, '0')}^\\circ`;
+}
+
+/** The text beyond a line's b end, or '' for none. */
+export function endText(it, pts) {
+  if (it.type !== 'segment' || !it.endMode || it.endMode === 'none') return '';
+  if (it.endMode === 'custom') return it.endText || '';
+  // a ray's bearing runs from its start through the point it passes
+  const a = pts.get(it.a);
+  const b = pts.get(it.b);
+  if (!a || !b) return '';
+  return bearingText(bearingDeg(a, b));
+}
+/** Where that text goes: { dx, dy } from the b end, just past it along the line. */
+export function endOffset(it, pts, text) {
+  const a = pts.get(it.a);
+  const b = pts.get(it.b);
+  const L = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+  const ux = (b.x - a.x) / L;
+  const uy = (b.y - a.y) / L;
+  const box = labelBox(text);
+  const reach = (box.w / 2) * Math.abs(ux) + (box.h / 2) * Math.abs(uy) + 0.12;
+  return { dx: r3(ux * reach), dy: r3(uy * reach) };
+}
+
 /** The angle (degrees) to turn a label so it runs along a line, kept upright. */
 export function slopeDeg(a, b) {
   let g = (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI;
@@ -598,8 +645,14 @@ export function sceneToTikz(scene) {
     for (const p of deps) {
       usedLibs.add('calc');
       const d = p.dep;
-      const expr = d.kind === 'mid' ? `$(${name(d.a)})!0.5!(${name(d.b)})$` : `$(${name(d.a)})!(${name(d.p)})!(${name(d.b)})$`;
-      b.add(`\\coordinate (${p.name}) at (${expr});${d.kind === 'mid' ? ' % midpoint' : ' % foot of perpendicular'}`);
+      const expr =
+        d.kind === 'mid'
+          ? `$(${name(d.a)})!0.5!(${name(d.b)})$`
+          : d.kind === 'ray'
+            ? `$(${name(d.b)})!-${fmt(d.ext ?? 1.2)}cm!(${name(d.a)})$`
+            : `$(${name(d.a)})!(${name(d.p)})!(${name(d.b)})$`;
+      const note = { mid: 'midpoint', ray: `end of ray ${name(d.a)}${name(d.b)}`, foot: 'foot of perpendicular' }[d.kind];
+      b.add(`\\coordinate (${p.name}) at (${expr}); % ${note}`);
     }
     for (const p of scene.points) {
       if (p.dep && !deps.includes(p)) {
@@ -709,6 +762,14 @@ export function sceneToTikz(scene) {
     }
   }
 
+  // ---- text beyond the ends of lines (a ray's bearing)
+  for (const s of segs) {
+    const t = endText(s, pts);
+    if (!t) continue;
+    const o = endOffset(s, pts, t);
+    labels.push(`\\path (${name(s.b)}) ++(${fmt(o.dx)},${fmt(o.dy)}) node {${mathLabel(t)}};`);
+  }
+
   // ---- labels: side lengths, angle sizes, point names, text
   for (const s of segs) {
     const text = segmentText(s, pts, S);
@@ -763,6 +824,8 @@ export function notToScalePlace(scene) {
       const c = pts.get(it.c);
       xs.push(c.x + Math.hypot(pts.get(it.p).x - c.x, pts.get(it.p).y - c.y));
     }
+    const t = it.type === 'segment' && pts.get(it.a) && pts.get(it.b) ? endText(it, pts) : '';
+    if (t) xs.push(pts.get(it.b).x + endOffset(it, pts, t).dx + labelBox(t).w / 2);
   }
   const shown = scene.points.filter((p) => !p.hidden);
   const ys = (shown.length ? shown : scene.points).map((p) => p.y);

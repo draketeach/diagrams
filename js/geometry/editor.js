@@ -21,6 +21,10 @@ import {
   fmt,
   markOffsets,
   slopeDeg,
+  bearingDeg,
+  bearingText,
+  endText,
+  endOffset,
   notToScalePlace,
   segmentText,
   resolvePoints,
@@ -35,6 +39,7 @@ const TOOLS = [
   { id: 'select', label: 'Select', key: 'v', hint: 'Click to select; drag points, labels and text. Drag empty space to pan. Delete removes.' },
   { id: 'point', label: 'Point', key: 'p', hint: 'Click to add a point (snaps to the grid, other points and lines).' },
   { id: 'segment', label: 'Line', key: 's', hint: 'Click two points (new or existing) to join them.' },
+  { id: 'ray', label: 'Ray', key: 'y', hint: 'Click the start, then a point the ray passes through. Set its bearing and the label at its end in the panel below.' },
   { id: 'polygon', label: 'Polygon', key: 'g', hint: 'Click the corners, then click the first one again to close it (Enter finishes an open path).' },
   { id: 'angle', label: 'Angle', key: 'a', hint: 'Click two lines that meet (or three points: arm, vertex, arm).' },
   { id: 'right', label: 'Right angle', key: 'r', hint: 'Click two lines that meet (or three points: arm, vertex, arm).' },
@@ -52,6 +57,7 @@ const ICONS = {
   select: '<path d="M6 3.5v15.5l4.2-4.1 2.7 6.1 2.6-1.1-2.7-6h5.9z" fill="currentColor" stroke-linejoin="round"/>',
   point: `${DOT(12, 12, 3)}<path d="M12 3v4M12 17v4M3 12h4M17 12h4" stroke-width="1.4"/>`,
   segment: `<path d="M5.5 18.5 18.5 5.5"/>${DOT(5.5, 18.5)}${DOT(18.5, 5.5)}`,
+  ray: `<path d="M5 19 19.5 4.5"/><path d="M19.8 4.2 13.4 6.6M19.8 4.2l-2.4 6.4" stroke-linejoin="round"/>${DOT(5, 19)}${DOT(10.5, 13.5, 1.6)}`,
   polygon: `<path d="M4 19 12 5l8 14z" stroke-linejoin="round"/>${DOT(4, 19)}${DOT(12, 5)}${DOT(20, 19)}`,
   angle: '<path d="M4 19h17M4 19 15 6"/><path d="M11 19a7 7 0 0 0-2.3-5.2" stroke-width="1.5"/>',
   right: '<path d="M5 4v15h15"/><path d="M5 13h6v6" stroke-width="1.5"/>',
@@ -412,6 +418,21 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
       showProps();
       return;
     }
+    if (tool === 'ray') {
+      const sp = snap(raw);
+      begin();
+      const id = pointAt(sp);
+      if (!pending.length) {
+        pending = [id];
+        render();
+        return;
+      }
+      if (pending[0] !== id) addRay(pending[0], id);
+      clearPending();
+      commit();
+      showProps();
+      return;
+    }
     if (tool === 'segment' || tool === 'polygon') {
       const s = snap(raw);
       begin();
@@ -599,6 +620,23 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     }
     scene.items.push(normalItem({ id: newId('i'), type: 'right', v: foot.id, a: far, b: p }));
     selection = { kind: 'point', id: foot.id };
+  }
+
+  /** A ray from a through b: a hidden end point past b, joined to a with an arrowhead. */
+  function addRay(a, b) {
+    const end = normalPoint({ id: newId('p'), name: `${findPoint(a).name}${findPoint(b).name}_r`.replace(/[^A-Za-z0-9_']/g, ''), x: 0, y: 0, hidden: true, dep: { kind: 'ray', a, b, ext: 1.2 } });
+    // keep the name unique
+    while (scene.points.some((q) => q.name === end.name)) end.name += "'";
+    scene.points.push(end);
+    resolvePoints(scene);
+    const it = normalItem({ id: newId('i'), type: 'segment', a, b: end.id, label: '', tip: 'b' });
+    scene.items.push(it);
+    selection = { kind: 'item', id: it.id };
+  }
+  /** The ray a segment draws, if it is one: its end point's construction. */
+  function rayOf(it) {
+    const e = it?.type === 'segment' ? findPoint(it.b) : null;
+    return e?.dep?.kind === 'ray' && e.dep.a === it.a ? e.dep : null;
   }
 
   function addSegment(a, b) {
@@ -844,7 +882,7 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     }
     if (e.key === 'Escape') {
       if (pending.length) {
-        if (tool === 'segment' || tool === 'circle' || tool === 'arc') commit();
+        if (tool === 'segment' || tool === 'ray' || tool === 'circle' || tool === 'arc') commit();
         clearPending();
         render();
       } else select(null);
@@ -1048,6 +1086,16 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
       parts.push(labelSvg('item', it.id, (a.x + b.x) / 2 + off.dx, (a.y + b.y) / 2 + off.dy, display(text), false, sel('item', it.id), it.sloped ? slopeDeg(a, b) : 0));
     }
 
+    // text beyond the ends of lines (a ray's bearing)
+    for (const it of scene.items.filter((i) => i.type === 'segment')) {
+      const a = pts.get(it.a);
+      const b = pts.get(it.b);
+      const t = a && b ? endText(it, pts) : '';
+      if (!t) continue;
+      const o = endOffset(it, pts, t);
+      parts.push(`<text data-kind="item" data-id="${it.id}" x="${sx(b.x + o.dx)}" y="${sy(b.y + o.dy)}" class="lbl${sel('item', it.id) ? ' is-sel' : ''}" text-anchor="middle" dominant-baseline="central">${esc(display(t))}</text>`);
+    }
+
     // text
     for (const it of scene.items.filter((i) => i.type === 'text')) {
       const lines = String(it.text || '').split(/\n|\\\\/);
@@ -1073,7 +1121,7 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     }
 
     // pending tool feedback
-    if (pending.length && pendingKind !== 'segments' && hover && ['segment', 'polygon', 'circle', 'arc'].includes(tool)) {
+    if (pending.length && pendingKind !== 'segments' && hover && ['segment', 'ray', 'polygon', 'circle', 'arc'].includes(tool)) {
       const last = pts.get(pending[pending.length - 1]);
       if (last) parts.push(`<line x1="${sx(last.x)}" y1="${sy(last.y)}" x2="${sx(hover.x)}" y2="${sy(hover.y)}" class="rubber"/>`);
       if (tool === 'circle' && pending.length === 1) {
@@ -1225,7 +1273,9 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
         h.textContent +=
           p.dep.kind === 'mid'
             ? ` \u2014 midpoint of ${nm(p.dep.a)}${nm(p.dep.b)}`
-            : ` \u2014 foot of the perpendicular from ${nm(p.dep.p)} to ${nm(p.dep.a)}${nm(p.dep.b)}`;
+            : p.dep.kind === 'ray'
+              ? ` \u2014 the end of the ray from ${nm(p.dep.a)} through ${nm(p.dep.b)}`
+              : ` \u2014 foot of the perpendicular from ${nm(p.dep.p)} to ${nm(p.dep.a)}${nm(p.dep.b)}`;
         props.append(
           row(
             field('Name', textInput(p.name, (v) => (p.name = v.trim())), 'name'),
@@ -1261,16 +1311,19 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     const nm = (id) => pts.get(id)?.name ?? '?';
     const del = actionButton('Delete', deleteSelection);
     if (it.type === 'segment') {
-      h.textContent = `Line ${nm(it.a)}${nm(it.b)}`;
+      const ray = rayOf(it);
+      h.textContent = ray ? `Ray from ${nm(ray.a)} through ${nm(ray.b)}` : `Line ${nm(it.a)}${nm(it.b)}`;
       const measured = segmentText({ ...it, label: null }, pts, scene.settings);
-      const mode = it.label === null || it.label === undefined ? 'measured' : it.label === '' ? 'none' : 'custom';
+      // a ray goes on for ever, so it has no length to show
+      const mode = it.label === null || it.label === undefined ? (ray ? 'none' : 'measured') : it.label === '' ? 'none' : 'custom';
       const labelBox = textInput(mode === 'custom' ? it.label : '', (v) => (it.label = v), { placeholder: 'e.g. 81 or x' });
+      const labelModes = ray ? [['custom', 'My own'], ['none', 'None']] : [['measured', `Its length (${measured})`], ['custom', 'My own'], ['none', 'None']];
       props.append(
         row(
           field(
             'Label',
-            selectInput([['measured', `Its length (${measured})`], ['custom', 'My own'], ['none', 'None']], mode, (v) => {
-              it.label = v === 'measured' ? null : v === 'none' ? '' : measured;
+            selectInput(labelModes, mode, (v) => {
+              it.label = v === 'measured' ? null : v === 'none' ? '' : ray ? 'x' : measured;
               queueMicrotask(() => {
                 showProps();
                 if (v === 'custom') focusProp('label');
@@ -1280,10 +1333,12 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
           mode === 'custom' ? field('Text', labelBox, 'label') : el('span'),
           field('Style', selectInput(LINE_STYLES, it.style, (v) => (it.style = v)))
         ),
+        ray ? rayRow(it, ray) : el('span'),
+        ray ? endRow(it) : el('span'),
         row(
           field(
             'Arrowheads',
-            selectInput([['none', 'None'], ['b', `At ${nm(it.b)}`], ['a', `At ${nm(it.a)}`], ['both', 'Both ends']], it.tip || 'none', (v) => (it.tip = v))
+            selectInput([['none', 'None'], ['b', ray ? 'At the far end' : `At ${nm(it.b)}`], ['a', `At ${nm(it.a)}`], ['both', 'Both ends']], it.tip || 'none', (v) => (it.tip = v))
           ),
           checkbox('Label along the line', it.sloped, (v) => (it.sloped = v))
         ),
@@ -1349,6 +1404,44 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
         )
       );
     }
+  }
+
+  /** A ray's bearing and how far it runs past the point it goes through. */
+  function rayRow(it, ray) {
+    const P = findPoint(ray.a);
+    const Q = findPoint(ray.b);
+    const bearing = numberInput(Math.round(bearingDeg(P, Q) * 10) / 10, 1, (v) => {
+      const d = Math.hypot(Q.x - P.x, Q.y - P.y) || 1;
+      const g = (v * Math.PI) / 180;
+      Q.x = round(P.x + d * Math.sin(g));
+      Q.y = round(P.y + d * Math.cos(g));
+    });
+    const r = row(
+      field(`Bearing (° from north)`, bearing, 'bearing'),
+      field(`Runs past ${Q.name} by (cm)`, numberInput(ray.ext ?? 1.2, 0.1, (v) => (ray.ext = Math.max(0.2, v))))
+    );
+    if (Q.dep) {
+      bearing.disabled = true;
+      bearing.title = `${Q.name} is a constructed point, so the ray's direction follows it`;
+    }
+    return r;
+  }
+  /** The text beyond a ray's arrowhead: none, its bearing, or your own. */
+  function endRow(it) {
+    const pts = pointMap(scene);
+    const auto = display(bearingText(bearingDeg(pts.get(it.a), pts.get(it.b))));
+    const box = textInput(it.endText, (v) => (it.endText = v), { placeholder: 'e.g. 056^\\circ' });
+    return row(
+      field(
+        'At its end',
+        selectInput([['none', 'Nothing'], ['bearing', `Its bearing (${auto})`], ['custom', 'My own']], it.endMode || 'none', (v) => {
+          it.endMode = v;
+          if (v === 'custom' && !it.endText) it.endText = bearingText(bearingDeg(pts.get(it.a), pts.get(it.b)));
+          queueMicrotask(showProps);
+        })
+      ),
+      it.endMode === 'custom' ? field('Text', box) : el('span')
+    );
   }
 
   /** One letter, A–Z or a–z: the name of the next new point (then onwards). */
