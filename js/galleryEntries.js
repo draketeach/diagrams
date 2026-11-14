@@ -11,6 +11,7 @@ export const GALLERY_GROUPS = [
   { type: 'normal', heading: 'Normal distribution' },
   { type: 'scatter', heading: 'Scatterplots' },
   { type: 'slopefield', heading: 'Slope fields' },
+  { type: 'geometry', heading: 'Geometry' },
 ];
 
 export const GALLERY = [
@@ -337,6 +338,33 @@ export const GALLERY = [
       segLength: 0.75,
       width: 9,
       height: 6.5,
+    },
+  },
+  {
+    id: 'geometry-efg',
+    type: 'geometry',
+    title: 'Triangle with an altitude',
+    description: 'Drawn in the geometry editor: side lengths, two marked angles, a dashed altitude with a right angle, NOT TO SCALE.',
+    values: {
+      scene: JSON.stringify({
+        settings: { grid: 0.25, snap: true, showGrid: true, lineWidth: 'thin', fontSize: '', notToScale: true, view: { x0: -1.5, y0: -4.5, w: 13, h: 6.5 } },
+        points: [
+          { id: 'E', name: 'E', x: 0, y: 0 },
+          { id: 'F', name: 'F', x: 9, y: 0 },
+          { id: 'G', name: 'G', x: 4.25, y: -2.75 },
+          { id: 'H', name: 'H', x: 4.25, y: 0, showLabel: false },
+        ],
+        items: [
+          { id: 'poly', type: 'polygon', pts: ['E', 'F', 'G'], fill: 'none' },
+          { id: 'ef', type: 'segment', a: 'E', b: 'F', label: '81' },
+          { id: 'fg', type: 'segment', a: 'F', b: 'G', label: '50' },
+          { id: 'ge', type: 'segment', a: 'G', b: 'E' },
+          { id: 'gh', type: 'segment', a: 'G', b: 'H', style: 'dashed' },
+          { id: 'angE', type: 'angle', v: 'E', a: 'G', b: 'F', label: '35^\\circ', radius: 0.9 },
+          { id: 'angG', type: 'angle', v: 'G', a: 'H', b: 'E', label: '55^\\circ', radius: 0.7 },
+          { id: 'rtH', type: 'right', v: 'H', a: 'F', b: 'G' },
+        ],
+      }),
     },
   },
 ];

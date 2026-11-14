@@ -60,6 +60,27 @@ els.code.addEventListener('input', () => {
   codeDirty = true;
 });
 
+// A module can take hand edits back from the code (e.g. geometry: changed
+// \coordinate lines move the points), applied when you leave the code box.
+els.code.addEventListener('change', () => {
+  if (!codeDirty || !current?.onCodeEdit) return;
+  const next = current.onCodeEdit(form.getValues(), editor.getValue());
+  if (!next) return;
+  form.setValues(next.values);
+  generate();
+  if (next.message) showMessages([next.message], 'info');
+});
+
+// editors that change continuously (dragging) regenerate shortly after they stop
+let generateTimer = null;
+function scheduleGenerate() {
+  clearTimeout(generateTimer);
+  generateTimer = setTimeout(() => {
+    codeDirty = false;
+    generate();
+  }, 250);
+}
+
 // ---------------------------------------------------------------- messages
 
 function showMessages(list, kind = 'warning') {
@@ -107,7 +128,13 @@ function selectType(id, restore = null) {
   current = getDiagram(id) ?? listDiagrams()[0];
   els.type.value = current.id;
   els.typeHelp.textContent = current.description || '';
-  form = buildForm(els.form, current.schema);
+  form?.destroy?.();
+  // a module may bring its own editor (e.g. the geometry canvas) instead of
+  // the options form; it has the same getValues/setValues/reset interface
+  form = current.mountEditor
+    ? current.mountEditor(els.form, { onChange: scheduleGenerate, defaults: defaultValues(current.schema) })
+    : buildForm(els.form, current.schema);
+  document.body.classList.toggle('wide-editor', !!current.wideLayout);
   els.filename.value = current.id;
   if (restore?.values) form.setValues(restore.values);
   if (restore?.code) {

@@ -12,6 +12,8 @@ import normal from '../js/diagrams/normal.js';
 import blank from '../js/diagrams/blank.js';
 import scatter from '../js/diagrams/scatter.js';
 import slopefield from '../js/diagrams/slopefield.js';
+import geometry from '../js/diagrams/geometry.js';
+import { GALLERY } from '../js/galleryEntries.js';
 
 const base = defaultValues(fn.schema);
 const sbase = defaultValues(sketch.schema);
@@ -59,6 +61,9 @@ const jobs = [
   ['scatter-typed-crosses', scatter.generate({ ...defaultValues(scatter.schema), line: 'typed', lineEquation: '0.5x + 3', pointStyle: 'cross', axisBreak: 'off', showGrid: false })],
   ['slopefield-curves', slopefield.generate({ ...defaultValues(slopefield.schema), solutions: 'dashed', isoclines: '0, 1', labelIsoclines: true, xScaleTicks: true, yScaleTicks: true })],
   ['slopefield-arrows', slopefield.generate({ ...defaultValues(slopefield.schema), equation: 'xy/4', arrows: true, skipAxes: true })],
+  ['geometry-default', geometry.generate(defaultValues(geometry.schema))],
+  ['geometry-efg', geometry.generate(GALLERY.find((e) => e.id === 'geometry-efg').values)],
+  ['geometry-marks', geometry.generate({ scene: JSON.stringify({ points: [{ id: 'P', name: 'P', x: 0, y: 0 }, { id: 'Q', name: 'Q', x: 4, y: 0 }, { id: 'R', name: 'R', x: 5, y: 3 }, { id: 'S', name: 'S', x: 1, y: 3 }], items: [{ id: 'p', type: 'polygon', pts: ['P', 'Q', 'R', 'S'], fill: 'gray!15' }, { id: 'a', type: 'segment', a: 'P', b: 'Q', arrows: 2, ticks: 1 }, { id: 'b', type: 'segment', a: 'S', b: 'R', arrows: 2, ticks: 1 }, { id: 'c', type: 'segment', a: 'Q', b: 'R', ticks: 2 }, { id: 'd', type: 'segment', a: 'P', b: 'S', ticks: 2 }, { id: 'e', type: 'circle', c: 'P', p: 'Q', style: 'dotted' }, { id: 'f', type: 'arc', c: 'R', a: 'Q', b: 'S' }, { id: 'g', type: 'angle', v: 'Q', a: 'R', b: 'P', arcs: 2 }, { id: 'h', type: 'text', x: 2.5, y: -1, text: 'parallelogram' }] }) })],
   ['blank-trig', blank.generate({ ...defaultValues(blank.schema), xPreset: 'radians', xCustomTicks: '', originLabel: true })],
   ['blank-degrees-grid', blank.generate({ ...defaultValues(blank.schema), xPreset: 'degrees', yCustomTicks: '1, -1', showGrid: true })],
 ];

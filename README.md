@@ -92,6 +92,31 @@ usual axis labels, scale ticks and NOT TO SCALE note.
 
 Fractions in labels are drawn full size (`\\displaystyle`), as on exam papers.
 
+### Geometry (visual editor)
+
+Draw on a grid instead of filling in options. The toolbar has Select, Point,
+Line, Polygon, Angle, Right angle, Label, Text, Circle and Arc (each with a
+one-key shortcut while the canvas has focus), plus Undo/Redo (Ctrl+Z / Ctrl+Y),
+Delete, zoom and Fit.
+
+- Clicks snap to existing points, then onto lines, then to the grid (0.25,
+  0.5 or 1 cm; snapping can be turned off).
+- Angles: click two lines that meet, or three points (arm, vertex, arm). A line
+  ending on another line (such as an altitude) counts as meeting it. The label
+  is the measured size unless you type your own (e.g. `35^\\circ`, `\\theta`);
+  angles can be reflex and have one to three arcs.
+- Lines can be dashed or dotted, with a length label and equal-length ticks or
+  parallel arrows. Polygons can be shaded.
+- Drag points, labels and text to move them; drag empty space to pan.
+- Click something to edit it in the properties panel; with nothing selected
+  the panel holds the drawing settings (grid, line width, font size, NOT TO
+  SCALE).
+
+Each point is a named `\\coordinate` at the top of the TikZ code, and
+everything else refers to the names. Change the numbers there and click outside
+the code box to move the points in the drawing too. The drawing is saved in
+share links like any other diagram.
+
 ## Running it
 
 ES modules don't load from `file://`, so double-clicking `index.html` won't work.
@@ -103,7 +128,7 @@ Use either:
   then open http://localhost:8000.
 
 You can open a diagram type directly, e.g. `?type=function`, `?type=sketch`,
-`?type=blank`, `?type=normal`, `?type=scatter` or `?type=slopefield`.
+`?type=blank`, `?type=normal`, `?type=scatter`, `?type=slopefield` or `?type=geometry`.
 
 The **Gallery** (`gallery.html`, linked from the top bar) shows example
 diagrams made with the site, grouped by type; each opens in the editor with
@@ -169,6 +194,10 @@ js/diagrams/
   blank.js               blank axes
   scatter.js             scatterplots (click the preview to add points)
   slopefield.js          slope fields, solution curves, isoclines
+  geometry.js            geometry drawn in the visual editor
+js/geometry/
+  scene.js               the drawing's data, label placement, and TikZ output
+  editor.js              the editor: canvas, toolbar, snapping, properties, undo
 tools/
   stamp-versions.mjs     adds content-hash versions to JS/CSS URLs in index.html and gallery.html
   build-gallery.mjs      renders the gallery images with the site in a headless browser
@@ -220,6 +249,13 @@ The schema field types are `group` (groups can nest), `row` (fields side by
 side), `select`, `number`, `text`, `textarea` and `checkbox`. A field can also
 have `examples` (`{ rows: [[code, description], …], notes }`), shown in a box
 opened by a "?" button next to its label. Any field can have `help` text and a `showIf: (values) => boolean`.
+
+A type can replace the options panel with its own editor: give it
+`mountEditor(container, { onChange, defaults })`, returning
+`{ getValues, setValues, reset, destroy }` like the built-in form, and
+`wideLayout: true` to give it more room. `onCodeEdit(values, code)` may return
+`{ values, message }` to take changes typed into the code box back into the
+editor (see `geometry.js`).
 
 ## TikZJax
 

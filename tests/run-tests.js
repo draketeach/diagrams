@@ -20,6 +20,8 @@ import blank from '../js/diagrams/blank.js';
 import scatter, { parseData, regression } from '../js/diagrams/scatter.js';
 import slopefield, { solutionCurve, contour } from '../js/diagrams/slopefield.js';
 import normal, { normalProbability } from '../js/diagrams/normal.js';
+import geometry from '../js/diagrams/geometry.js';
+import { parseScene, sceneToTikz, coordinatesFromCode, angleSpan } from '../js/geometry/scene.js';
 import { GALLERY } from '../js/galleryEntries.js';
 import { existsSync } from 'node:fs';
 import { encodeShareHash, decodeShareHash, changedValues } from '../js/core/shareLink.js';
@@ -416,8 +418,48 @@ test('scatterplot: data, regression, axis breaks and clicks', () => {
   assert.ok(scatter.generate({ ...base, line: 'none', showR: true }).code.includes('{$r = 0.854$}'), 'r only, no line');
 });
 
+test('geometry: scene to TikZ', () => {
+  const base = defaultValues(geometry.schema);
+  const { code, warnings } = geometry.generate(base);
+  assert.deepEqual(warnings, []);
+  assert.ok(code.includes('\\coordinate (A) at (0,0);'));
+  assert.ok(code.includes('\\draw (A) -- (B) -- (C) -- cycle;'), 'polygon is one closed path');
+  assert.ok(/\\pic\[draw[^\]]*\] \{angle = /.test(code));
+  // marks, circles, arcs, shading, text
+  const scene = parseScene(base.scene);
+  scene.items.push(
+    { id: 's1', type: 'segment', a: scene.points[1].id, b: scene.points[2].id, ticks: 2, arrows: 1 },
+    { id: 'c1', type: 'circle', c: scene.points[0].id, p: scene.points[2].id, style: 'dashed' },
+    { id: 'a1', type: 'arc', c: scene.points[0].id, a: scene.points[1].id, b: scene.points[2].id },
+    { id: 't1', type: 'text', x: 1, y: 4, text: 'Hello $x$' }
+  );
+  const poly = scene.items.find((i) => i.type === 'polygon');
+  if (poly) poly.fill = 'gray!30';
+  scene.settings.notToScale = true;
+  const more = sceneToTikz(parseScene(JSON.stringify(scene))).code;
+  assert.ok(more.includes('decorations.markings'), 'markings library');
+  assert.ok(/\\draw\[dashed\] \(A\) circle/.test(more), 'circle');
+  assert.ok(more.includes(' arc['), 'arc');
+  assert.ok(more.includes('NOT TO'), 'not to scale');
+  assert.ok(more.includes('{Hello $x$}'), 'text');
+  // hand-edited coordinates move points
+  const edited = code.replace('\\coordinate (B) at (6,0);', '\\coordinate (B) at (7,0.5);');
+  assert.deepEqual(coordinatesFromCode(edited).get('B'), { x: 7, y: 0.5 });
+  const next = geometry.onCodeEdit(base, edited);
+  assert.ok(next.values.scene.includes('"x":7') && next.message.includes('Moved 1 point'));
+  assert.equal(geometry.onCodeEdit(base, code), null, 'unchanged code: nothing to do');
+  // angles measure the smaller turn unless reflex
+  const v = { x: 0, y: 0 }, a = { x: 1, y: 0 }, b = { x: 0, y: -1 };
+  assert.equal(Math.round(angleSpan(v, a, b, false).size), 90);
+  assert.equal(Math.round(angleSpan(v, a, b, true).size), 270);
+  // bad names warn
+  const bad = parseScene(base.scene);
+  bad.points[1].name = bad.points[0].name;
+  assert.ok(sceneToTikz(bad).warnings.length > 0, 'duplicate names warn');
+});
+
 test('gallery: every entry generates cleanly and has its image', () => {
-  const modules = { function: fn, sketch, blank, normal, scatter, slopefield };
+  const modules = { function: fn, sketch, blank, normal, scatter, slopefield, geometry };
   const ids = new Set();
   for (const e of GALLERY) {
     assert.ok(!ids.has(e.id), `duplicate gallery id ${e.id}`);
