@@ -1467,7 +1467,8 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
         row(
           checkbox('Snap to grid', S.snap, (v) => (S.snap = v)),
           checkbox('Show grid', S.showGrid, (v) => (S.showGrid = v)),
-          checkbox('NOT TO SCALE', S.notToScale, (v) => (S.notToScale = v))
+          checkbox('NOT TO SCALE', S.notToScale, (v) => (S.notToScale = v)),
+          field('White backgrounds', selectInput([['outline', 'Follow the letters'], ['box', 'Rectangles']], S.bgStyle || 'outline', (v) => (S.bgStyle = v)))
         ),
         row(
           field('New points start at', letterInput()),

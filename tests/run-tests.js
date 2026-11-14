@@ -739,6 +739,12 @@ test('geometry: scale shrinks the drawing, not its text or marks', () => {
   assert.ok(code.includes('{$16\\ \\mathrm{m}$}'), 'lengths in the drawing\'s units');
   assert.ok(code.includes('at (4,1) {Hi}'), 'text moves with the drawing');
   assert.equal(sc.points[1].x, 16, 'the drawing itself is unchanged');
+  // white backgrounds: following the letters (white copies underneath), or a rectangle
+  sc.items[2].bg = true;
+  const outline = sceneToTikz(sc).code;
+  assert.ok(outline.includes('\\foreach \\a in {0,22.5,...,337.5} {\\begin{scope}[shift={(\\a:1.3pt)}] \\node[align=center, text=white]'), 'outline');
+  sc.settings.bgStyle = 'box';
+  assert.ok(sceneToTikz(sc).code.includes('\\node[align=center, fill=white, inner sep=1.5pt]'), 'box');
   const edited = code.replace('\\coordinate (B) at (8,0);', '\\coordinate (B) at (9,0);');
   const next = geometry.onCodeEdit({ scene: JSON.stringify(sc) }, edited);
   assert.ok(next.values.scene.includes('"x":18'), 'hand-edited page coordinates come back at the drawing\'s scale');
