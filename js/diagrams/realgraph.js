@@ -188,9 +188,10 @@ function generate(v) {
     const gxMax = pick(v.gridXmax, Math.floor((xmax - 1e-9) / gx) * gx);
     const gyMax = pick(v.gridYmax, Math.floor((ymax - 1e-9) / gy) * gy);
     const colour = v.gridColour === 'grey' ? ', gray!60' : '';
+    // TikZ's grid draws lines at multiples of the steps (in the axes' units); the far corner goes
+    // a hair past the last line so rounding can't drop it
     b.comment('grid');
-    for (const x of multiples(xmin, gxMax, gx)) if (!near(x, x0)) b.add(`\\draw[very thin${colour}] ${pt(x, ymin)} -- ${pt(x, gyMax)};`);
-    for (const y of multiples(ymin, gyMax, gy)) if (!near(y, y0)) b.add(`\\draw[very thin${colour}] ${pt(xmin, y)} -- ${pt(gxMax, y)};`);
+    b.add(`\\draw[very thin${colour}, xstep=${n(gx)}, ystep=${n(gy)}] ${pt(xmin, ymin)} grid ${pt(gxMax + gx * 1e-3, gyMax + gy * 1e-3)};`);
   }
 
   // ---- axes
