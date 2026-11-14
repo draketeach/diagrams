@@ -1796,7 +1796,7 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     });
     const note = el('p', 'geo-note');
     note.textContent =
-      'One edge per line or comma: A-B, A->B (directed), A-B 5 (labelled), A-A (a loop), A-B twice (two edges), D (a vertex on its own). New vertices go on a circle; drag them where you want.';
+      'One edge per line: A-B, A->B (directed), A->B A, 8 (labelled; the label is everything after the edge), A-A (a loop), A-B twice (two edges), D (a vertex on its own). New vertices go on a circle; drag them where you want.';
     wrap.append(field('Edges', ta), row(go), note);
     return wrap;
   }

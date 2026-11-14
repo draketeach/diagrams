@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: CC0-1.0
-// A network as typed text, and back: "A-B, B->C 5, C-C, D" means an edge AB,
-// a directed edge from B to C labelled 5, a loop at C and a vertex D on its own.
+// A network as typed text, and back — one edge per line:
+//   A-B          an edge AB
+//   B->C 5       a directed edge from B to C, labelled 5 (labels may hold commas: "A->B A, 8")
+//   C-C          a loop at C
+//   D            a vertex D on its own
 
 import { normalPoint, normalItem, pointMap } from './scene.js';
 
@@ -16,7 +19,7 @@ export function parseEdgeList(text) {
     if (!vertices.includes(v)) vertices.push(v);
   };
   const entries = String(text ?? '')
-    .split(/[,\n;]/)
+    .split('\n')
     .map((s) => s.trim())
     .filter(Boolean);
   for (const e of entries) {
@@ -34,7 +37,7 @@ export function parseEdgeList(text) {
       see(m[1]);
       continue;
     }
-    throw new Error(`"${e}" isn't an edge or a vertex. Write edges like A-B, A->B (directed) or A-B 5 (labelled), and a vertex on its own like D.`);
+    throw new Error(`"${e}" isn't an edge or a vertex. Put one on each line: A-B, A->B (directed), A-B 5 (labelled), or a vertex on its own like D.`);
   }
   return { vertices, edges };
 }

@@ -76,7 +76,7 @@ const jobs = [
   ['network-default', network.generate({ scene: JSON.stringify(DEFAULT_NETWORK) })],
   ['network-features', (() => {
     let k = 0;
-    const sc = applyEdgeList(parseNet(JSON.stringify(DEFAULT_NETWORK)), 'A-B 3, A-B 5, A->C 4, C-C 2, B->B, G-E, E->D 7', (p) => `${p}${++k}`);
+    const sc = applyEdgeList(parseNet(JSON.stringify(DEFAULT_NETWORK)), 'A-B 3\nA-B 5\nA->C 4\nC-C 2\nB->B\nG-E\nE->D 7', (p) => `${p}${++k}`);
     return network.generate({ scene: JSON.stringify(sc) });
   })()],
   ['realgraph-loan', realgraph.generate(defaultValues(realgraph.schema))],

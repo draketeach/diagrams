@@ -611,8 +611,9 @@ test('probability trees: input, products, blanks', () => {
 });
 
 test('networks: edge lists, repeated edges, loops, directions', () => {
-  const pl = parseEdgeList('A-B, B->C 5\nC<-D: x, C-C, E');
-  assert.deepEqual(pl.vertices, ['A', 'B', 'C', 'D', 'E']);
+  const pl = parseEdgeList('A-B\nB->C 5\nC<-D: x\nC-C\nE\nStart->A A, 8');
+  assert.deepEqual(pl.vertices, ['A', 'B', 'C', 'D', 'E', 'Start']);
+  assert.deepEqual(pl.edges[4], { a: 'Start', b: 'A', directed: true, label: 'A, 8' }, 'a label with a comma');
   assert.deepEqual(pl.edges[1], { a: 'B', b: 'C', directed: true, label: '5' });
   assert.deepEqual(pl.edges[2], { a: 'D', b: 'C', directed: true, label: 'x' }, 'C<-D is an edge from D to C');
   assert.throws(() => parseEdgeList('A = B'), /isn't an edge or a vertex/);
@@ -620,7 +621,7 @@ test('networks: edge lists, repeated edges, loops, directions', () => {
   const id = (p) => `${p}${++k}`;
   const scene = parseScene(JSON.stringify(DEFAULT_NETWORK));
   const before = scene.points.find((p) => p.name === 'A');
-  applyEdgeList(scene, 'A-B, A-B, A->C 4, C-C, H', id);
+  applyEdgeList(scene, 'A-B\nA-B\nA->C 4\nC-C\nH', id);
   assert.equal(scene.points.find((p) => p.name === 'A').x, before.x, 'vertices that stay keep their places');
   assert.ok(scene.points.find((p) => p.name === 'H'), 'a new vertex');
   assert.ok(!scene.points.find((p) => p.name === 'D'), 'an unlisted vertex goes');
