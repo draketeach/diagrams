@@ -21,6 +21,10 @@ import {
   fmt,
   markOffsets,
   slopeDeg,
+  edgeShape,
+  shapeAt,
+  shapeTangent,
+  segmentMid,
   bearingDeg,
   bearingText,
   endText,
@@ -30,6 +34,7 @@ import {
   resolvePoints,
   dependentsOf,
 } from './scene.js';
+import { sceneToEdgeList, applyEdgeList, nextBend } from './edgeList.js';
 
 const PX = 40; // pixels per cm at zoom 1
 const SNAP_POINT = 12; // px
@@ -39,6 +44,7 @@ const TOOLS = [
   { id: 'select', label: 'Select', key: 'v', hint: 'Click to select; drag points, labels and text. Drag empty space to pan. Delete removes.' },
   { id: 'point', label: 'Point', key: 'p', hint: 'Click to add a point (snaps to the grid, other points and lines).' },
   { id: 'segment', label: 'Line', key: 's', hint: 'Click two points (new or existing) to join them.' },
+  { id: 'directed', label: 'Directed edge', key: 'd', hint: 'Click the start vertex, then the end: the edge gets an arrow in the middle.' },
   { id: 'ray', label: 'Ray', key: 'y', hint: 'Click the start, then a point the ray passes through. Set its bearing and the label at its end in the panel below.' },
   { id: 'north', label: 'North line', key: 'n', hint: 'Click a point: draws a dashed arrow straight up from it, labelled N.' },
   { id: 'polygon', label: 'Polygon', key: 'g', hint: 'Click the corners, then click the first one again to close it (Enter finishes an open path).' },
@@ -58,6 +64,7 @@ const ICONS = {
   select: '<path d="M6 3.5v15.5l4.2-4.1 2.7 6.1 2.6-1.1-2.7-6h5.9z" fill="currentColor" stroke-linejoin="round"/>',
   point: `${DOT(12, 12, 3)}<path d="M12 3v4M12 17v4M3 12h4M17 12h4" stroke-width="1.4"/>`,
   segment: `<path d="M5.5 18.5 18.5 5.5"/>${DOT(5.5, 18.5)}${DOT(18.5, 5.5)}`,
+  directed: `<path d="M4 18 20 6"/><path d="M14.6 7.4 12.9 13M14.6 7.4 8.8 7.6" stroke-linejoin="round" transform="translate(-1.2 1.4)"/>${DOT(4, 18)}${DOT(20, 6)}`,
   ray: `<path d="M5 19 19.5 4.5"/><path d="M19.8 4.2 13.4 6.6M19.8 4.2l-2.4 6.4" stroke-linejoin="round"/>${DOT(5, 19)}${DOT(10.5, 13.5, 1.6)}`,
   north: '<path d="M12 21V8" stroke-dasharray="2.6 2"/><path d="M8.5 11.5 12 7l3.5 4.5" stroke-linejoin="round"/><path d="M9 6.2V1.8l6 4.4V1.8" stroke-width="1.6" stroke-linejoin="round" transform="translate(0 -0.3)"/>',
   polygon: `<path d="M4 19 12 5l8 14z" stroke-linejoin="round"/>${DOT(4, 19)}${DOT(12, 5)}${DOT(20, 19)}`,
@@ -78,6 +85,14 @@ const ICONS = {
 };
 const icon = (name) =>
   `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">${ICONS[name]}</svg>`;
+
+// in a network: fewer tools, with network names
+const NETWORK_TOOLS = ['select', 'point', 'segment', 'directed', 'label', 'text'];
+const NETWORK_NAMES = {
+  point: ['Vertex', 'Click to add a vertex (it snaps to the grid and to other vertices).'],
+  segment: ['Edge', 'Click two vertices to join them. Click a vertex twice for a loop; joining two vertices again curves the new edge.'],
+  label: ['Label', 'Click an edge to label it (e.g. a weight), or a vertex to rename it.'],
+};
 
 const LINE_STYLES = [
   ['solid', 'Solid'],
@@ -262,7 +277,7 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     if (lines) {
       const pts = pointMap(scene);
       for (const it of scene.items) {
-        if (it.type !== 'segment') continue;
+        if (it.type !== 'segment' || it.bend || it.a === it.b) continue;
         const a = pts.get(it.a);
         const b = pts.get(it.b);
         if (!a || !b) continue;
@@ -320,7 +335,7 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
   /** The point at a snap result: an existing one, or a new one. */
   function pointAt(s) {
     if (s.point) return s.point;
-    const p = normalPoint({ id: newId('p'), name: nextName(), x: round(s.x), y: round(s.y) });
+    const p = normalPoint({ id: newId('p'), name: nextName(), x: round(s.x), y: round(s.y), dot: isNet() });
     scene.points.push(p);
     return p.id;
   }
@@ -334,9 +349,25 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     hint.textContent = toolHint(id);
     render();
   }
-  function toolHint(id) {
+  const isNet = () => scene.settings.mode === 'network';
+  function toolInfo(id) {
     const t = TOOLS.find((x) => x.id === id);
+    const nn = isNet() && NETWORK_NAMES[id];
+    return nn ? { ...t, label: nn[0], hint: nn[1] } : t;
+  }
+  function toolHint(id) {
+    const t = toolInfo(id);
     return `${t.label} (${t.key.toUpperCase()}): ${t.hint}`;
+  }
+  /** Show the tools for this kind of drawing, with their names. */
+  function applyMode() {
+    for (const [id, btn] of toolButtons) {
+      const t = toolInfo(id);
+      btn.hidden = isNet() ? !NETWORK_TOOLS.includes(id) : id === 'directed';
+      btn.title = `${t.label} (${t.key.toUpperCase()})`;
+      btn.setAttribute('aria-label', t.label);
+    }
+    if (toolButtons.get(tool)?.hidden) setTool('select');
   }
   function clearPending() {
     pending = [];
@@ -426,6 +457,21 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
       showProps();
       return;
     }
+    if (tool === 'directed') {
+      const sp = snap(raw, { lines: false });
+      begin();
+      const id = pointAt(sp);
+      if (!pending.length) {
+        pending = [id];
+        render();
+        return;
+      }
+      addEdge(pending[0], id, true);
+      clearPending();
+      commit();
+      showProps();
+      return;
+    }
     if (tool === 'ray') {
       const sp = snap(raw);
       begin();
@@ -452,7 +498,8 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
           return;
         }
         const a = pending[0];
-        if (a !== id) addSegment(a, id);
+        if (isNet()) addEdge(a, id, false);
+        else if (a !== id) addSegment(a, id);
         clearPending();
         commit();
         showProps();
@@ -669,6 +716,23 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     return e?.dep?.kind === 'ray' && e.dep.a === it.a ? e.dep : null;
   }
 
+  /** A network edge: repeats are allowed (they curve apart), a === b is a loop. */
+  function addEdge(a, b, directed) {
+    const it = normalItem({ id: newId('i'), type: 'segment', a, b, label: '', arrows: directed ? 1 : 0, bend: a === b ? 0 : nextBend(scene, a, b) });
+    if (a === b) {
+      // a second loop at the same vertex points another way
+      const loops = scene.items.filter((i) => i.type === 'segment' && i.a === a && i.b === a).length;
+      if (loops) it.loopDir = (loopAutoDirFor(a) + 90 * loops) % 360;
+    }
+    scene.items.push(it);
+    selection = { kind: 'item', id: it.id };
+    return it.id;
+  }
+  const loopAutoDirFor = (v) => {
+    const first = scene.items.find((i) => i.type === 'segment' && i.a === v && i.b === v);
+    return edgeShape(first, pointMap(scene), scene).dir;
+  };
+
   function addSegment(a, b) {
     const dup = scene.items.find((i) => i.type === 'segment' && ((i.a === a && i.b === b) || (i.a === b && i.b === a)));
     if (dup) return dup.id;
@@ -833,7 +897,8 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     if (it.type === 'segment') {
       const a = pts.get(it.a);
       const b = pts.get(it.b);
-      it.labelPos = { dx: round(raw.x - (a.x + b.x) / 2), dy: round(raw.y - (a.y + b.y) / 2) };
+      const m = segmentMid(it, pts, scene);
+      it.labelPos = { dx: round(raw.x - m.x), dy: round(raw.y - m.y) };
     } else if (it.type === 'angle') {
       const v = pts.get(it.v);
       it.labelPos = { dx: round(raw.x - v.x), dy: round(raw.y - v.y) };
@@ -912,7 +977,7 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     }
     if (e.key === 'Escape') {
       if (pending.length) {
-        if (tool === 'segment' || tool === 'ray' || tool === 'circle' || tool === 'arc') commit();
+        if (['segment', 'directed', 'ray', 'circle', 'arc'].includes(tool)) commit();
         clearPending();
         render();
       } else select(null);
@@ -924,7 +989,7 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     }
     // tool shortcuts only while the canvas has focus
     if (document.activeElement !== svg) return;
-    const t = TOOLS.find((x) => x.key === e.key.toLowerCase());
+    const t = TOOLS.find((x) => x.key === e.key.toLowerCase() && !toolButtons.get(x.id).hidden);
     if (t) setTool(t.id);
   }
   window.addEventListener('keydown', onKey);
@@ -1003,10 +1068,12 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
       const b = pts.get(it.b);
       if (!a || !b) continue;
       const cls = `shape ls-${it.style}${sel('item', it.id) || pendingSet.has(it.id) ? ' is-sel' : ''}`;
-      const xy = `x1="${sx(a.x)}" y1="${sy(a.y)}" x2="${sx(b.x)}" y2="${sy(b.y)}"`;
-      parts.push(`<line ${xy} class="${cls}"/>`);
-      // arrowheads at the ends
-      for (const [end, from] of [[b, a], [a, b]]) {
+      const sh = edgeShape(it, pts, scene);
+      const S2 = (q) => `${sx(q.x)} ${sy(q.y)}`;
+      const d = sh.kind === 'line' ? `M ${S2(a)} L ${S2(b)}` : `M ${S2(sh.a)} C ${S2(sh.c1)} ${S2(sh.c2)} ${S2(sh.b)}`;
+      parts.push(`<path d="${d}" class="${cls}"/>`);
+      // arrowheads at the ends (along the curve's ends)
+      for (const [end, from] of [[b, sh.kind === 'line' ? a : sh.c2], [a, sh.kind === 'line' ? b : sh.c1]]) {
         const want = end === b ? ['b', 'both'] : ['a', 'both'];
         if (!want.includes(it.tip)) continue;
         const ex = sx(end.x);
@@ -1018,10 +1085,12 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
           `<path d="M ${ex} ${ey} L ${ex - ux * 9 - uy * 3.5} ${ey - uy * 9 + ux * 3.5} L ${ex - ux * 9 + uy * 3.5} ${ey - uy * 9 - ux * 3.5} Z" class="arrow-tip${sel('item', it.id) ? ' is-sel' : ''}"/>`
         );
       }
-      // marks at the middle
-      const mx = (sx(a.x) + sx(b.x)) / 2;
-      const my = (sy(a.y) + sy(b.y)) / 2;
-      const ang = (Math.atan2(sy(b.y) - sy(a.y), sx(b.x) - sx(a.x)) * 180) / Math.PI;
+      // marks at the middle, along the line or curve
+      const mid = shapeAt(sh, 0.5);
+      const tan = shapeTangent(sh);
+      const mx = sx(mid.x);
+      const my = sy(mid.y);
+      const ang = (Math.atan2(-tan.y, tan.x) * 180) / Math.PI;
       // as in the TikZ (pt), drawn about twice as big
       const off = markOffsets(it);
       const marks = [
@@ -1029,7 +1098,7 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
         ...off.arrows.map((o) => `<path d="M ${2 * o - 4} -4 L ${2 * o + 4} 0 L ${2 * o - 4} 4"/>`),
       ];
       if (marks.length) parts.push(`<g class="marks" transform="translate(${mx} ${my}) rotate(${ang})">${marks.join('')}</g>`);
-      parts.push(`<line data-kind="item" data-id="${it.id}" ${xy} class="hit"/>`);
+      parts.push(`<path data-kind="item" data-id="${it.id}" d="${d}" class="hit"/>`);
     }
 
     // equal-length marks on their own
@@ -1113,7 +1182,9 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
       const text = segmentText(it, pts, scene.settings);
       if (!a || !b || !text) continue;
       const off = placed.get(`s:${it.id}`) ?? segmentLabelOffset(scene, it, pts);
-      parts.push(labelSvg('item', it.id, (a.x + b.x) / 2 + off.dx, (a.y + b.y) / 2 + off.dy, display(text), false, sel('item', it.id), it.sloped ? slopeDeg(a, b) : 0));
+      const m = segmentMid(it, pts, scene);
+      const turn = it.sloped ? slopeDeg({ x: 0, y: 0 }, shapeTangent(edgeShape(it, pts, scene))) : 0;
+      parts.push(labelSvg('item', it.id, m.x + off.dx, m.y + off.dy, display(text), false, sel('item', it.id), turn));
     }
 
     // text beyond the ends of lines (a ray's bearing)
@@ -1151,7 +1222,7 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     }
 
     // pending tool feedback
-    if (pending.length && pendingKind !== 'segments' && hover && ['segment', 'ray', 'polygon', 'circle', 'arc'].includes(tool)) {
+    if (pending.length && pendingKind !== 'segments' && hover && ['segment', 'directed', 'ray', 'polygon', 'circle', 'arc'].includes(tool)) {
       const last = pts.get(pending[pending.length - 1]);
       if (last) parts.push(`<line x1="${sx(last.x)}" y1="${sy(last.y)}" x2="${sx(hover.x)}" y2="${sy(hover.y)}" class="rubber"/>`);
       if (tool === 'circle' && pending.length === 1) {
@@ -1285,9 +1356,13 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
         ),
         row(
           field('New points start at', letterInput()),
-          field('Lengths shown to', selectInput([[0, 'Whole numbers'], [1, '1 decimal place'], [2, '2 decimal places']], S.lengthDecimals, (v) => (S.lengthDecimals = Number(v))))
+          isNet() ? el('span') : field('Lengths shown to', selectInput([[0, 'Whole numbers'], [1, '1 decimal place'], [2, '2 decimal places']], S.lengthDecimals, (v) => (S.lengthDecimals = Number(v))))
         )
       );
+      if (isNet()) {
+        props.append(edgeListBox());
+        return;
+      }
       const p = el('p', 'geo-note');
       p.textContent =
         'Each point is a named \\coordinate at the top of the TikZ code. Edit its numbers there and click outside the code box to move it here too.';
@@ -1343,6 +1418,10 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     const nm = (id) => pts.get(id)?.name ?? '?';
     const del = actionButton('Delete', deleteSelection);
     if (it.type === 'segment') {
+      if (isNet() && !rayOf(it) && !northOf(it)) {
+        edgeProps(it, h, nm, del);
+        return;
+      }
       const north = northOf(it);
       const ray = rayOf(it) || north; // neither has a length worth labelling
       h.textContent = north ? `North line at ${nm(north.a)}` : ray ? `Ray from ${nm(ray.a)} through ${nm(ray.b)}` : `Line ${nm(it.a)}${nm(it.b)}`;
@@ -1439,6 +1518,68 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     }
   }
 
+  /** A network edge: its label, direction, and curve (or a loop's direction and size). */
+  function edgeProps(it, h, nm, del) {
+    const loop = it.a === it.b;
+    h.textContent = loop ? `Loop at ${nm(it.a)}` : `Edge ${nm(it.a)}${nm(it.b)}`;
+    const mode = it.label ? 'custom' : 'none';
+    const box = textInput(it.label || '', (v) => (it.label = v), { placeholder: 'e.g. 5' });
+    props.append(
+      row(
+        field(
+          'Label',
+          selectInput([['none', 'None'], ['custom', 'My own (e.g. a weight)']], mode, (v) => {
+            it.label = v === 'none' ? '' : '1';
+            queueMicrotask(() => {
+              showProps();
+              if (v === 'custom') focusProp('label');
+            });
+          })
+        ),
+        mode === 'custom' ? field('Text', box, 'label') : el('span'),
+        field('Style', selectInput(LINE_STYLES, it.style, (v) => (it.style = v)))
+      ),
+      row(
+        field(
+          'Direction',
+          selectInput(
+            loop
+              ? [['none', 'None'], ['f', 'Arrow (anticlockwise)'], ['b', 'Arrow (clockwise)']]
+              : [['none', 'None'], ['f', `${nm(it.a)} \u2192 ${nm(it.b)}`], ['b', `${nm(it.b)} \u2192 ${nm(it.a)}`]],
+            it.arrows ? 'f' : 'none',
+            (v) => {
+              if (v === 'none') it.arrows = 0;
+              else {
+                if (v === 'b') {
+                  // the other way round: swap the ends, keeping the same curve
+                  [it.a, it.b] = [it.b, it.a];
+                  it.bend = -(it.bend || 0);
+                  if (loop) it.loopDir = null;
+                }
+                it.arrows = 1;
+              }
+              queueMicrotask(showProps);
+            }
+          )
+        ),
+        loop
+          ? field('Points (° from east, blank = away from the edges)', loopDirInput(it))
+          : field('Curve (°, + bends left)', numberInput(it.bend || 0, 5, (v) => (it.bend = Math.max(-80, Math.min(80, v))))),
+        loop ? field('Size (cm)', numberInput(it.loopSize ?? 0.8, 0.1, (v) => (it.loopSize = Math.max(0.3, v)))) : el('span')
+      ),
+      row(actionButton('Reset label position', () => change(() => (it.labelPos = null))), del)
+    );
+  }
+  function loopDirInput(it) {
+    const i = el('input');
+    i.type = 'number';
+    i.step = 15;
+    i.value = it.loopDir ?? '';
+    i.placeholder = String(Math.round(edgeShape(it, pointMap(scene), scene).dir));
+    i.addEventListener('change', () => change(() => (it.loopDir = i.value === '' ? null : Number(i.value) % 360)));
+    return i;
+  }
+
   /** A ray's bearing and how far it runs past the point it goes through. */
   function rayRow(it, ray) {
     const P = findPoint(ray.a);
@@ -1477,6 +1618,28 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     );
   }
 
+  /** The network as an edge list you can edit: A-B, A->B (directed), A-B 5 (labelled), A-A (loop), D (a vertex alone). */
+  function edgeListBox() {
+    const wrap = el('div', 'geo-edgelist');
+    const ta = el('textarea');
+    ta.rows = 5;
+    ta.value = sceneToEdgeList(scene);
+    ta.spellcheck = false;
+    const go = actionButton('Update the drawing', () => {
+      try {
+        change(() => applyEdgeList(scene, ta.value, newId));
+        showProps();
+      } catch (e) {
+        flash(e.message);
+      }
+    });
+    const note = el('p', 'geo-note');
+    note.textContent =
+      'One edge per line or comma: A-B, A->B (directed), A-B 5 (labelled), A-A (a loop), A-B twice (two edges), D (a vertex on its own). New vertices go on a circle; drag them where you want.';
+    wrap.append(field('Edges', ta), row(go), note);
+    return wrap;
+  }
+
   /** One letter, A–Z or a–z: the name of the next new point (then onwards). */
   function letterInput() {
     const i = el('input');
@@ -1513,11 +1676,13 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
   }
 
   function renderAll() {
+    applyMode();
     render();
     showProps();
   }
 
   setTool('select');
+  applyMode();
   showProps();
 
   return {

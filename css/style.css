@@ -339,6 +339,8 @@ a.button:hover { filter: brightness(1.1); }
 .geo-check { font-size: 13.5px; display: flex; align-items: center; gap: 4px; }
 .geo-small { padding: 3px 8px; font-size: 12.5px; border: 1px solid var(--border); border-radius: 5px; background: #fff; cursor: pointer; }
 .geo-small:hover { border-color: var(--accent); }
+.geo-edgelist textarea { width: 100%; min-width: 16em; font-family: var(--mono, monospace); font-size: 13px; }
+.geo-edgelist .geo-field { display: flex; }
 .geo-note { font-size: 12px; color: var(--muted); margin: 4px 0 0; }
 
 /* ---- drag handles between the panels */

@@ -14,6 +14,9 @@ import scatter from '../js/diagrams/scatter.js';
 import slopefield from '../js/diagrams/slopefield.js';
 import geometry from '../js/diagrams/geometry.js';
 import probtree from '../js/diagrams/probtree.js';
+import network, { DEFAULT_NETWORK } from '../js/diagrams/network.js';
+import { parseScene as parseNet } from '../js/geometry/scene.js';
+import { applyEdgeList } from '../js/geometry/edgeList.js';
 import { GALLERY } from '../js/galleryEntries.js';
 
 const base = defaultValues(fn.schema);
@@ -69,6 +72,12 @@ const jobs = [
   ['probtree-uniform', probtree.generate({ ...defaultValues(probtree.schema), ...GALLERY.find((e) => e.id === 'probtree-uniform').values })],
   ['probtree-counters', probtree.generate({ ...defaultValues(probtree.schema), input: 'outline', outline: 'Red : 3/7\n> Red : 2/6\n> Blue : ?\nBlue : 4/7\n> Red : ?\n> Blue : 3/6', headings: 'First counter; Second counter', outcomes: 'both' })],
   ['probtree-lines', probtree.generate({ ...defaultValues(probtree.schema), stages: 'H : p; T : ?\nH : ?; T : 1-p', blankStyle: 'line', outcomes: 'probs' })],
+  ['network-default', network.generate({ scene: JSON.stringify(DEFAULT_NETWORK) })],
+  ['network-features', (() => {
+    let k = 0;
+    const sc = applyEdgeList(parseNet(JSON.stringify(DEFAULT_NETWORK)), 'A-B 3, A-B 5, A->C 4, C-C 2, B->B, G-E, E->D 7', (p) => `${p}${++k}`);
+    return network.generate({ scene: JSON.stringify(sc) });
+  })()],
   ['blank-trig', blank.generate({ ...defaultValues(blank.schema), xPreset: 'radians', xCustomTicks: '', originLabel: true })],
   ['blank-degrees-grid', blank.generate({ ...defaultValues(blank.schema), xPreset: 'degrees', yCustomTicks: '1, -1', showGrid: true })],
 ];

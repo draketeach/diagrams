@@ -92,6 +92,21 @@ usual axis labels, scale ticks and NOT TO SCALE note.
 
 Fractions in labels are drawn full size (`\\displaystyle`), as on exam papers.
 
+### Network (visual editor)
+
+Networks (graphs) drawn on the geometry editor's canvas, with network tools:
+Vertex, Edge, Directed edge, Label and Text. Vertices are dots with their
+letter beside them (names can be hidden per vertex). Clicking a vertex twice
+with the Edge tool makes a loop; joining two vertices again makes a second
+edge that curves away (0°, then 25°, −25°, 45° …). A directed edge has an arrow
+at its middle. Click an edge to label it (e.g. a weight), change its direction,
+or set its curve; a loop can be pointed any way and resized.
+
+With nothing selected, the panel shows the network as an **edge list** you can
+edit: `A-B`, `A->B` (directed), `A-B 5` (labelled), `A-A` (a loop), `A-B`
+twice (two edges), `D` (a vertex on its own). Vertices and edges still listed
+keep their places; new vertices go on a circle to be dragged into place.
+
 ### Probability tree
 
 Trees grow left to right, with each stage's names in a column so every branch
@@ -178,7 +193,7 @@ Use either:
   then open http://localhost:8000.
 
 You can open a diagram type directly, e.g. `?type=function`, `?type=sketch`,
-`?type=blank`, `?type=normal`, `?type=scatter`, `?type=slopefield`, `?type=geometry` or `?type=probtree`.
+`?type=blank`, `?type=normal`, `?type=scatter`, `?type=slopefield`, `?type=geometry`, `?type=network` or `?type=probtree`.
 
 The **Gallery** (`gallery.html`, linked from the top bar) shows example
 diagrams made with the site, grouped by type; each opens in the editor with
@@ -246,10 +261,12 @@ js/diagrams/
   scatter.js             scatterplots (click the preview to add points)
   slopefield.js          slope fields, solution curves, isoclines
   geometry.js            geometry drawn in the visual editor
+  network.js             networks, drawn in the geometry editor
   probtree.js            probability trees
 js/geometry/
   scene.js               the drawing's data, label placement, and TikZ output
   editor.js              the editor: canvas, toolbar, snapping, properties, undo
+  edgeList.js            networks as typed edge lists, and back
 tools/
   stamp-versions.mjs     adds content-hash versions to JS/CSS URLs in index.html and gallery.html
   build-gallery.mjs      renders the gallery images with the site in a headless browser

@@ -21,6 +21,8 @@ import scatter, { parseData, regression } from '../js/diagrams/scatter.js';
 import slopefield, { solutionCurve, contour } from '../js/diagrams/slopefield.js';
 import normal, { normalProbability } from '../js/diagrams/normal.js';
 import geometry from '../js/diagrams/geometry.js';
+import network, { DEFAULT_NETWORK } from '../js/diagrams/network.js';
+import { parseEdgeList, sceneToEdgeList, applyEdgeList } from '../js/geometry/edgeList.js';
 import probtree, { treeFromStages, treeFromOutline, pathProduct } from '../js/diagrams/probtree.js';
 import { parseScene, sceneToTikz, coordinatesFromCode, angleSpan, labelPositions, pointMap } from '../js/geometry/scene.js';
 import { GALLERY } from '../js/galleryEntries.js';
@@ -607,8 +609,36 @@ test('probability trees: input, products, blanks', () => {
   assert.ok(col.includes('{First}') && col.includes('{Outcome}') && col.includes('{Probability}'), 'headings');
 });
 
+test('networks: edge lists, repeated edges, loops, directions', () => {
+  const pl = parseEdgeList('A-B, B->C 5\nC<-D: x, C-C, E');
+  assert.deepEqual(pl.vertices, ['A', 'B', 'C', 'D', 'E']);
+  assert.deepEqual(pl.edges[1], { a: 'B', b: 'C', directed: true, label: '5' });
+  assert.deepEqual(pl.edges[2], { a: 'D', b: 'C', directed: true, label: 'x' }, 'C<-D is an edge from D to C');
+  assert.throws(() => parseEdgeList('A = B'), /isn't an edge or a vertex/);
+  let k = 0;
+  const id = (p) => `${p}${++k}`;
+  const scene = parseScene(JSON.stringify(DEFAULT_NETWORK));
+  const before = scene.points.find((p) => p.name === 'A');
+  applyEdgeList(scene, 'A-B, A-B, A->C 4, C-C, H', id);
+  assert.equal(scene.points.find((p) => p.name === 'A').x, before.x, 'vertices that stay keep their places');
+  assert.ok(scene.points.find((p) => p.name === 'H'), 'a new vertex');
+  assert.ok(!scene.points.find((p) => p.name === 'D'), 'an unlisted vertex goes');
+  const ab = scene.items.filter((i) => i.type === 'segment' && [i.a, i.b].sort().join() === ['A', 'B'].sort().join());
+  assert.equal(ab.length, 2);
+  assert.deepEqual(ab.map((i) => i.bend).sort(), [0, 25], 'the second AB curves');
+  assert.equal(sceneToEdgeList(scene), 'A-B\nA-B\nA->C 4\nC-C\nH');
+  scene.settings.mode = 'network';
+  const { code, warnings } = sceneToTikz(scene);
+  assert.deepEqual(warnings, []);
+  assert.ok(code.includes('(A) to[bend left=25] (B)'), 'curved edge');
+  assert.ok(/\(C\) \.\. controls \+\([\d.-]+:1\.28\) and \+\([\d.-]+:1\.28\) \.\. \(C\)/.test(code), 'loop');
+  assert.ok(/mark=at position 0\.5 with \{\\arrow\[xshift=2pt\]\{Stealth\[length=4pt\]\}\}\}\] \(A\) -- \(C\)/.test(code), 'directed: arrow in the middle');
+  assert.ok(code.includes('{$4$}'), 'edge label');
+  assert.deepEqual(network.generate({ scene: JSON.stringify(DEFAULT_NETWORK) }).warnings, []);
+});
+
 test('gallery: every entry generates cleanly and has its image', () => {
-  const modules = { function: fn, sketch, blank, normal, scatter, slopefield, geometry, probtree };
+  const modules = { function: fn, sketch, blank, normal, scatter, slopefield, geometry, network, probtree };
   const ids = new Set();
   for (const e of GALLERY) {
     assert.ok(!ids.has(e.id), `duplicate gallery id ${e.id}`);

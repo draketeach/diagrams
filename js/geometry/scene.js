@@ -13,6 +13,9 @@
 //     { id, type: 'segment', a, b, style, label, labelPos, ticks, arrows, tip, sloped },
 //       tip: 'none' | 'a' | 'b' | 'both' (arrowheads at the ends); sloped: label turned along the line
 //       endMode: 'none' | 'bearing' | 'custom', endText: a label beyond the b end (rays: their bearing)
+//       bend: degrees (0 straight; + bends left going a→b, as TikZ's bend left)
+//       a === b makes a loop: loopDir (degrees, null = away from the other edges), loopSize (cm)
+//   settings.mode: 'geometry' or 'network' (network: dots, no lengths, edges can repeat)
 //     { id, type: 'polygon', pts: [ids], fill },              (shading only: a grey, or a pattern in PATTERNS)
 //     { id, type: 'angle', v, a, b, label, labelPos, arcs, radius, reflex, arrow },
 //       arrow: null, or the id of the arm (a or b) the arc's arrowhead points at
@@ -40,6 +43,7 @@ export const DEFAULT_SETTINGS = {
   notToScale: false,
   firstLetter: 'A',
   lengthDecimals: 1,
+  mode: 'geometry',
   view: { x0: -1, y0: -5, w: 14, h: 8 },
 };
 
@@ -71,7 +75,7 @@ export function normalPoint(p) {
 
 export function normalItem(it) {
   const base = {
-    segment: { style: 'solid', label: '', labelPos: null, ticks: 0, arrows: 0, tip: 'none', sloped: false, endMode: 'none', endText: '' },
+    segment: { style: 'solid', label: '', labelPos: null, ticks: 0, arrows: 0, tip: 'none', sloped: false, endMode: 'none', endText: '', bend: 0, loopDir: null, loopSize: 0.8 },
     polygon: { fill: 'gray!20' },
     angle: { label: null, labelPos: null, arcs: 1, radius: 0.7, reflex: false, arrow: null },
     right: { size: 0.25 },
@@ -236,6 +240,90 @@ export function pointLabelOffset(scene, p, pts = pointMap(scene)) {
   return { dx: r3((-ux / len) * 0.32), dy: r3((-uy / len) * 0.32) };
 }
 
+// ---------------------------------------------------------------- curved edges and loops
+
+const rad = (d) => (d * Math.PI) / 180;
+const LOOP_SPREAD = 35; // degrees either side of a loop's direction
+const LOOP_REACH = 1.6; // control-point distance per cm of loop size
+
+/** Which way a loop at point v points by default: away from its other edges. */
+export function loopAutoDir(scene, v, pts = pointMap(scene)) {
+  const p = pts.get(v);
+  const nb = neighbours(scene, v, pts).filter((q) => q.x !== p.x || q.y !== p.y);
+  let ux = 0;
+  let uy = 0;
+  for (const q of nb) {
+    const d = Math.hypot(q.x - p.x, q.y - p.y);
+    ux -= (q.x - p.x) / d;
+    uy -= (q.y - p.y) / d;
+  }
+  if (Math.hypot(ux, uy) < 1e-6) {
+    const c = centroid(scene);
+    [ux, uy] = [p.x - c.x, p.y - c.y];
+  }
+  return Math.hypot(ux, uy) < 1e-6 ? 90 : (Math.atan2(uy, ux) * 180) / Math.PI;
+}
+
+/**
+ * A line's shape: { kind: 'line' | 'curve' | 'loop', a, b, c1, c2, dir }.
+ * Curves and loops are cubic Béziers with the control points TikZ uses
+ * (a bend uses "out"/"in" angles with looseness 1: control points 0.3915 × the
+ * distance away).
+ */
+export function edgeShape(it, pts, scene = null) {
+  const a = pts.get(it.a);
+  const b = pts.get(it.b);
+  if (it.a === it.b) {
+    const dir = it.loopDir ?? (scene ? loopAutoDir(scene, it.a, pts) : 90);
+    const r = (it.loopSize ?? 0.8) * LOOP_REACH;
+    return {
+      kind: 'loop',
+      a,
+      b: a,
+      dir,
+      c1: { x: a.x + r * Math.cos(rad(dir + LOOP_SPREAD)), y: a.y + r * Math.sin(rad(dir + LOOP_SPREAD)) },
+      c2: { x: a.x + r * Math.cos(rad(dir - LOOP_SPREAD)), y: a.y + r * Math.sin(rad(dir - LOOP_SPREAD)) },
+    };
+  }
+  if (!it.bend) return { kind: 'line', a, b };
+  const d = Math.hypot(b.x - a.x, b.y - a.y);
+  const g = (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI;
+  const k = 0.3915 * d;
+  return {
+    kind: 'curve',
+    a,
+    b,
+    c1: { x: a.x + k * Math.cos(rad(g + it.bend)), y: a.y + k * Math.sin(rad(g + it.bend)) },
+    c2: { x: b.x + k * Math.cos(rad(g + 180 - it.bend)), y: b.y + k * Math.sin(rad(g + 180 - it.bend)) },
+  };
+}
+
+/** A point part-way (t from 0 to 1) along a line's shape. */
+export function shapeAt(sh, t) {
+  if (sh.kind === 'line') return { x: sh.a.x + (sh.b.x - sh.a.x) * t, y: sh.a.y + (sh.b.y - sh.a.y) * t };
+  const u = 1 - t;
+  const w = [u * u * u, 3 * u * u * t, 3 * u * t * t, t * t * t];
+  return {
+    x: w[0] * sh.a.x + w[1] * sh.c1.x + w[2] * sh.c2.x + w[3] * sh.b.x,
+    y: w[0] * sh.a.y + w[1] * sh.c1.y + w[2] * sh.c2.y + w[3] * sh.b.y,
+  };
+}
+
+/** The direction of travel (unit vector) half-way along a line's shape. */
+export function shapeTangent(sh) {
+  const v =
+    sh.kind === 'line'
+      ? { x: sh.b.x - sh.a.x, y: sh.b.y - sh.a.y }
+      : { x: sh.b.x + sh.c2.x - sh.c1.x - sh.a.x, y: sh.b.y + sh.c2.y - sh.c1.y - sh.a.y };
+  const L = Math.hypot(v.x, v.y) || 1;
+  return { x: v.x / L, y: v.y / L };
+}
+
+/** Where a line's label is measured from: the middle of the line, or of its curve. */
+export function segmentMid(it, pts, scene = null) {
+  return shapeAt(edgeShape(it, pts, scene), 0.5);
+}
+
 export function centroid(scene) {
   const ps = scene.points.filter((p) => !p.hidden);
   if (!ps.length) return { x: 0, y: 0 };
@@ -245,6 +333,14 @@ export function centroid(scene) {
 /** Where a side's label goes: { dx, dy } from the midpoint, away from the drawing's middle. */
 export function segmentLabelOffset(scene, it, pts = pointMap(scene)) {
   if (it.labelPos) return it.labelPos;
+  if (it.a === it.b || it.bend) {
+    // outside the bulge of a curve or loop
+    const sh = edgeShape(it, pts, scene);
+    const m = shapeAt(sh, 0.5);
+    const base = sh.kind === 'loop' ? sh.a : { x: (sh.a.x + sh.b.x) / 2, y: (sh.a.y + sh.b.y) / 2 };
+    const L = Math.hypot(m.x - base.x, m.y - base.y) || 1;
+    return { dx: r3(((m.x - base.x) / L) * 0.3), dy: r3(((m.y - base.y) / L) * 0.3) };
+  }
   const a = pts.get(it.a);
   const b = pts.get(it.b);
   const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
@@ -255,6 +351,17 @@ export function segmentLabelOffset(scene, it, pts = pointMap(scene)) {
   if (nx * (c.x - m.x) + ny * (c.y - m.y) > 0) {
     nx = -nx;
     ny = -ny;
+  }
+  // a curved edge between the same two points: the straight one's label goes the other side
+  const twin = scene.items.find(
+    (o) => o !== it && o.type === 'segment' && o.bend && ((o.a === it.a && o.b === it.b) || (o.a === it.b && o.b === it.a))
+  );
+  if (twin) {
+    const bulge = shapeAt(edgeShape(twin, pts, scene), 0.5);
+    if (nx * (bulge.x - m.x) + ny * (bulge.y - m.y) > 0) {
+      nx = -nx;
+      ny = -ny;
+    }
   }
   // slide along the line, away from a point near the middle (lines meet there)
   const ux = (b.x - a.x) / len;
@@ -332,7 +439,11 @@ export function labelPositions(scene, pts = pointMap(scene)) {
     for (let i = 0; i <= n; i++) samples.push({ x: a.x + ((b.x - a.x) * i) / n, y: a.y + ((b.y - a.y) * i) / n, seg });
   };
   for (const it of scene.items) {
-    if (it.type === 'segment' && pts.get(it.a) && pts.get(it.b)) sampleLine(pts.get(it.a), pts.get(it.b), it.id);
+    if (it.type === 'segment' && pts.get(it.a) && pts.get(it.b)) {
+      const sh = edgeShape(it, pts, scene);
+      if (sh.kind === 'line') sampleLine(sh.a, sh.b, it.id);
+      else for (let t = 0; t <= 1.0001; t += 0.04) samples.push({ ...shapeAt(sh, t), seg: it.id });
+    }
     if (it.type === 'angle' && pts.get(it.v) && pts.get(it.a) && pts.get(it.b)) {
       const v = pts.get(it.v);
       const sp = angleSpan(v, pts.get(it.a), pts.get(it.b), it.reflex);
@@ -434,7 +545,8 @@ export function labelPositions(scene, pts = pointMap(scene)) {
       if (!text) continue;
       if (it.labelPos) {
         out.set(`s:${it.id}`, it.labelPos);
-        placed.push({ x: (a.x + b.x) / 2 + it.labelPos.dx, y: (a.y + b.y) / 2 + it.labelPos.dy, ...labelBox(text) });
+        const m = segmentMid(it, pts, scene);
+        placed.push({ x: m.x + it.labelPos.dx, y: m.y + it.labelPos.dy, ...labelBox(text) });
       } else later.push(['segment', it, text]);
     }
   }
@@ -469,9 +581,13 @@ export function labelPositions(scene, pts = pointMap(scene)) {
     } else {
       const a = pts.get(it.a);
       const b = pts.get(it.b);
-      const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
-      const ux = (b.x - a.x) / len;
-      const uy = (b.y - a.y) / len;
+      // along the line, or along a curve where its label sits (slides stay short there)
+      const sh = edgeShape(it, pts, scene);
+      const mid = shapeAt(sh, 0.5);
+      const tan = shapeTangent(sh);
+      const len = sh.kind === 'line' ? Math.hypot(b.x - a.x, b.y - a.y) || 1 : 1.1;
+      const ux = tan.x;
+      const uy = tan.y;
       const flat = labelBox(text);
       // a label turned along the line takes up a slanted box: use the box around it
       const box = it.sloped
@@ -500,7 +616,7 @@ export function labelPositions(scene, pts = pointMap(scene)) {
         }
       }
       if (!cands.length) cands.push({ ...d0, penalty: 0 });
-      choose(`s:${it.id}`, { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, box, cands, { seg: it.id });
+      choose(`s:${it.id}`, mid, box, cands, { seg: it.id });
     }
   }
   return out;
@@ -552,6 +668,20 @@ export function endOffset(it, pts, text) {
   const box = labelBox(text);
   const reach = (box.w / 2) * Math.abs(ux) + (box.h / 2) * Math.abs(uy) + 0.12;
   return { dx: r3(ux * reach), dy: r3(uy * reach) };
+}
+
+/** TikZ for a line's path: "(A) -- (B)", "(A) to[bend left=30] (B)" or a loop; `node` goes at its middle. */
+export function segPath(it, pts, nameOf, scene, node = '') {
+  const A = `(${nameOf(it.a)})`;
+  const B = `(${nameOf(it.b)})`;
+  const sp = node ? ` ${node}` : '';
+  if (it.a === it.b) {
+    const sh = edgeShape(it, pts, scene);
+    const r = (it.loopSize ?? 0.8) * LOOP_REACH;
+    return `${A} .. controls +(${fmt(sh.dir + LOOP_SPREAD)}:${fmt(r)}) and +(${fmt(sh.dir - LOOP_SPREAD)}:${fmt(r)}) .. ${A}${sp}`;
+  }
+  if (it.bend) return `${A} to[bend ${it.bend > 0 ? 'left' : 'right'}=${fmt(Math.abs(it.bend))}]${sp} ${B}`;
+  return `${A} -- ${B}${sp}`;
 }
 
 /** The angle (degrees) to turn a label so it runs along a line, kept upright. */
@@ -682,7 +812,7 @@ export function sceneToTikz(scene) {
 
   // ---- lines: plain ones chained into paths, marked ones on their own
   const segs = scene.items.filter((it) => it.type === 'segment' && known(it.a, it.b));
-  const special = (s) => s.ticks || s.arrows || (s.tip && s.tip !== 'none');
+  const special = (s) => s.ticks || s.arrows || (s.tip && s.tip !== 'none') || s.bend || s.a === s.b;
   const plain = segs.filter((s) => !special(s));
   const marked = segs.filter(special);
   if (segs.length) b.comment('lines');
@@ -696,7 +826,7 @@ export function sceneToTikz(scene) {
     if (s.ticks || s.arrows) usedLibs.add('decorations.markings');
     if (s.arrows || tipOption(s)) usedLibs.add('arrows.meta');
     const opts = [tipOption(s), lw, STYLE[s.style], markings(s)].filter(Boolean).join(', ');
-    b.add(`\\draw[${opts}] (${name(s.a)}) -- (${name(s.b)});`);
+    b.add(`\\draw${opts ? `[${opts}]` : ''} ${segPath(s, pts, name, scene)};`);
   }
 
   // ---- equal-length marks on their own (the line itself is drawn elsewhere)
@@ -782,8 +912,9 @@ export function sceneToTikz(scene) {
     const text = segmentText(s, pts, S);
     if (!text) continue;
     const off = placed.get(`s:${s.id}`) ?? segmentLabelOffset(scene, s, pts);
-    const turn = s.sloped ? `, rotate=${fmt(slopeDeg(pts.get(s.a), pts.get(s.b)))}` : '';
-    labels.push(`\\path (${name(s.a)}) -- (${name(s.b)}) node[midway, xshift=${fmt(off.dx)}cm, yshift=${fmt(off.dy)}cm${turn}] {${mathLabel(text)}};`);
+    const tan = shapeTangent(edgeShape(s, pts, scene));
+    const turn = s.sloped ? `, rotate=${fmt(slopeDeg({ x: 0, y: 0 }, tan))}` : '';
+    labels.push(`\\path ${segPath(s, pts, name, scene, `node[midway, xshift=${fmt(off.dx)}cm, yshift=${fmt(off.dy)}cm${turn}] {${mathLabel(text)}}`)};`);
   }
   for (const p of scene.points) {
     if (p.hidden || !p.showLabel || !p.name) continue;
