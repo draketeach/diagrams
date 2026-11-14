@@ -602,7 +602,8 @@ export function labelPositions(scene, pts = pointMap(scene)) {
       for (let k = 0; k < 12; k++) {
         const step = Math.ceil(k / 2) * (k % 2 ? 1 : -1); // 0, 1, -1, 2, -2, …
         const g = g0 + (step * Math.PI) / 6;
-        const dist = 0.24 + box.w / 2 * Math.abs(Math.cos(g)) * 0.6 + 0.04;
+        // clear of the point whichever way it sits: half the label's extent that way, plus a gap
+        const dist = (box.w / 2) * Math.abs(Math.cos(g)) + (box.h / 2) * Math.abs(Math.sin(g)) + 0.15;
         cands.push({ dx: Math.cos(g) * Math.max(0.32, dist), dy: Math.sin(g) * Math.max(0.32, dist), penalty: Math.abs(step) * 0.35 });
       }
       choose(`p:${it.id}`, it, box, cands, { point: it });
@@ -674,6 +675,10 @@ export const PATTERNS = {
 };
 
 const TIP = '{Stealth[length=5pt]}';
+
+/** A point's name: a word (3+ letters, like Start) as upright text; letters like A or B_1 as maths. */
+export const isWordName = (name) => /^[A-Za-z]{3,}$/.test(String(name));
+const nameLabel = (name) => (isWordName(name) ? name : mathLabel(name));
 /** A white patch behind a label, so it reads over shading. */
 const BG = 'fill=white, inner sep=1.5pt';
 function tipOption(it) {
@@ -1082,7 +1087,7 @@ export function sceneToTikz(sceneIn) {
   for (const p of scene.points) {
     if (p.hidden || !p.showLabel || !p.name) continue;
     const off = placed.get(`p:${p.id}`) ?? pointLabelOffset(scene, p, pts);
-    labels.push(`\\path (${p.name}) ++(${fmt(off.dx)},${fmt(off.dy)}) node {${mathLabel(p.name)}};`);
+    labels.push(`\\path (${p.name}) ++(${fmt(off.dx)},${fmt(off.dy)}) node {${nameLabel(p.name)}};`);
   }
   const dots = scene.points.filter((p) => p.dot && !p.hidden);
   for (const it of scene.items.filter((i) => i.type === 'text')) {

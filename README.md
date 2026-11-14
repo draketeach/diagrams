@@ -97,7 +97,8 @@ Fractions in labels are drawn full size (`\\displaystyle`), as on exam papers.
 
 Networks (graphs) drawn on the geometry editor's canvas, with network tools:
 Vertex, Edge, Directed edge, Label and Text. Vertices are dots with their
-letter beside them (names can be hidden per vertex). Clicking a vertex twice
+letter beside them (names can be hidden per vertex; a name that's a word of
+three or more letters, like Start or Finish, is set upright as text). Clicking a vertex twice
 with the Edge tool makes a loop; joining two vertices again makes a second
 edge that curves away (0°, then 25°, −25°, 45° …). A directed edge has an arrow
 at its middle. Click an edge to label it (e.g. a weight), change its direction,

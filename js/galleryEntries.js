@@ -469,4 +469,13 @@ export const GALLERY = [
     description: 'Drawn through points: a smooth curve with a vertical drop at 10 years, on a grid, with axis titles and units (estimated from an exam graph).',
     values: {},
   },
+  {
+    id: 'network-activity',
+    type: 'network',
+    title: 'Activity network',
+    description: 'Directed edges labelled with activities and durations, from Start to Finish; vertices are dots, with word names set upright.',
+    values: {
+      scene: JSON.stringify({"settings": {"mode": "network", "grid": 0.25, "snap": true, "showGrid": true, "lineWidth": "thin", "fontSize": "", "notToScale": false, "view": {"x0": -1.8, "y0": -5.6, "w": 14.5, "h": 9}}, "points": [{"id": "Start", "name": "Start", "x": 0.0, "y": 0.0, "dot": true, "showLabel": true}, {"id": "P", "name": "P", "x": 8.86, "y": 2.8, "dot": true, "showLabel": false}, {"id": "Finish", "name": "Finish", "x": 10.74, "y": 0.0, "dot": true, "showLabel": true}, {"id": "Q", "name": "Q", "x": 7.02, "y": 0.0, "dot": true, "showLabel": false}, {"id": "R", "name": "R", "x": 2.76, "y": -3.24, "dot": true, "showLabel": false}, {"id": "S", "name": "S", "x": 7.26, "y": -2.24, "dot": true, "showLabel": false}, {"id": "T", "name": "T", "x": 6.06, "y": -4.66, "dot": true, "showLabel": false}, {"id": "U", "name": "U", "x": 9.14, "y": -4.7, "dot": true, "showLabel": false}, {"id": "W", "name": "W", "x": 9.44, "y": -2.32, "dot": true, "showLabel": false}], "items": [{"id": "eA", "type": "segment", "a": "Start", "b": "P", "label": "A, 8", "arrows": 1}, {"id": "eD", "type": "segment", "a": "P", "b": "Finish", "label": "D, 4", "arrows": 1}, {"id": "eB", "type": "segment", "a": "Start", "b": "Q", "label": "B, 9", "arrows": 1, "labelPos": {"dx": 0, "dy": -0.3}}, {"id": "eE1", "type": "segment", "a": "Q", "b": "Finish", "label": "E, 4", "arrows": 1, "labelPos": {"dx": 0, "dy": -0.3}}, {"id": "eC", "type": "segment", "a": "Start", "b": "R", "label": "C, 4", "arrows": 1}, {"id": "eG", "type": "segment", "a": "R", "b": "S", "label": "G, 6", "arrows": 1, "labelPos": {"dx": -0.07, "dy": 0.33}}, {"id": "eE2", "type": "segment", "a": "R", "b": "T", "label": "E, 3", "arrows": 1}, {"id": "eI", "type": "segment", "a": "T", "b": "S", "label": "I, 2", "arrows": 1}, {"id": "eF", "type": "segment", "a": "T", "b": "U", "label": "F, 5", "arrows": 1}, {"id": "eJ", "type": "segment", "a": "S", "b": "U", "label": "J, 1", "arrows": 1, "labelPos": {"dx": 0.32, "dy": 0.24}}, {"id": "eH", "type": "segment", "a": "S", "b": "Q", "label": "H, 3", "arrows": 1}, {"id": "eK", "type": "segment", "a": "U", "b": "W", "label": "K, 11", "arrows": 1}, {"id": "eL", "type": "segment", "a": "W", "b": "Finish", "label": "L, 1", "arrows": 1}]}),
+    },
+  },
 ];

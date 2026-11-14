@@ -21,6 +21,7 @@ import {
   fmt,
   markOffsets,
   slopeDeg,
+  isWordName,
   curveSections,
   polygonEdges,
   labelGap,
@@ -1327,7 +1328,7 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     for (const p of scene.points) {
       if (p.hidden || !p.showLabel) continue;
       const off = placed.get(`p:${p.id}`) ?? pointLabelOffset(scene, p, pts);
-      parts.push(labelSvg('point', p.id, p.x + off.dx, p.y + off.dy, display(p.name), true, sel('point', p.id)));
+      parts.push(labelSvg('point', p.id, p.x + off.dx, p.y + off.dy, display(p.name), !isWordName(p.name), sel('point', p.id)));
     }
 
     // NOT TO SCALE (as in the TikZ)

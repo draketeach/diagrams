@@ -636,6 +636,9 @@ test('networks: edge lists, repeated edges, loops, directions', () => {
   assert.ok(/mark=at position 0\.5 with \{\\arrow\[xshift=2pt\]\{Stealth\[length=4pt\]\}\}\}\] \(A\) -- \(C\)/.test(code), 'directed: arrow in the middle');
   assert.ok(code.includes('{$4$}'), 'edge label');
   assert.deepEqual(network.generate({ scene: JSON.stringify(DEFAULT_NETWORK) }).warnings, []);
+  // word names (Start, Finish) are upright text; letters stay maths
+  const words = sceneToTikz(parseScene({ points: [{ id: 's', name: 'Start', x: 0, y: 0 }, { id: 'a', name: 'A', x: 3, y: 0 }], items: [{ id: 'e', type: 'segment', a: 's', b: 'a', label: '' }] })).code;
+  assert.ok(words.includes('node {Start};') && words.includes('node {$A$};'), words);
 });
 
 test('real-world graphs: curves from points, titles', () => {
