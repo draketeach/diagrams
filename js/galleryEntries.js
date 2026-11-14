@@ -7,6 +7,7 @@
 export const GALLERY_GROUPS = [
   { type: 'function', heading: 'Function graphs' },
   { type: 'sketch', heading: 'Sketch graphs' },
+  { type: 'realgraph', heading: 'Real-world graphs' },
   { type: 'blank', heading: 'Blank axes' },
   { type: 'normal', heading: 'Normal distribution' },
   { type: 'scatter', heading: 'Scatterplots' },
@@ -428,5 +429,12 @@ export const GALLERY = [
     values: {
       scene: JSON.stringify({"settings": {"mode": "network", "grid": 0.25, "snap": true, "showGrid": true, "lineWidth": "thin", "fontSize": "", "notToScale": false, "view": {"x0": -4.5, "y0": -3.8, "w": 10, "h": 6.8}}, "points": [{"id": "A", "name": "A", "x": 0.0, "y": 2.05, "dot": true, "showLabel": false}, {"id": "B", "name": "B", "x": 1.93, "y": 1.05, "dot": true, "showLabel": false}, {"id": "C", "name": "C", "x": 2.38, "y": -1.12, "dot": true, "showLabel": false}, {"id": "D", "name": "D", "x": -0.5, "y": -2.8, "dot": true, "showLabel": false}, {"id": "E", "name": "E", "x": -0.38, "y": -1.18, "dot": true, "showLabel": false}, {"id": "F", "name": "F", "x": -2.05, "y": 0.35, "dot": true, "showLabel": false}, {"id": "G", "name": "G", "x": 0.0, "y": 0.35, "dot": true, "showLabel": false}], "items": [{"id": "eAB", "type": "segment", "a": "A", "b": "B", "label": ""}, {"id": "eAF", "type": "segment", "a": "A", "b": "F", "label": ""}, {"id": "eAG", "type": "segment", "a": "A", "b": "G", "label": ""}, {"id": "eFG", "type": "segment", "a": "F", "b": "G", "label": ""}, {"id": "eGB", "type": "segment", "a": "G", "b": "B", "label": ""}, {"id": "eFE", "type": "segment", "a": "F", "b": "E", "label": ""}, {"id": "eFD", "type": "segment", "a": "F", "b": "D", "label": ""}, {"id": "eGE", "type": "segment", "a": "G", "b": "E", "label": ""}, {"id": "eBE", "type": "segment", "a": "B", "b": "E", "label": ""}, {"id": "eBD", "type": "segment", "a": "B", "b": "D", "label": ""}, {"id": "eED", "type": "segment", "a": "E", "b": "D", "label": ""}, {"id": "eBC", "type": "segment", "a": "B", "b": "C", "label": ""}, {"id": "eCD", "type": "segment", "a": "C", "b": "D", "label": ""}]}),
     },
+  },
+  {
+    id: 'realgraph-loan',
+    type: 'realgraph',
+    title: 'Loan balance',
+    description: 'Drawn through points: a smooth curve with a vertical drop at 10 years, on a grid, with axis titles and units (estimated from an exam graph).',
+    values: {},
   },
 ];

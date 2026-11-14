@@ -8,10 +8,11 @@ import fn from './function.js';
 import sketch from './sketch.js';
 import normal from './normal.js';
 import blank from './blank.js';
+import realgraph from './realgraph.js';
 import scatter from './scatter.js';
 import slopefield from './slopefield.js';
 import geometry from './geometry.js';
 import probtree from './probtree.js';
 import network from './network.js';
 
-[fn, sketch, blank, normal, scatter, slopefield, geometry, network, probtree].forEach(registerDiagram);
+[fn, sketch, blank, realgraph, normal, scatter, slopefield, geometry, network, probtree].forEach(registerDiagram);

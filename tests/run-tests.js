@@ -21,6 +21,7 @@ import scatter, { parseData, regression } from '../js/diagrams/scatter.js';
 import slopefield, { solutionCurve, contour } from '../js/diagrams/slopefield.js';
 import normal, { normalProbability } from '../js/diagrams/normal.js';
 import geometry from '../js/diagrams/geometry.js';
+import realgraph, { parseCurve, curveRuns, titleText } from '../js/diagrams/realgraph.js';
 import network, { DEFAULT_NETWORK } from '../js/diagrams/network.js';
 import { parseEdgeList, sceneToEdgeList, applyEdgeList } from '../js/geometry/edgeList.js';
 import probtree, { treeFromStages, treeFromOutline, pathProduct } from '../js/diagrams/probtree.js';
@@ -637,8 +638,31 @@ test('networks: edge lists, repeated edges, loops, directions', () => {
   assert.deepEqual(network.generate({ scene: JSON.stringify(DEFAULT_NETWORK) }).warnings, []);
 });
 
+test('real-world graphs: curves from points, titles', () => {
+  const c = parseCurve('0,8 5, 7.5 10,6.6 -- 10,5.8 20,3 | 22,2* 25,0o:Q; dashed; thick; label: Plan A', 0);
+  assert.equal(c.points.length, 7, '"5, 7.5" with a space is one point');
+  assert.deepEqual(c.joins, ['smooth', 'smooth', 'line', 'smooth', 'gap', 'smooth']);
+  assert.deepEqual([c.style, c.width, c.label], ['dashed', 'thick', 'Plan A']);
+  assert.deepEqual([c.points[5].dot, c.points[6].dot, c.points[6].text], ['filled', 'open', 'Q']);
+  assert.deepEqual(curveRuns(c).map((r) => [r.kind, r.points.length]), [['smooth', 3], ['line', 2], ['smooth', 2], ['smooth', 2]]);
+  assert.deepEqual(curveRuns(parseCurve('0,0 2,40 3,40; straight', 0)).map((r) => r.kind), ['line']);
+  assert.throws(() => parseCurve('0,8 ten,3', 0), /isn't a number/);
+  assert.throws(() => parseCurve('0,8; wiggly', 0), /isn't a setting/);
+  assert.equal(titleText('Balance \\\\ (× \\$ hundred)'), 'Balance \\\\ ($\\times$ $\\$$ hundred)', 'TikZJax needs the dollar as maths');
+  assert.equal(titleText('Speed ($v$ m/s) 50%'), 'Speed ($v$ m/s) 50\\%');
+  const base = defaultValues(realgraph.schema);
+  const { code, warnings } = realgraph.generate(base);
+  assert.deepEqual(warnings, []);
+  assert.ok(code.includes('(10,6.6) -- (10,5.85)'), 'the vertical drop');
+  assert.ok(code.includes('plot[smooth, tension=0.5] coordinates {(0,8) (5,7.47) (10,6.6)}'));
+  assert.ok(code.includes('node[rotate=90, anchor=south, align=center]'), 'turned y title');
+  assert.ok(code.includes('{$8$}') && !code.includes('{$2$}'), 'only the chosen y numbers');
+  const out = realgraph.generate({ ...base, curves: '0,8 50,1' });
+  assert.ok(out.warnings.some((w) => /outside the axes/.test(w)));
+});
+
 test('gallery: every entry generates cleanly and has its image', () => {
-  const modules = { function: fn, sketch, blank, normal, scatter, slopefield, geometry, network, probtree };
+  const modules = { realgraph, function: fn, sketch, blank, normal, scatter, slopefield, geometry, network, probtree };
   const ids = new Set();
   for (const e of GALLERY) {
     assert.ok(!ids.has(e.id), `duplicate gallery id ${e.id}`);

@@ -107,6 +107,22 @@ edit: `A-B`, `A->B` (directed), `A-B 5` (labelled), `A-A` (a loop), `A-B`
 twice (two edges), `D` (a vertex on its own). Vertices and edges still listed
 keep their places; new vertices go on a circle to be dragged into place.
 
+### Real-world graph
+
+Graphs of real quantities (money, temperature, distance against time) drawn
+through points instead of from an equation. One curve per line: points `x,y`
+separated by spaces are joined by a smooth curve, `--` between two points
+joins them with a straight line (`10,6.6 -- 10,5.8` is a vertical drop) and `|`
+leaves a gap. A point ending in `*` gets a filled dot, in `o` an open dot, and
+`:P` labels it. Settings follow `;`: `dashed`, `dotted`, a line width,
+`straight` (all joins straight) and `label: text` at the end of the curve.
+
+The axes meet at the corner, with numbers every so often (or only the ones you
+list), one 0 at the corner (or one on each axis, or none), and an optional
+grid. Axis titles are text, centred under the x-axis and turned beside the
+y-axis (or at the axis ends): `\\` starts a new line, `$…$` is maths, `\$` is a
+dollar sign and `×` works.
+
 ### Probability tree
 
 Trees grow left to right, with each stage's names in a column so every branch
@@ -193,7 +209,7 @@ Use either:
   then open http://localhost:8000.
 
 You can open a diagram type directly, e.g. `?type=function`, `?type=sketch`,
-`?type=blank`, `?type=normal`, `?type=scatter`, `?type=slopefield`, `?type=geometry`, `?type=network` or `?type=probtree`.
+`?type=blank`, `?type=normal`, `?type=scatter`, `?type=slopefield`, `?type=geometry`, `?type=network`, `?type=probtree` or `?type=realgraph`.
 
 The **Gallery** (`gallery.html`, linked from the top bar) shows example
 diagrams made with the site, grouped by type; each opens in the editor with
@@ -261,6 +277,7 @@ js/diagrams/
   scatter.js             scatterplots (click the preview to add points)
   slopefield.js          slope fields, solution curves, isoclines
   geometry.js            geometry drawn in the visual editor
+  realgraph.js           real-world graphs drawn through points
   network.js             networks, drawn in the geometry editor
   probtree.js            probability trees
 js/geometry/

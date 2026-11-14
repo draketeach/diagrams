@@ -28,13 +28,23 @@ for (const e of GALLERY) {
   if (only.size && !only.has(e.id)) continue;
   // the query string forces a fresh page load for every entry
   await page.goto(`${base}index.html?gallery=${e.id}${encodeShareHash({ type: e.type, values: e.values })}`);
-  await page.waitForFunction(
-    () => /Rendered|failed|rror/i.test(document.querySelector('#status').textContent) &&
-      !document.querySelector('#preview').classList.contains('is-busy') &&
-      document.querySelector('#preview svg'),
-    null,
-    { timeout: 120000 }
-  );
+  // done when it has rendered (with a picture) or has failed (with none)
+  const settled = await page
+    .waitForFunction(
+      () => {
+        const st = document.querySelector('#status').textContent;
+        if (document.querySelector('#preview').classList.contains('is-busy')) return false;
+        return /failed|rror/i.test(st) || (/Rendered/.test(st) && document.querySelector('#preview svg'));
+      },
+      null,
+      { timeout: 60000 }
+    )
+    .then(() => true, () => false);
+  if (!settled) {
+    failures++;
+    console.log(`${e.id}: FAILED (no result after 60 s)`);
+    continue;
+  }
   const status = await page.textContent('#status');
   const warnings = (await page.evaluate(() => document.querySelector('#messages')?.textContent || '')).trim();
   if (!/Rendered/.test(status)) {
