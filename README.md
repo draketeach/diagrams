@@ -132,6 +132,13 @@ everything else refers to the names. Change the numbers there and click outside
 the code box to move the points in the drawing too. The drawing is saved in
 share links like any other diagram.
 
+## Panel widths
+
+Drag the handles between the options, code and preview panels to resize them
+(or focus a handle and use the arrow keys). The widths are kept in your
+browser, separately for the geometry editor and the other types; double-click
+a handle (or press Home) to go back to the standard widths.
+
 ## Running it
 
 ES modules don't load from `file://`, so double-clicking `index.html` won't work.
@@ -181,6 +188,7 @@ sw.js                    service worker: keeps TikZJax cached, fetches site code
 js/core/                 shared by every diagram type
   registry.js            registerDiagram / getDiagram
   formBuilder.js         builds the options panel from a schema
+  columnSplitters.js     drag handles to resize the three panels
   codeEditor.js          editable code box (Ctrl+Enter renders)
   tikzDocument.js        TikZJax input, standalone .tex, picture-only
   tikzRenderer.js        renders code to <svg> with TikZJax

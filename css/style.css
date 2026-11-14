@@ -69,6 +69,7 @@ body {
 .type-help { margin: 0; color: var(--muted); }
 
 .layout {
+  position: relative;
   flex: 1;
   display: grid;
   grid-template-columns: minmax(260px, 320px) minmax(300px, 1fr) minmax(320px, 1.2fr);
@@ -337,3 +338,19 @@ a.button:hover { filter: brightness(1.1); }
 .geo-small { padding: 3px 8px; font-size: 12.5px; border: 1px solid var(--border); border-radius: 5px; background: #fff; cursor: pointer; }
 .geo-small:hover { border-color: var(--accent); }
 .geo-note { font-size: 12px; color: var(--muted); margin: 4px 0 0; }
+
+/* ---- drag handles between the panels */
+.col-splitter {
+  position: absolute; width: 12px; cursor: col-resize; z-index: 5; touch-action: none;
+  border-radius: 6px;
+}
+.col-splitter::after {
+  content: ''; position: absolute; left: 5px; top: 50%; width: 2px; height: 40px; margin-top: -20px;
+  border-radius: 1px; background: var(--border); transition: background 0.15s, height 0.15s, margin 0.15s;
+}
+.col-splitter:hover::after, .col-splitter.is-active::after, .col-splitter:focus-visible::after {
+  background: var(--accent); height: 80px; margin-top: -40px;
+}
+.col-splitter:focus-visible { outline: none; }
+body.is-resizing { cursor: col-resize; user-select: none; }
+body.is-resizing iframe, body.is-resizing svg { pointer-events: none; }

@@ -7,6 +7,7 @@ import { diagramsByCategory, getDiagram, listDiagrams } from './core/registry.js
 import { buildForm, defaultValues } from './core/formBuilder.js';
 import { encodeShareHash, decodeShareHash, changedValues } from './core/shareLink.js';
 import { createCodeEditor } from './core/codeEditor.js';
+import { initColumnSplitters } from './core/columnSplitters.js';
 import { renderTikz } from './core/tikzRenderer.js';
 import { ensureTikzJax, registerServiceWorker, engineCacheStatus } from './core/tikzjaxLoader.js';
 import { toStandaloneDocument, toPictureOnly } from './core/tikzDocument.js';
@@ -53,6 +54,7 @@ let form = null;
 let currentSvg = null;
 let codeDirty = false;
 let lastResult = null; // the last generate() result (for clickable previews)
+let columns = null; // the panel-width handles
 let clickArea = null; // { el, area, decimals, scale } when the preview takes clicks
 
 const editor = createCodeEditor(els.code, { onRun: render });
@@ -135,6 +137,7 @@ function selectType(id, restore = null) {
     ? current.mountEditor(els.form, { onChange: scheduleGenerate, defaults: defaultValues(current.schema) })
     : buildForm(els.form, current.schema);
   document.body.classList.toggle('wide-editor', !!current.wideLayout);
+  columns?.refresh();
   els.filename.value = current.id;
   if (restore?.values) form.setValues(restore.values);
   if (restore?.code) {
@@ -160,6 +163,7 @@ function restoreFromAddress() {
     showMessages([`This link is for a diagram type ("${restore.type}") this site doesn't have.`], 'error');
     restore = null;
   }
+  columns ??= initColumnSplitters(document.querySelector('.layout'), () => (current?.wideLayout ? 'wide' : 'normal'));
   selectType(restore?.type ?? new URLSearchParams(location.search).get('type'), restore);
 }
 
