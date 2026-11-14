@@ -17,6 +17,9 @@ function generate(values) {
 function onCodeEdit(values, code) {
   const scene = parseScene(values.scene);
   const coords = coordinatesFromCode(code);
+  // the code's coordinates are on the page; the drawing's are at its scale
+  const k = Number(scene.settings.scale) || 1;
+  for (const [nm, c] of coords) coords.set(nm, { x: Math.round((c.x / k) * 10000) / 10000, y: Math.round((c.y / k) * 10000) / 10000 });
   let moved = 0;
   for (const p of scene.points) {
     const c = coords.get(p.name);

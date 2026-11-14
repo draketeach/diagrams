@@ -1472,7 +1472,15 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
         row(
           field('New points start at', letterInput()),
           isNet() ? el('span') : field('Lengths shown to', selectInput([[0, 'Whole numbers'], [1, '1 decimal place'], [2, '2 decimal places']], S.lengthDecimals, (v) => (S.lengthDecimals = Number(v)))),
-          isNet() ? el('span') : field('Units', unitInput())
+          isNet() ? el('span') : field('Units', unitInput()),
+          field(
+            'Scale on the page',
+            selectInput(
+              [[1, '1 cm a unit'], [0.75, '× 0.75'], [0.5, '× 0.5'], [0.4, '× 0.4'], [0.25, '× 0.25'], [0.2, '× 0.2'], [0.1, '× 0.1']],
+              S.scale ?? 1,
+              (v) => (S.scale = Number(v))
+            )
+          )
         )
       );
       if (isNet()) {

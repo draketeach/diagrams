@@ -717,6 +717,33 @@ test('geometry: curves, shading along a curve, measurement lines, units', () => 
   assert.ok(code.includes('{$16\\ \\mathrm{m}$}'), 'measured length with units');
 });
 
+test('geometry: scale shrinks the drawing, not its text or marks', () => {
+  const sc = parseScene({
+    settings: { unit: 'm', lengthDecimals: 0, scale: 0.5 },
+    points: [
+      { id: 'A', name: 'A', x: 0, y: 0 },
+      { id: 'B', name: 'B', x: 16, y: 0 },
+      { id: 'P', name: 'P', x: 0, y: 0, hidden: true, dep: { kind: 'offset', p: 'A', a: 'A', b: 'B', d: -1 } },
+      { id: 'Q', name: 'Q', x: 0, y: 0, hidden: true, dep: { kind: 'offset', p: 'B', a: 'A', b: 'B', d: -1 } },
+    ],
+    items: [
+      { id: 's', type: 'segment', a: 'A', b: 'B', label: null },
+      { id: 'm', type: 'segment', a: 'P', b: 'Q', label: null, gap: true, bars: true, tip: 'both' },
+      { id: 't', type: 'text', x: 8, y: 2, text: 'Hi' },
+    ],
+  });
+  const { code } = sceneToTikz(sc);
+  assert.ok(code.includes('\\coordinate (B) at (8,0);'), 'positions halved');
+  assert.ok(code.includes('\\coordinate (P) at ($(A)!-1cm!90:(B)$);'), 'stand-off stays 1 cm');
+  assert.ok(code.includes('(0,-0.85) -- (0,-1.15)'), 'bars stay 0.3 cm long');
+  assert.ok(code.includes('{$16\\ \\mathrm{m}$}'), 'lengths in the drawing\'s units');
+  assert.ok(code.includes('at (4,1) {Hi}'), 'text moves with the drawing');
+  assert.equal(sc.points[1].x, 16, 'the drawing itself is unchanged');
+  const edited = code.replace('\\coordinate (B) at (8,0);', '\\coordinate (B) at (9,0);');
+  const next = geometry.onCodeEdit({ scene: JSON.stringify(sc) }, edited);
+  assert.ok(next.values.scene.includes('"x":18'), 'hand-edited page coordinates come back at the drawing\'s scale');
+});
+
 test('gallery: every entry generates cleanly and has its image', () => {
   const modules = { realgraph, function: fn, sketch, blank, normal, scatter, slopefield, geometry, network, probtree };
   const ids = new Set();

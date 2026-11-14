@@ -17,6 +17,7 @@
 //       bend: degrees (0 straight; + bends left going a→b, as TikZ's bend left)
 //       gap: the label sits in a break in the line; bars: short bars across the ends (measurement lines)
 //       a === b makes a loop: loopDir (degrees, null = away from the other edges), loopSize (cm)
+//   settings.scale: the drawing's size on the page (1 = 1 cm a unit); text, marks and gaps stay full size
 //   settings.mode: 'geometry' or 'network' (network: dots, no lengths, edges can repeat)
 //     { id, type: 'polygon', pts: [ids], fill },              (shading only: a grey, or a pattern in PATTERNS)
 //     { id, type: 'angle', v, a, b, label, labelPos, arcs, radius, reflex, arrow },
@@ -49,6 +50,7 @@ export const DEFAULT_SETTINGS = {
   lengthDecimals: 1,
   mode: 'geometry',
   unit: '',
+  scale: 1,
   view: { x0: -1, y0: -5, w: 14, h: 8 },
 };
 
@@ -414,7 +416,9 @@ export function segmentText(it, pts, settings = DEFAULT_SETTINGS) {
   if (!a || !b) return '';
   const d = Math.max(0, Math.min(4, Number(settings.lengthDecimals ?? 1)));
   const unit = String(settings.unit ?? '').trim();
-  return String(Number(Math.hypot(b.x - a.x, b.y - a.y).toFixed(d))) + (unit ? `\\ \\mathrm{${unit}}` : '');
+  // (a scaled copy of a drawing measures in the drawing's own units)
+  const len = Math.hypot(b.x - a.x, b.y - a.y) * (settings.lengthFactor ?? 1);
+  return String(Number(len.toFixed(d))) + (unit ? `\\ \\mathrm{${unit}}` : '');
 }
 
 export function angleText(it, pts) {
@@ -840,9 +844,36 @@ function chainSegments(segs) {
 // free text: plain text (use $…$ for maths); new lines become \\
 const textNode = (t) => String(t ?? '').replace(/\n/g, '\\\\');
 
-export function sceneToTikz(scene) {
+/**
+ * The drawing at its scale: positions shrink (or grow), while sizes on the
+ * page — text, label offsets, arrowheads, angle arcs, gaps, how far a
+ * measurement line stands off — stay as they are.
+ */
+export function scaledScene(scene) {
+  const k = Number(scene.settings.scale) || 1;
+  if (k === 1) return scene;
+  const out = structuredClone(scene);
+  for (const p of out.points) {
+    p.x = r4(p.x * k);
+    p.y = r4(p.y * k);
+    if (p.dep?.kind === 'north') p.dep.len = (p.dep.len ?? 2.5) * k;
+    if (p.dep?.kind === 'ray') p.dep.ext = (p.dep.ext ?? 1.2) * k;
+  }
+  for (const it of out.items) {
+    if (it.type === 'text') {
+      it.x = r4(it.x * k);
+      it.y = r4(it.y * k);
+    }
+  }
+  out.settings = { ...out.settings, scale: 1, lengthFactor: 1 / k };
+  return resolvePoints(out);
+}
+
+export function sceneToTikz(sceneIn) {
   const warnings = [];
-  resolvePoints(scene);
+  resolvePoints(sceneIn);
+  const scaleNote = (Number(sceneIn.settings.scale) || 1) !== 1 ? Number(sceneIn.settings.scale) : null;
+  const scene = scaledScene(sceneIn);
   const pts = pointMap(scene);
   const S = scene.settings;
   const b = new TikzBuilder();
@@ -863,7 +894,7 @@ export function sceneToTikz(scene) {
   }
 
   if (scene.points.length) {
-    b.comment('points');
+    b.comment(scaleNote ? `points (at scale ${fmt(scaleNote)}: these are page cm, the drawing's units × ${fmt(scaleNote)})` : 'points');
     for (const p of scene.points) if (!p.dep) b.add(`\\coordinate (${p.name}) at (${fmt(p.x)},${fmt(p.y)});`);
     const deps = dependentOrder(scene);
     for (const p of deps) {

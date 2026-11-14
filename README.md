@@ -190,6 +190,11 @@ Delete, zoom and Fit.
   0.7 cm away from the shape (change the distance, or flip it to the other
   side, in its settings). Any line can have its label in a gap or bars at its
   ends. Give the drawing a unit (e.g. m) and measured lengths read "16 m".
+- Scale on the page (drawing settings): 1 cm a unit by default; × 0.5 draws a
+  16-unit side 8 cm long. Text, arrowheads, angle arcs, gaps and how far a
+  measurement line stands off stay full size, and measured lengths stay in the
+  drawing's units. The code's coordinates are on the page; edit them there and
+  they're read back at the drawing's scale.
 - North line: click a point for a dashed arrow straight up from it with a
   bold N at the top (`($(O)+(0,2.5)$)`); it moves with the point, and its
   length and top label can be changed.
