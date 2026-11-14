@@ -634,7 +634,7 @@ test('networks: edge lists, repeated edges, loops, directions', () => {
   assert.deepEqual(warnings, []);
   assert.ok(code.includes('(A) to[bend left=25] (B)'), 'curved edge');
   assert.ok(/\(C\) \.\. controls \+\([\d.-]+:1\.28\) and \+\([\d.-]+:1\.28\) \.\. \(C\)/.test(code), 'loop');
-  assert.ok(/mark=at position 0\.5 with \{\\arrow\[xshift=2pt\]\{Stealth\[length=4pt\]\}\}\}\] \(A\) -- \(C\)/.test(code), 'directed: arrow in the middle');
+  assert.ok(/mark=at position 0\.5 with \{\\arrow\[xshift=2pt\]\{To\[scale=1\.5\]\}\}\}\] \(A\) -- \(C\)/.test(code), 'directed: arrow in the middle');
   assert.ok(code.includes('{$4$}'), 'edge label');
   assert.deepEqual(network.generate({ scene: JSON.stringify(DEFAULT_NETWORK) }).warnings, []);
   // word names (Start, Finish) are upright text; letters stay maths

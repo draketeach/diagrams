@@ -467,6 +467,12 @@ export function labelPositions(scene, pts = pointMap(scene)) {
       const sh = edgeShape(it, pts, scene);
       if (sh.kind === 'line') sampleLine(sh.a, sh.b, it.id);
       else for (let t = 0; t <= 1.0001; t += 0.04) samples.push({ ...shapeAt(sh, t), seg: it.id });
+      // its direction or parallel arrowheads stick out either side of the middle
+      if (it.arrows) {
+        const m = shapeAt(sh, 0.5);
+        const tan = shapeTangent(sh);
+        for (const k of [-0.15, -0.08, 0.08, 0.15]) samples.push({ x: m.x - tan.y * k, y: m.y + tan.x * k });
+      }
     }
     if (it.type === 'angle' && pts.get(it.v) && pts.get(it.a) && pts.get(it.b)) {
       const v = pts.get(it.v);
@@ -813,7 +819,8 @@ function markings(it) {
   const draws = [
     ...ticks.map((x) => `\\draw (${fmt(x)}pt,-3pt) -- (${fmt(x)}pt,3pt);`),
     // an arrow tip ends at the mark, so shift it on by half its length
-    ...arrows.map((x) => `\\arrow[xshift=${fmt(x + 2)}pt]{Stealth[length=4pt]}`),
+    // the LaTeX arrowhead (curved barbs), as exam papers draw direction and parallel marks
+    ...arrows.map((x) => `\\arrow[xshift=${fmt(x + 2)}pt]{To[scale=1.5]}`),
   ];
   const marks = draws.length ? [`mark=at position 0.5 with {${draws.join(' ')}}`] : [];
   return marks.length ? `postaction={decorate}, decoration={markings, ${marks.join(', ')}}` : '';
