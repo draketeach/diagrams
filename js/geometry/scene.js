@@ -819,8 +819,8 @@ function markings(it) {
   const draws = [
     ...ticks.map((x) => `\\draw (${fmt(x)}pt,-3pt) -- (${fmt(x)}pt,3pt);`),
     // an arrow tip ends at the mark, so shift it on by half its length
-    // an open chevron (two straight strokes), the same mark as the editor draws
-    ...arrows.map((x) => `\\draw (${fmt(x - 2)}pt,2pt) -- (${fmt(x + 2)}pt,0pt) -- (${fmt(x - 2)}pt,-2pt);`),
+    // Straight Barb: an open chevron, the same mark as the editor draws (centred on the mark)
+    ...arrows.map((x) => `\\arrow[xshift=${fmt(x + 2)}pt]{Straight Barb[length=4pt, width=4pt]}`),
   ];
   const marks = draws.length ? [`mark=at position 0.5 with {${draws.join(' ')}}`] : [];
   return marks.length ? `postaction={decorate}, decoration={markings, ${marks.join(', ')}}` : '';
@@ -963,7 +963,7 @@ export function sceneToTikz(sceneIn) {
   }
   for (const s of marked) {
     if (s.ticks || s.arrows) usedLibs.add('decorations.markings');
-    if (tipOption(s)) usedLibs.add('arrows.meta');
+    if (s.arrows || tipOption(s)) usedLibs.add('arrows.meta');
     const gap = labelGap(s, pts, segmentText(s, pts, S));
     if (gap) {
       // two pieces either side of the label, each with its own end's arrowhead
