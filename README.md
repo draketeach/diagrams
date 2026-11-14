@@ -147,7 +147,7 @@ for the outcome column.
 ### Geometry (visual editor)
 
 Draw on a grid instead of filling in options. The toolbar's icons are Select, Point,
-Line, Ray, North line, Polygon, Angle, Right angle, Label, Text, Midpoint, Perpendicular, Circle
+Line, Ray, North line, Curve, Measure, Polygon, Angle, Right angle, Label, Text, Midpoint, Perpendicular, Circle
 and Arc (each with a
 one-key shortcut while the canvas has focus), plus Undo/Redo (Ctrl+Z / Ctrl+Y),
 Delete, zoom and Fit.
@@ -180,6 +180,16 @@ Delete, zoom and Fit.
   that direction, set how far it runs past the point, and choose what goes at
   its end: nothing, its bearing (e.g. 056°) or your own text. Rays have no
   length label.
+- Curve: click points for a smooth curve through them (click the last point
+  again or press Enter to finish); drag the points to reshape it, and set its
+  direction at any point (0 = level) in its settings. A polygon whose corners
+  are the two ends of a curve follows the curve on that side, so shading can
+  fill the area between a curve and straight sides.
+- Measure: click the two ends of what you're measuring for a dashed line with
+  arrowheads, bars across its ends and its length in a gap in the line, set
+  0.7 cm away from the shape (change the distance, or flip it to the other
+  side, in its settings). Any line can have its label in a gap or bars at its
+  ends. Give the drawing a unit (e.g. m) and measured lengths read "16 m".
 - North line: click a point for a dashed arrow straight up from it with a
   bold N at the top (`($(O)+(0,2.5)$)`); it moves with the point, and its
   length and top label can be changed.

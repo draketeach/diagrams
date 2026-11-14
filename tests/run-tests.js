@@ -688,6 +688,35 @@ test('function graphs in other letters name the axes', () => {
   assert.ok(xy.includes('{$x$}') && xy.includes('{$y$}'), 'x and y unchanged');
 });
 
+test('geometry: curves, shading along a curve, measurement lines, units', () => {
+  const sc = parseScene({
+    settings: { unit: 'm', lengthDecimals: 0 },
+    points: [
+      { id: 'A', name: 'A', x: 0, y: 0 },
+      { id: 'B', name: 'B', x: 16, y: 0 },
+      { id: 'C', name: 'C', x: 16, y: 7 },
+      { id: 'D', name: 'D', x: 0, y: 3 },
+      { id: 'M', name: 'M', x: 8, y: 4 },
+      { id: 'P', name: 'P', x: 0, y: 0, hidden: true, dep: { kind: 'offset', p: 'A', a: 'A', b: 'B', d: -1.5 } },
+      { id: 'Q', name: 'Q', x: 0, y: 0, hidden: true, dep: { kind: 'offset', p: 'B', a: 'A', b: 'B', d: -1.5 } },
+    ],
+    items: [
+      { id: 'c', type: 'curve', pts: ['D', 'M', 'C'], dirs: [null, null, 0] },
+      { id: 'g', type: 'polygon', pts: ['A', 'B', 'C', 'D'], fill: 'dots' },
+      { id: 'm', type: 'segment', a: 'P', b: 'Q', label: null, gap: true, bars: true, tip: 'both', style: 'dashed' },
+    ],
+  });
+  assert.deepEqual([sc.points[5].x, sc.points[5].y], [0, -1.5], 'a measurement end set 1.5 cm below');
+  const { code, warnings } = sceneToTikz(sc);
+  assert.deepEqual(warnings, []);
+  assert.ok(code.includes('\\coordinate (P) at ($(A)!-1.5cm!90:(B)$);') && code.includes('\\coordinate (Q) at ($(B)!-1.5cm!-90:(A)$);'));
+  assert.ok(/\(D\) \.\. controls \([\d.,]+\) and \([\d.,]+\) \.\. \(M\) \.\. controls \([\d.,]+\) and \(([\d.]+),7\) \.\. \(C\)/.test(code), 'curve through D, M, C, level at C');
+  assert.ok(code.includes('angle=45]}] (A) -- (B) -- (C) .. controls'), 'shading follows the curve from C back to D');
+  assert.ok(code.includes('-- (7.') && code.includes('(8.') && code.includes('-- (Q);'), 'a gap in the measurement line');
+  assert.ok(code.includes('(0,-1.35) -- (0,-1.65)'), 'bars across the ends');
+  assert.ok(code.includes('{$16\\ \\mathrm{m}$}'), 'measured length with units');
+});
+
 test('gallery: every entry generates cleanly and has its image', () => {
   const modules = { realgraph, function: fn, sketch, blank, normal, scatter, slopefield, geometry, network, probtree };
   const ids = new Set();

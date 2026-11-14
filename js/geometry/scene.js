@@ -9,11 +9,13 @@
 //       { kind: 'foot', p, a, b }   the foot of the perpendicular from p to line ab
 //       { kind: 'ray', a, b, ext }  on the line from a through b, ext cm beyond b (a ray's end)
 //       { kind: 'north', a, len }   len cm straight up from a (the top of a North line)
+//       { kind: 'offset', p, a, b, d } p (a or b) moved d cm square to line ab (+ = left of a→b): a measurement line's end
 //   items: [
 //     { id, type: 'segment', a, b, style, label, labelPos, ticks, arrows, tip, sloped },
 //       tip: 'none' | 'a' | 'b' | 'both' (arrowheads at the ends); sloped: label turned along the line
 //       endMode: 'none' | 'bearing' | 'custom', endText: a label beyond the b end (rays: their bearing)
 //       bend: degrees (0 straight; + bends left going a→b, as TikZ's bend left)
+//       gap: the label sits in a break in the line; bars: short bars across the ends (measurement lines)
 //       a === b makes a loop: loopDir (degrees, null = away from the other edges), loopSize (cm)
 //   settings.mode: 'geometry' or 'network' (network: dots, no lengths, edges can repeat)
 //     { id, type: 'polygon', pts: [ids], fill },              (shading only: a grey, or a pattern in PATTERNS)
@@ -23,7 +25,8 @@
 //     { id, type: 'circle', c, p, style },                    (centre, a point on it)
 //     { id, type: 'arc', c, a, b, style },                    (centre, from a to b anticlockwise)
 //     { id, type: 'text', x, y, text },
-//     { id, type: 'ticks', a, b, ticks },                     (equal-length marks only, e.g. the halves of a midpoint)
+//     { id, type: 'ticks', a, b, ticks },
+//     { id, type: 'curve', pts: [ids], dirs: [degrees or null], style },  (a smooth curve through the points)                     (equal-length marks only, e.g. the halves of a midpoint)
 //   ],
 //   settings: { grid, snap, showGrid, lineWidth, fontSize, notToScale, firstLetter,
 //               lengthDecimals, view: {x0, y0, w, h} },
@@ -32,6 +35,7 @@
 // Coordinates are in cm. In the TikZ every point is a named \coordinate and
 // everything else refers to the names, so editing a coordinate moves all of it.
 
+import { smoothSections, reverseSections, sectionAt } from '../lib/smooth.js';
 import { TikzBuilder, mathLabel } from '../lib/tikz.js';
 
 export const DEFAULT_SETTINGS = {
@@ -44,6 +48,7 @@ export const DEFAULT_SETTINGS = {
   firstLetter: 'A',
   lengthDecimals: 1,
   mode: 'geometry',
+  unit: '',
   view: { x0: -1, y0: -5, w: 14, h: 8 },
 };
 
@@ -75,7 +80,8 @@ export function normalPoint(p) {
 
 export function normalItem(it) {
   const base = {
-    segment: { style: 'solid', label: '', labelPos: null, ticks: 0, arrows: 0, tip: 'none', sloped: false, endMode: 'none', endText: '', bend: 0, loopDir: null, loopSize: 0.8 },
+    segment: { style: 'solid', label: '', labelPos: null, ticks: 0, arrows: 0, tip: 'none', sloped: false, endMode: 'none', endText: '', bend: 0, loopDir: null, loopSize: 0.8, gap: false, bars: false },
+    curve: { pts: [], dirs: [], style: 'solid' },
     polygon: { fill: 'gray!20' },
     angle: { label: null, labelPos: null, arcs: 1, radius: 0.7, reflex: false, arrow: null },
     right: { size: 0.25 },
@@ -129,7 +135,12 @@ export function resolvePoints(scene) {
     const d = q.dep;
     const a = pts.get(d.a);
     const b = pts.get(d.b);
-    if (d.kind === 'north') {
+    if (d.kind === 'offset') {
+      const p = pts.get(d.p);
+      const L = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+      q.x = r4(p.x - ((b.y - a.y) / L) * (d.d ?? 0.7));
+      q.y = r4(p.y + ((b.x - a.x) / L) * (d.d ?? 0.7));
+    } else if (d.kind === 'north') {
       q.x = a.x;
       q.y = r4(a.y + (d.len ?? 2.5));
     } else if (d.kind === 'mid') {
@@ -209,6 +220,13 @@ function neighbours(scene, id, pts) {
     if (it.type === 'segment') {
       if (it.a === id) out.push(pts.get(it.b));
       if (it.b === id) out.push(pts.get(it.a));
+    }
+    if (it.type === 'curve') {
+      it.pts.forEach((q, i) => {
+        if (q !== id) return;
+        if (i > 0) out.push(pts.get(it.pts[i - 1]));
+        if (i + 1 < it.pts.length) out.push(pts.get(it.pts[i + 1]));
+      });
     }
     if (it.type === 'circle' || it.type === 'arc') {
       if (it.c === id) out.push(...[it.p, it.a, it.b].filter(Boolean).map((q) => pts.get(q)));
@@ -395,7 +413,8 @@ export function segmentText(it, pts, settings = DEFAULT_SETTINGS) {
   const b = pts.get(it.b);
   if (!a || !b) return '';
   const d = Math.max(0, Math.min(4, Number(settings.lengthDecimals ?? 1)));
-  return String(Number(Math.hypot(b.x - a.x, b.y - a.y).toFixed(d)));
+  const unit = String(settings.unit ?? '').trim();
+  return String(Number(Math.hypot(b.x - a.x, b.y - a.y).toFixed(d))) + (unit ? `\\ \\mathrm{${unit}}` : '');
 }
 
 export function angleText(it, pts) {
@@ -451,6 +470,16 @@ export function labelPositions(scene, pts = pointMap(scene)) {
       for (let t = 0; t <= sp.size; t += 6) {
         const g = ((sp.start + t) * Math.PI) / 180;
         samples.push({ x: v.x + r * Math.cos(g), y: v.y + r * Math.sin(g) });
+      }
+    }
+    if (it.type === 'curve') {
+      const cs = curveSections(it, pts);
+      if (cs) {
+        let a = cs.start;
+        for (const sec of cs.sections) {
+          for (let t = 0; t <= 1.0001; t += 0.1) samples.push(sectionAt(a, sec, t));
+          a = sec.p;
+        }
       }
     }
     if (it.type === 'right' && pts.get(it.v) && pts.get(it.a) && pts.get(it.b)) {
@@ -543,6 +572,12 @@ export function labelPositions(scene, pts = pointMap(scene)) {
       const b = pts.get(it.b);
       const text = a && b ? segmentText(it, pts, S) : '';
       if (!text) continue;
+      if (labelGap(it, pts, text)) {
+        // in the line's own gap
+        out.set(`s:${it.id}`, { dx: 0, dy: 0 });
+        placed.push({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, ...labelBox(text) });
+        continue;
+      }
       if (it.labelPos) {
         out.set(`s:${it.id}`, it.labelPos);
         const m = segmentMid(it, pts, scene);
@@ -670,6 +705,60 @@ export function endOffset(it, pts, text) {
   return { dx: r3(ux * reach), dy: r3(uy * reach) };
 }
 
+/** A curve item's sections (smooth through its points), or null if a point is missing. */
+export function curveSections(it, pts) {
+  const P = it.pts.map((id, i) => {
+    const p = pts.get(id);
+    return p ? { x: p.x, y: p.y, dir: it.dirs?.[i] ?? null } : null;
+  });
+  if (P.length < 2 || P.some((p) => !p)) return null;
+  return { start: P[0], sections: smoothSections(P, 0.5) };
+}
+
+/** Where a gap in a line for its label starts and ends (cm along the line from a), or null. */
+export function labelGap(it, pts, text) {
+  if (!it.gap || !text || it.a === it.b || it.bend) return null;
+  const a = pts.get(it.a);
+  const b = pts.get(it.b);
+  const L = Math.hypot(b.x - a.x, b.y - a.y);
+  if (L < 1e-6) return null;
+  const ux = Math.abs(b.x - a.x) / L;
+  const uy = Math.abs(b.y - a.y) / L;
+  const box = labelBox(text);
+  const half = it.sloped ? box.w / 2 + 0.1 : (box.w / 2) * ux + (box.h / 2) * uy + 0.1;
+  if (2 * half >= L - 0.2) return null;
+  return { from: L / 2 - half, to: L / 2 + half, L };
+}
+
+/**
+ * A polygon's outline for shading: straight from corner to corner, except
+ * where a curve runs from one corner to the next — then along the curve.
+ */
+export function polygonEdges(scene, it, pts) {
+  const n = it.pts.length;
+  const edges = [];
+  for (let i = 0; i < n; i++) {
+    const a = it.pts[i];
+    const b = it.pts[(i + 1) % n];
+    const curve = scene.items.find((c) => c.type === 'curve' && c.pts.length >= 2 && ((c.pts[0] === a && c.pts[c.pts.length - 1] === b) || (c.pts[0] === b && c.pts[c.pts.length - 1] === a)));
+    const cs = curve && curveSections(curve, pts);
+    if (cs) edges.push({ a, b, sections: curve.pts[0] === a ? cs.sections : reverseSections(cs.start, cs.sections) });
+    else edges.push({ a, b, sections: null });
+  }
+  return edges;
+}
+function fillPath(scene, it, pts, name) {
+  let out = `(${name(it.pts[0])})`;
+  for (const e of polygonEdges(scene, it, pts)) {
+    if (!e.sections) out += ` -- (${name(e.b)})`;
+    else e.sections.forEach((sec, i) => {
+      const end = i === e.sections.length - 1 ? `(${name(e.b)})` : `(${fmt(sec.p.x)},${fmt(sec.p.y)})`;
+      out += ` .. controls (${fmt(sec.c1.x)},${fmt(sec.c1.y)}) and (${fmt(sec.c2.x)},${fmt(sec.c2.y)}) .. ${end}`;
+    });
+  }
+  return out.replace(/ -- \([^)]*\)$/, '') + ' -- cycle';
+}
+
 /** TikZ for a line's path: "(A) -- (B)", "(A) to[bend left=30] (B)" or a loop; `node` goes at its middle. */
 export function segPath(it, pts, nameOf, scene, node = '') {
   const A = `(${nameOf(it.a)})`;
@@ -787,8 +876,12 @@ export function sceneToTikz(scene) {
             ? `$(${name(d.b)})!-${fmt(d.ext ?? 1.2)}cm!(${name(d.a)})$`
             : d.kind === 'north'
               ? `$(${name(d.a)})+(0,${fmt(d.len ?? 2.5)})$`
+              : d.kind === 'offset'
+                ? d.p === d.a
+                  ? `$(${name(d.a)})!${fmt(d.d ?? 0.7)}cm!90:(${name(d.b)})$`
+                  : `$(${name(d.b)})!${fmt(d.d ?? 0.7)}cm!-90:(${name(d.a)})$`
             : `$(${name(d.a)})!(${name(d.p)})!(${name(d.b)})$`;
-      const note = { mid: 'midpoint', ray: `end of ray ${name(d.a)}${name(d.b)}`, north: `north of ${name(d.a)}`, foot: 'foot of perpendicular' }[d.kind];
+      const note = { mid: 'midpoint', ray: `end of ray ${name(d.a)}${name(d.b)}`, north: `north of ${name(d.a)}`, foot: 'foot of perpendicular', offset: `measuring ${name(d.a)}${name(d.b)}` }[d.kind];
       b.add(`\\coordinate (${p.name}) at (${expr}); % ${note}`);
     }
     for (const p of scene.points) {
@@ -806,13 +899,13 @@ export function sceneToTikz(scene) {
     for (const it of fills) {
       const pat = PATTERNS[it.fill];
       if (pat) usedLibs.add('patterns.meta');
-      b.add(`\\fill[${pat ? `pattern={${pat}}` : it.fill}] ${it.pts.map((id) => `(${name(id)})`).join(' -- ')} -- cycle;`);
+      b.add(`\\fill[${pat ? `pattern={${pat}}` : it.fill}] ${fillPath(scene, it, pts, name)};`);
     }
   }
 
   // ---- lines: plain ones chained into paths, marked ones on their own
   const segs = scene.items.filter((it) => it.type === 'segment' && known(it.a, it.b));
-  const special = (s) => s.ticks || s.arrows || (s.tip && s.tip !== 'none') || s.bend || s.a === s.b;
+  const special = (s) => s.ticks || s.arrows || (s.tip && s.tip !== 'none') || s.bend || s.a === s.b || s.gap || s.bars;
   const plain = segs.filter((s) => !special(s));
   const marked = segs.filter(special);
   if (segs.length) b.comment('lines');
@@ -825,8 +918,44 @@ export function sceneToTikz(scene) {
   for (const s of marked) {
     if (s.ticks || s.arrows) usedLibs.add('decorations.markings');
     if (s.arrows || tipOption(s)) usedLibs.add('arrows.meta');
-    const opts = [tipOption(s), lw, STYLE[s.style], markings(s)].filter(Boolean).join(', ');
-    b.add(`\\draw${opts ? `[${opts}]` : ''} ${segPath(s, pts, name, scene)};`);
+    const gap = labelGap(s, pts, segmentText(s, pts, S));
+    if (gap) {
+      // two pieces either side of the label, each with its own end's arrowhead
+      const A = pts.get(s.a);
+      const B = pts.get(s.b);
+      const at = (t) => `(${fmt(A.x + ((B.x - A.x) * t) / gap.L)},${fmt(A.y + ((B.y - A.y) * t) / gap.L)})`;
+      const tipA = s.tip === 'a' || s.tip === 'both' ? `${TIP}-` : '';
+      const tipB = s.tip === 'b' || s.tip === 'both' ? `-${TIP}` : '';
+      const o1 = [tipA, lw, STYLE[s.style]].filter(Boolean).join(', ');
+      const o2 = [tipB, lw, STYLE[s.style]].filter(Boolean).join(', ');
+      b.add(`\\draw${o1 ? `[${o1}]` : ''} (${name(s.a)}) -- ${at(gap.from)};`);
+      b.add(`\\draw${o2 ? `[${o2}]` : ''} ${at(gap.to)} -- (${name(s.b)});`);
+    } else {
+      const opts = [tipOption(s), lw, STYLE[s.style], markings(s)].filter(Boolean).join(', ');
+      b.add(`\\draw${opts ? `[${opts}]` : ''} ${segPath(s, pts, name, scene)};`);
+    }
+    if (s.bars && s.a !== s.b) {
+      // short bars square across both ends
+      const A = pts.get(s.a);
+      const B = pts.get(s.b);
+      const L = Math.hypot(B.x - A.x, B.y - A.y) || 1;
+      const nx = (-(B.y - A.y) / L) * 0.15;
+      const ny = ((B.x - A.x) / L) * 0.15;
+      for (const P of [A, B]) b.add(`\\draw${lw ? `[${lw}]` : ''} (${fmt(P.x + nx)},${fmt(P.y + ny)}) -- (${fmt(P.x - nx)},${fmt(P.y - ny)});`);
+    }
+  }
+
+  // ---- smooth curves through points
+  const smooths = scene.items.filter((it) => it.type === 'curve' && known(...it.pts) && it.pts.length >= 2);
+  if (smooths.length) b.comment('curves');
+  for (const c of smooths) {
+    const cs = curveSections(c, pts);
+    let path = `(${name(c.pts[0])})`;
+    cs.sections.forEach((sec, i) => {
+      path += ` .. controls (${fmt(sec.c1.x)},${fmt(sec.c1.y)}) and (${fmt(sec.c2.x)},${fmt(sec.c2.y)}) .. (${name(c.pts[i + 1])})`;
+    });
+    const opts = [lw, STYLE[c.style]].filter(Boolean).join(', ');
+    b.add(`\\draw${opts ? `[${opts}]` : ''} ${path};`);
   }
 
   // ---- equal-length marks on their own (the line itself is drawn elsewhere)

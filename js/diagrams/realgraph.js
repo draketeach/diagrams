@@ -7,6 +7,7 @@
 
 import { TikzBuilder, n, pt, escapeText, mathLabel, FONT_SIZES, LINE_WIDTHS } from '../lib/tikz.js';
 import { parseConstant } from '../lib/mathParser.js';
+import { smoothSections } from '../lib/smooth.js';
 
 // ---------------------------------------------------------------- reading curves
 
@@ -102,36 +103,10 @@ export function curveRuns(curve) {
   return runs;
 }
 
-/**
- * A smooth run as cubic Bézier sections through its points (Catmull–Rom, as
- * TikZ's smooth plots), in TikZ "(a) .. controls (c1) and (c2) .. (b)" form.
- * A point's dir (degrees on the page; 0 = level) fixes the curve's direction
- * there, so xu and yu (cm per unit) are needed to measure angles on the page.
- */
+/** A smooth run as TikZ "(a) .. controls (c1) and (c2) .. (b)" sections (see lib/smooth.js). */
 export function smoothPath(points, tension, xu, yu) {
-  const P = points;
-  const k = (2 / 3) * tension; // control points: k × the velocity at each point
-  const vel = P.map((p, i) => {
-    const a = P[Math.max(0, i - 1)];
-    const b = P[Math.min(P.length - 1, i + 1)];
-    const span = i === 0 || i === P.length - 1 ? 1 : 2;
-    let v = { x: (b.x - a.x) / span, y: (b.y - a.y) / span };
-    if (p.dir !== null && p.dir !== undefined) {
-      // same speed on the page, in the given direction (along the way the curve travels)
-      const len = Math.hypot(v.x * xu, v.y * yu);
-      let ux = Math.cos((p.dir * Math.PI) / 180);
-      let uy = Math.sin((p.dir * Math.PI) / 180);
-      if (ux * v.x * xu + uy * v.y * yu < 0) [ux, uy] = [-ux, -uy];
-      v = { x: (ux * len) / xu, y: (uy * len) / yu };
-    }
-    return v;
-  });
-  let out = pt(P[0].x, P[0].y);
-  for (let i = 0; i + 1 < P.length; i++) {
-    const c1 = { x: P[i].x + k * vel[i].x, y: P[i].y + k * vel[i].y };
-    const c2 = { x: P[i + 1].x - k * vel[i + 1].x, y: P[i + 1].y - k * vel[i + 1].y };
-    out += ` .. controls ${pt(c1.x, c1.y)} and ${pt(c2.x, c2.y)} .. ${pt(P[i + 1].x, P[i + 1].y)}`;
-  }
+  let out = pt(points[0].x, points[0].y);
+  for (const sec of smoothSections(points, tension, xu, yu)) out += ` .. controls ${pt(sec.c1.x, sec.c1.y)} and ${pt(sec.c2.x, sec.c2.y)} .. ${pt(sec.p.x, sec.p.y)}`;
   return out;
 }
 

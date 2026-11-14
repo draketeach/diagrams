@@ -21,6 +21,9 @@ import {
   fmt,
   markOffsets,
   slopeDeg,
+  curveSections,
+  polygonEdges,
+  labelGap,
   edgeShape,
   shapeAt,
   shapeTangent,
@@ -47,6 +50,8 @@ const TOOLS = [
   { id: 'directed', label: 'Directed edge', key: 'd', hint: 'Click the start vertex, then the end: the edge gets an arrow in the middle.' },
   { id: 'ray', label: 'Ray', key: 'y', hint: 'Click the start, then a point the ray passes through. Set its bearing and the label at its end in the panel below.' },
   { id: 'north', label: 'North line', key: 'n', hint: 'Click a point: draws a dashed arrow straight up from it, labelled N.' },
+  { id: 'curve', label: 'Curve', key: 'u', hint: 'Click points for a smooth curve through them; click the last point again (or press Enter) to finish. Drag the points to reshape it.' },
+  { id: 'measure', label: 'Measure', key: 'e', hint: 'Click the two ends of what you are measuring: a dashed line with arrowheads, end bars and its length goes beside it.' },
   { id: 'polygon', label: 'Polygon', key: 'g', hint: 'Click the corners, then click the first one again to close it (Enter finishes an open path).' },
   { id: 'angle', label: 'Angle', key: 'a', hint: 'Click two lines that meet (or three points: arm, vertex, arm).' },
   { id: 'right', label: 'Right angle', key: 'r', hint: 'Click two lines that meet (or three points: arm, vertex, arm).' },
@@ -67,6 +72,8 @@ const ICONS = {
   directed: `<path d="M4 18 20 6"/><path d="M14.6 7.4 12.9 13M14.6 7.4 8.8 7.6" stroke-linejoin="round" transform="translate(-1.2 1.4)"/>${DOT(4, 18)}${DOT(20, 6)}`,
   ray: `<path d="M5 19 19.5 4.5"/><path d="M19.8 4.2 13.4 6.6M19.8 4.2l-2.4 6.4" stroke-linejoin="round"/>${DOT(5, 19)}${DOT(10.5, 13.5, 1.6)}`,
   north: '<path d="M12 21V8" stroke-dasharray="2.6 2"/><path d="M8.5 11.5 12 7l3.5 4.5" stroke-linejoin="round"/><path d="M9 6.2V1.8l6 4.4V1.8" stroke-width="1.6" stroke-linejoin="round" transform="translate(0 -0.3)"/>',
+  curve: `<path d="M3 17C7 5 12 21 21 7"/>${DOT(3, 17)}${DOT(12, 13, 1.6)}${DOT(21, 7)}`,
+  measure: '<path d="M3 8v8M21 8v8"/><path d="M4 12h5.5M14.5 12H20" stroke-dasharray="2 1.6"/><path d="m6.5 9.6-2.6 2.4 2.6 2.4M17.5 9.6l2.6 2.4-2.6 2.4" stroke-linejoin="round"/><path d="M11 13.5v-3h2v3" stroke-width="1.2"/>',
   polygon: `<path d="M4 19 12 5l8 14z" stroke-linejoin="round"/>${DOT(4, 19)}${DOT(12, 5)}${DOT(20, 19)}`,
   angle: '<path d="M4 19h17M4 19 15 6"/><path d="M11 19a7 7 0 0 0-2.3-5.2" stroke-width="1.5"/>',
   right: '<path d="M5 4v15h15"/><path d="M5 13h6v6" stroke-width="1.5"/>',
@@ -451,6 +458,33 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
       showProps();
       return;
     }
+    if (tool === 'curve') {
+      const sp = snap(raw);
+      begin();
+      const id = pointAt(sp);
+      if (pending.length >= 2 && id === pending[pending.length - 1]) {
+        finishCurve();
+        return;
+      }
+      if (pending[pending.length - 1] !== id) pending.push(id);
+      render();
+      return;
+    }
+    if (tool === 'measure') {
+      const sp = snap(raw);
+      begin();
+      const id = pointAt(sp);
+      if (!pending.length) {
+        pending = [id];
+        render();
+        return;
+      }
+      if (pending[0] !== id) addMeasure(pending[0], id);
+      clearPending();
+      commit();
+      showProps();
+      return;
+    }
     if (tool === 'north') {
       const sp = snap(raw);
       change(() => addNorth(pointAt(sp)));
@@ -742,6 +776,54 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     return it.id;
   }
 
+  /** A smooth curve through the clicked points. */
+  function finishCurve() {
+    if (pending.length >= 2) {
+      begin();
+      const it = normalItem({ id: newId('i'), type: 'curve', pts: [...pending], dirs: pending.map(() => null) });
+      scene.items.push(it);
+      selection = { kind: 'item', id: it.id };
+    }
+    clearPending();
+    commit();
+    showProps();
+  }
+
+  /** A measurement line for a to b, set apart from the drawing (away from its middle). */
+  function addMeasure(a, b, d = null) {
+    const A = findPoint(a);
+    const B = findPoint(b);
+    if (d === null) {
+      const c = centroidOf();
+      const nx = -(B.y - A.y);
+      const ny = B.x - A.x;
+      const side = nx * (c.x - (A.x + B.x) / 2) + ny * (c.y - (A.y + B.y) / 2) > 0 ? -1 : 1;
+      d = 0.7 * side;
+    }
+    const mk = (p) => {
+      const q = normalPoint({ id: newId('p'), name: `${A.name}${B.name}_${p === a ? 1 : 2}`.replace(/[^A-Za-z0-9_']/g, ''), x: 0, y: 0, hidden: true, dep: { kind: 'offset', p, a, b, d } });
+      while (scene.points.some((o) => o.name === q.name)) q.name += "'";
+      scene.points.push(q);
+      return q.id;
+    };
+    const e1 = mk(a);
+    const e2 = mk(b);
+    resolvePoints(scene);
+    const it = normalItem({ id: newId('i'), type: 'segment', a: e1, b: e2, label: null, style: 'dashed', tip: 'both', gap: true, bars: true });
+    scene.items.push(it);
+    selection = { kind: 'item', id: it.id };
+  }
+  const centroidOf = () => {
+    const ps = scene.points.filter((p) => !p.hidden);
+    return ps.length ? { x: ps.reduce((t, p) => t + p.x, 0) / ps.length, y: ps.reduce((t, p) => t + p.y, 0) / ps.length } : { x: 0, y: 0 };
+  };
+  /** The measurement a line is, if it is one: its two set-apart ends. */
+  function measureOf(it) {
+    const e1 = it?.type === 'segment' ? findPoint(it.a) : null;
+    const e2 = it?.type === 'segment' ? findPoint(it.b) : null;
+    return e1?.dep?.kind === 'offset' && e2?.dep?.kind === 'offset' ? [e1.dep, e2.dep] : null;
+  }
+
   function finishPolygon(closed) {
     if (pending.length < 2) {
       clearPending();
@@ -750,9 +832,12 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     }
     begin();
     const ids = [...pending];
-    for (let i = 0; i < ids.length - 1; i++) addSegment(ids[i], ids[i + 1]);
+    // a side along a curve already there keeps the curve (the shading follows it)
+    const curved = (a, b) =>
+      scene.items.some((c) => c.type === 'curve' && ((c.pts[0] === a && c.pts[c.pts.length - 1] === b) || (c.pts[0] === b && c.pts[c.pts.length - 1] === a)));
+    for (let i = 0; i < ids.length - 1; i++) if (!curved(ids[i], ids[i + 1])) addSegment(ids[i], ids[i + 1]);
     if (closed) {
-      addSegment(ids[ids.length - 1], ids[0]);
+      if (!curved(ids[ids.length - 1], ids[0])) addSegment(ids[ids.length - 1], ids[0]);
       const it = normalItem({ id: newId('i'), type: 'polygon', pts: ids, fill: 'none' });
       scene.items.push(it);
       selection = { kind: 'item', id: it.id };
@@ -883,6 +968,7 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
   });
   svg.addEventListener('dblclick', () => {
     if (tool === 'polygon' && pending.length >= 2) finishPolygon(false);
+    if (tool === 'curve' && pending.length >= 2) finishCurve();
   });
 
   /** Drag a label: store its offset from its anchor (cm). */
@@ -987,6 +1073,10 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
       finishPolygon(false);
       return;
     }
+    if (e.key === 'Enter' && tool === 'curve') {
+      finishCurve();
+      return;
+    }
     // tool shortcuts only while the canvas has focus
     if (document.activeElement !== svg) return;
     const t = TOOLS.find((x) => x.key === e.key.toLowerCase() && !toolButtons.get(x.id).hidden);
@@ -1034,9 +1124,13 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
         'dots-sparse': 'url(#geo-dots-sparse)',
         hatch: 'url(#geo-hatch)',
       }[it.fill];
-      parts.push(
-        `<polygon data-kind="item" data-id="${it.id}" points="${ps.map((p) => `${sx(p.x)},${sy(p.y)}`).join(' ')}" class="poly${sel('item', it.id) ? ' is-sel' : ''}" style="fill:${fill || 'transparent'}"/>`
-      );
+      let d = `M ${sx(ps[0].x)} ${sy(ps[0].y)}`;
+      for (const e of polygonEdges(scene, it, pts)) {
+        const q = pts.get(e.b);
+        if (!e.sections) d += ` L ${sx(q.x)} ${sy(q.y)}`;
+        else for (const sec of e.sections) d += ` C ${sx(sec.c1.x)} ${sy(sec.c1.y)} ${sx(sec.c2.x)} ${sy(sec.c2.y)} ${sx(sec.p.x)} ${sy(sec.p.y)}`;
+      }
+      parts.push(`<path data-kind="item" data-id="${it.id}" d="${d} Z" class="poly${sel('item', it.id) ? ' is-sel' : ''}" style="fill:${fill || 'transparent'}"/>`);
     }
 
     // circles and arcs
@@ -1062,6 +1156,16 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
       }
     }
 
+    // smooth curves
+    for (const it of scene.items.filter((i) => i.type === 'curve')) {
+      const cs = curveSections(it, pts);
+      if (!cs) continue;
+      let d = `M ${sx(cs.start.x)} ${sy(cs.start.y)}`;
+      for (const sec of cs.sections) d += ` C ${sx(sec.c1.x)} ${sy(sec.c1.y)} ${sx(sec.c2.x)} ${sy(sec.c2.y)} ${sx(sec.p.x)} ${sy(sec.p.y)}`;
+      const cls = `shape ls-${it.style}${sel('item', it.id) ? ' is-sel' : ''}`;
+      parts.push(`<path d="${d}" class="${cls}"/><path data-kind="item" data-id="${it.id}" d="${d}" class="hit"/>`);
+    }
+
     // segments
     for (const it of scene.items.filter((i) => i.type === 'segment')) {
       const a = pts.get(it.a);
@@ -1071,7 +1175,18 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
       const sh = edgeShape(it, pts, scene);
       const S2 = (q) => `${sx(q.x)} ${sy(q.y)}`;
       const d = sh.kind === 'line' ? `M ${S2(a)} L ${S2(b)}` : `M ${S2(sh.a)} C ${S2(sh.c1)} ${S2(sh.c2)} ${S2(sh.b)}`;
-      parts.push(`<path d="${d}" class="${cls}"/>`);
+      const gap = labelGap(it, pts, segmentText(it, pts, scene.settings));
+      if (gap) {
+        // broken around its label
+        const at = (t) => S2({ x: a.x + ((b.x - a.x) * t) / gap.L, y: a.y + ((b.y - a.y) * t) / gap.L });
+        parts.push(`<path d="M ${S2(a)} L ${at(gap.from)} M ${at(gap.to)} L ${S2(b)}" class="${cls}"/>`);
+      } else parts.push(`<path d="${d}" class="${cls}"/>`);
+      if (it.bars && it.a !== it.b) {
+        const L = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+        const nx = (-(b.y - a.y) / L) * 0.15;
+        const ny = ((b.x - a.x) / L) * 0.15;
+        for (const P of [a, b]) parts.push(`<path d="M ${S2({ x: P.x + nx, y: P.y + ny })} L ${S2({ x: P.x - nx, y: P.y - ny })}" class="${cls.replace(/ ls-\w+/, '')}"/>`);
+      }
       // arrowheads at the ends (along the curve's ends)
       for (const [end, from] of [[b, sh.kind === 'line' ? a : sh.c2], [a, sh.kind === 'line' ? b : sh.c1]]) {
         const want = end === b ? ['b', 'both'] : ['a', 'both'];
@@ -1222,14 +1337,14 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     }
 
     // pending tool feedback
-    if (pending.length && pendingKind !== 'segments' && hover && ['segment', 'directed', 'ray', 'polygon', 'circle', 'arc'].includes(tool)) {
+    if (pending.length && pendingKind !== 'segments' && hover && ['segment', 'directed', 'ray', 'polygon', 'curve', 'measure', 'circle', 'arc'].includes(tool)) {
       const last = pts.get(pending[pending.length - 1]);
       if (last) parts.push(`<line x1="${sx(last.x)}" y1="${sy(last.y)}" x2="${sx(hover.x)}" y2="${sy(hover.y)}" class="rubber"/>`);
       if (tool === 'circle' && pending.length === 1) {
         const r = Math.hypot(hover.x - last.x, hover.y - last.y) * PX;
         parts.push(`<circle cx="${sx(last.x)}" cy="${sy(last.y)}" r="${r}" class="rubber"/>`);
       }
-      if (tool === 'polygon' && pending.length > 1) {
+      if ((tool === 'polygon' || tool === 'curve') && pending.length > 1) {
         const ps = pending.map((id) => pts.get(id));
         parts.push(`<polyline points="${ps.map((p) => `${sx(p.x)},${sy(p.y)}`).join(' ')}" class="rubber"/>`);
       }
@@ -1356,7 +1471,8 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
         ),
         row(
           field('New points start at', letterInput()),
-          isNet() ? el('span') : field('Lengths shown to', selectInput([[0, 'Whole numbers'], [1, '1 decimal place'], [2, '2 decimal places']], S.lengthDecimals, (v) => (S.lengthDecimals = Number(v))))
+          isNet() ? el('span') : field('Lengths shown to', selectInput([[0, 'Whole numbers'], [1, '1 decimal place'], [2, '2 decimal places']], S.lengthDecimals, (v) => (S.lengthDecimals = Number(v)))),
+          isNet() ? el('span') : field('Units', unitInput())
         )
       );
       if (isNet()) {
@@ -1455,6 +1571,17 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
           checkbox('Label along the line', it.sloped, (v) => (it.sloped = v))
         ),
         row(
+          checkbox('Label in a gap in the line', it.gap, (v) => (it.gap = v)),
+          checkbox('Bars across the ends', it.bars, (v) => (it.bars = v)),
+          measureOf(it)
+            ? field('Distance from the shape (cm)', numberInput(Math.abs(measureOf(it)[0].d ?? 0.7), 0.1, (v) => {
+                const sign = (measureOf(it)[0].d ?? 0.7) < 0 ? -1 : 1;
+                for (const d of measureOf(it)) d.d = sign * Math.max(0, v);
+              }))
+            : el('span'),
+          measureOf(it) ? actionButton('Other side', () => change(() => measureOf(it).forEach((d) => (d.d = -(d.d ?? 0.7))))) : el('span')
+        ),
+        row(
           field('Equal-length ticks', selectInput([[0, 'None'], [1, '|'], [2, '||'], [3, '|||']], it.ticks, (v) => (it.ticks = Number(v)))),
           field('Parallel arrows', selectInput([[0, 'None'], [1, '>'], [2, '>>'], [3, '>>>']], it.arrows, (v) => (it.arrows = Number(v))))
         ),
@@ -1496,6 +1623,28 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
         )
       );
       if (mode !== 'custom') propInputs.set('label', labelBox);
+    } else if (it.type === 'curve') {
+      h.textContent = `Curve ${it.pts.map(nm).join('')}`;
+      props.append(row(field('Style', selectInput(LINE_STYLES, it.style, (v) => (it.style = v))), del));
+      // its direction at each point: blank lets the curve choose, 0 is level
+      const dirs = el('div', 'geo-row');
+      it.pts.forEach((id, k) => {
+        const i = el('input');
+        i.type = 'number';
+        i.step = 5;
+        i.value = it.dirs?.[k] ?? '';
+        i.placeholder = 'auto';
+        i.addEventListener('change', () =>
+          change(() => {
+            it.dirs = it.pts.map((_, j) => it.dirs?.[j] ?? null);
+            it.dirs[k] = i.value === '' ? null : Number(i.value);
+          })
+        );
+        dirs.append(field(`At ${nm(id)} (°)`, i));
+      });
+      const note = el('p', 'geo-note');
+      note.textContent = 'Direction of the curve at each point, in degrees: 0 is level, 90 straight up; leave blank to let the curve choose. Drag the points to reshape it.';
+      props.append(dirs, note);
     } else if (it.type === 'ticks') {
       h.textContent = `Equal-length marks on ${nm(it.a)}${nm(it.b)}`;
       props.append(row(field('Ticks', selectInput([[1, '|'], [2, '||'], [3, '|||']], it.ticks, (v) => (it.ticks = Number(v)))), del));
@@ -1638,6 +1787,18 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
       'One edge per line or comma: A-B, A->B (directed), A-B 5 (labelled), A-A (a loop), A-B twice (two edges), D (a vertex on its own). New vertices go on a circle; drag them where you want.';
     wrap.append(field('Edges', ta), row(go), note);
     return wrap;
+  }
+
+  /** Units after measured lengths (e.g. m or cm); blank for none. */
+  function unitInput() {
+    const i = el('input');
+    i.type = 'text';
+    i.className = 'geo-letter';
+    i.placeholder = 'e.g. m';
+    i.value = scene.settings.unit || '';
+    i.title = 'Written after every measured length, e.g. 16 m';
+    i.addEventListener('change', () => change(() => (scene.settings.unit = i.value.trim().replace(/[^A-Za-z°%]/g, ''))));
+    return i;
   }
 
   /** One letter, A–Z or a–z: the name of the next new point (then onwards). */
