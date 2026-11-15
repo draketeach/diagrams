@@ -1033,6 +1033,8 @@ test('3D solids: ~a in a label is a vector in the chosen style', () => {
   assert.equal(vectorShortcuts('4 cm'), '4 cm');
   const code = solids.generate({ ...defaultValues(solids.schema), solid: 'cuboid', hLabel: '~h' }).code;
   assert.ok(code.includes('{$\\mathop{h\\kern0pt}\\limits_{\\sim}$}'), "used in a solid's label");
+  const bold = solids.generate({ ...defaultValues(solids.schema), solid: 'cuboid', hLabel: '~h', vecStyle: 'bold' }).code;
+  assert.ok(bold.includes('{$\\mathbf{h}$}'), 'any solid can use bold vectors');
 });
 
 test('gallery.html versions are up to date', () => {

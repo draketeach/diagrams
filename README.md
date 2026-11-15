@@ -169,7 +169,7 @@ Cylinders, cones, spheres, hemispheres, cuboids, triangular prisms and pyramids
 (rectangular base), drawn without shading as on exam papers. Type the
 measurements and a unit; each length is labelled with its value and unit
 (`4 cm`) unless you type your own label (`$r$`) or `-` for none; `~a` in a
-label is the vector a (tilde under, or a sphere's chosen vector style). Round solids
+label is the vector a, drawn in the chosen vector style (tilde under, bold or arrow over). Round solids
 have a dashed radius from a dot at the centre; a cylinder's height goes on a
 measurement line beside it (bars, arrows, or both at its ends), and a cone's
 or pyramid's height is dashed inside it, with an optional slant height label on a cone.

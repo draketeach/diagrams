@@ -555,17 +555,6 @@ const schema = [
           ],
         },
       },
-      {
-        type: 'select',
-        key: 'vecStyle',
-        label: 'Vector labels',
-        default: 'tilde',
-        options: [
-          { value: 'tilde', label: 'Tilde under (a with ~)' },
-          { value: 'bold', label: 'Bold' },
-          { value: 'arrow', label: 'Arrow over' },
-        ],
-      },
     ],
   },
   {
@@ -596,7 +585,19 @@ const schema = [
         ],
         showIf: (v) => !ball(v),
       },
-      { type: 'note', text: 'A blank label shows the length and unit (e.g. 4 cm). Type your own, or - for none.' },
+      { type: 'note', text: 'A blank label shows the length and unit (e.g. 4 cm). Type your own, or - for none. ~a in a label is the vector a.' },
+      {
+        type: 'select',
+        key: 'vecStyle',
+        label: 'Vector labels',
+        default: 'tilde',
+        options: [
+          { value: 'tilde', label: 'Tilde under (a with ~)' },
+          { value: 'bold', label: 'Bold' },
+          { value: 'arrow', label: 'Arrow over' },
+        ],
+        help: "For ~a in labels, and a sphere's vectors.",
+      },
       {
         type: 'select',
         key: 'ends',
