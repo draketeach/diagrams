@@ -16,6 +16,7 @@ import geometry from '../js/diagrams/geometry.js';
 import probtree from '../js/diagrams/probtree.js';
 import realgraph from '../js/diagrams/realgraph.js';
 import network, { DEFAULT_NETWORK } from '../js/diagrams/network.js';
+import solids from '../js/diagrams/solids.js';
 import { parseScene as parseNet } from '../js/geometry/scene.js';
 import { applyEdgeList } from '../js/geometry/edgeList.js';
 import { GALLERY } from '../js/galleryEntries.js';
@@ -79,6 +80,20 @@ const jobs = [
     const sc = applyEdgeList(parseNet(JSON.stringify(DEFAULT_NETWORK)), 'A-B 3\nA-B 5\nA->C 4\nC-C 2\nB->B\nG-E\nE->D 7', (p) => `${p}${++k}`);
     return network.generate({ scene: JSON.stringify(sc) });
   })()],
+  ['solids-cylinder-none', solids.generate({ ...defaultValues(solids.schema), solid: 'cylinder', hidden: 'none', ends: 'both', sLabel: 'l' })],
+  ['solids-cylinder-dashed', solids.generate({ ...defaultValues(solids.schema), solid: 'cylinder', hidden: 'dashed', ends: 'both', sLabel: 'l' })],
+  ['solids-cone-none', solids.generate({ ...defaultValues(solids.schema), solid: 'cone', hidden: 'none', ends: 'both', sLabel: 'l' })],
+  ['solids-cone-dashed', solids.generate({ ...defaultValues(solids.schema), solid: 'cone', hidden: 'dashed', ends: 'both', sLabel: 'l' })],
+  ['solids-sphere-none', solids.generate({ ...defaultValues(solids.schema), solid: 'sphere', hidden: 'none', ends: 'both', sLabel: 'l' })],
+  ['solids-sphere-dashed', solids.generate({ ...defaultValues(solids.schema), solid: 'sphere', hidden: 'dashed', ends: 'both', sLabel: 'l' })],
+  ['solids-hemisphere-none', solids.generate({ ...defaultValues(solids.schema), solid: 'hemisphere', hidden: 'none', ends: 'both', sLabel: 'l' })],
+  ['solids-hemisphere-dashed', solids.generate({ ...defaultValues(solids.schema), solid: 'hemisphere', hidden: 'dashed', ends: 'both', sLabel: 'l' })],
+  ['solids-cuboid-none', solids.generate({ ...defaultValues(solids.schema), solid: 'cuboid', hidden: 'none', ends: 'both', sLabel: 'l' })],
+  ['solids-cuboid-dashed', solids.generate({ ...defaultValues(solids.schema), solid: 'cuboid', hidden: 'dashed', ends: 'both', sLabel: 'l' })],
+  ['solids-prism-none', solids.generate({ ...defaultValues(solids.schema), solid: 'prism', hidden: 'none', ends: 'both', sLabel: 'l' })],
+  ['solids-prism-dashed', solids.generate({ ...defaultValues(solids.schema), solid: 'prism', hidden: 'dashed', ends: 'both', sLabel: 'l' })],
+  ['solids-pyramid-none', solids.generate({ ...defaultValues(solids.schema), solid: 'pyramid', hidden: 'none', ends: 'both', sLabel: 'l' })],
+  ['solids-pyramid-dashed', solids.generate({ ...defaultValues(solids.schema), solid: 'pyramid', hidden: 'dashed', ends: 'both', sLabel: 'l' })],
   ['realgraph-loan', realgraph.generate(defaultValues(realgraph.schema))],
   ['realgraph-travel', realgraph.generate({ ...defaultValues(realgraph.schema), curves: '0,0 -- 2,40 -- 3,40 -- 5,0; label above right: Car\n0,10 1,15 2,30* | 2,35o 4,38; dashed; label: Bus\n1,5:P', xTitle: 'Time (hours)', yTitle: 'Distance from home (km)', yTitlePos: 'top', xmax: 6, ymax: 45, xStep: 1, yStep: 10, yNumbers: '', gridX: 0.5, gridY: 5, gridColour: 'grey', origin: 'both' })],
   ['blank-trig', blank.generate({ ...defaultValues(blank.schema), xPreset: 'radians', xCustomTicks: '', originLabel: true })],

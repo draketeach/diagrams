@@ -23,6 +23,7 @@ import normal, { normalProbability } from '../js/diagrams/normal.js';
 import geometry from '../js/diagrams/geometry.js';
 import realgraph, { parseCurve, curveRuns, titleText } from '../js/diagrams/realgraph.js';
 import network, { DEFAULT_NETWORK } from '../js/diagrams/network.js';
+import solids from '../js/diagrams/solids.js';
 import { parseEdgeList, sceneToEdgeList, applyEdgeList } from '../js/geometry/edgeList.js';
 import probtree, { treeFromStages, treeFromOutline, pathProduct } from '../js/diagrams/probtree.js';
 import { parseScene, sceneToTikz, coordinatesFromCode, angleSpan, labelPositions, pointMap } from '../js/geometry/scene.js';
@@ -751,8 +752,25 @@ test('geometry: scale shrinks the drawing, not its text or marks', () => {
   assert.ok(next.values.scene.includes('"x":18'), 'hand-edited page coordinates come back at the drawing\'s scale');
 });
 
+test('solids: each solid draws; hidden edges only when asked', () => {
+  const d = defaultValues(solids.schema);
+  for (const solid of ['cylinder', 'cone', 'sphere', 'hemisphere', 'cuboid', 'prism', 'pyramid']) {
+    const off = solids.generate({ ...d, solid }).code;
+    const on = solids.generate({ ...d, solid, hidden: 'dashed' }).code;
+    assert.ok(off.includes('\\begin{tikzpicture}'), solid);
+    assert.ok(on.split('dashed').length > off.split('dashed').length, `${solid}: hidden edges dashed`);
+  }
+  const cyl = solids.generate({ ...d, solid: 'cylinder', r: 4, h: 10 }).code;
+  assert.ok(cyl.includes('{4 cm}') && cyl.includes('{10 cm}') && cyl.includes('NOT TO'), 'cylinder labels');
+  assert.ok(cyl.includes('circle[radius=1.5pt]'), 'centre dot');
+  assert.ok(!cyl.includes('arrows.meta'), 'bars only: no arrow library');
+  const own = solids.generate({ ...d, solid: 'cylinder', rLabel: '$r$', hLabel: '-', notToScale: false }).code;
+  assert.ok(own.includes('{$r$}') && !own.includes('10 cm') && !own.includes('NOT TO'), 'own labels, none, no NOT TO SCALE');
+  assert.ok(solids.generate({ ...d, solid: 'cylinder', ends: 'both' }).code.includes('usetikzlibrary{arrows.meta}'), 'arrowheads load arrows.meta');
+});
+
 test('gallery: every entry generates cleanly and has its image', () => {
-  const modules = { realgraph, function: fn, sketch, blank, normal, scatter, slopefield, geometry, network, probtree };
+  const modules = { realgraph, function: fn, sketch, blank, normal, scatter, slopefield, geometry, network, probtree, solids };
   const ids = new Set();
   for (const e of GALLERY) {
     assert.ok(!ids.has(e.id), `duplicate gallery id ${e.id}`);

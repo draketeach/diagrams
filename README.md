@@ -110,6 +110,18 @@ edit, one edge per line: `A-B`, `A->B` (directed), `A-B 5` or `A->B A, 8`
 (a loop), `A-B` on two lines (two edges), `D` (a vertex on its own). Vertices and edges still listed
 keep their places; new vertices go on a circle to be dragged into place.
 
+### 3D solids
+
+Cylinders, cones, spheres, hemispheres, cuboids, triangular prisms and pyramids
+(rectangular base), drawn without shading as on exam papers. Type the
+measurements and a unit; each length is labelled with its value and unit
+(`4 cm`) unless you type your own label (`$r$`) or `-` for none. Round solids
+have a dashed radius from a dot at the centre; a cylinder's height goes on a
+measurement line beside it (bars, arrows, or both at its ends), and a cone's
+or pyramid's height is dashed inside it, with an optional slant height label on a cone.
+Hidden edges are left out, or drawn dashed. Under Drawing: the size, how flat
+round faces look, and the angle the depth goes back at.
+
 ### Real-world graph
 
 Graphs of real quantities (money, temperature, distance against time) drawn
