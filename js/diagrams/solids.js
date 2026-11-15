@@ -52,6 +52,12 @@ function measure(b, p, q, label, ends = 'bars') {
   if (ends !== 'arrows') for (const e of [p, q]) b.add(`\\draw ${P(e.x + nx, e.y + ny)} -- ${P(e.x - nx, e.y - ny)};`);
 }
 
+/** A corner's name: a letter (or letter and digits) in maths, a word upright. */
+function nameText(t) {
+  if (t.includes('$')) return titleText(t);
+  return /^[A-Za-z]{3,}$/.test(t) ? titleText(t) : `$${t.replace(/^([A-Za-z])(\d+)$/, '$1_{$2}')}$`;
+}
+
 /** A label beside the middle of an edge p→q, pushed off it by 0.3 cm towards `side` (a direction). */
 function edgeLabel(b, p, q, text, side, sloped = false) {
   if (!text) return;
@@ -155,20 +161,26 @@ function generate(v) {
     ext.push({ x: R + 0.8, y: Hh });
   } else if (v.solid === 'sphere' || v.solid === 'hemisphere') {
     const half = v.solid === 'hemisphere';
-    b.comment(`${v.solid}: radius ${n(r)}`);
-    if (half) b.add(`\\draw ${P(-R, 0)} arc[start angle=180, end angle=0, radius=${n(R)}];`);
-    else b.add(`\\draw (0,0) circle[radius=${n(R)}];`);
-    // the flat face (hemisphere) or the equator (sphere)
-    b.add(arc(0, 0, R, ry, 180, 360));
-    // the back half is behind the dome or the ball
-    H(() => b.add(arc(0, 0, R, ry, 0, 180, 'dashed')));
+    const bowl = half && v.flat !== 'down'; // flat face on top, curved side below
+    b.comment(`${v.solid}${half ? (bowl ? ', flat side up' : ', flat side down') : ''}: radius ${n(r)}`);
+    if (bowl) {
+      b.add(`\\draw (0,0) ellipse [x radius=${n(R)}, y radius=${n(ry)}];`);
+      b.add(`\\draw ${P(-R, 0)} arc[start angle=180, end angle=360, radius=${n(R)}];`);
+    } else {
+      if (half) b.add(`\\draw ${P(-R, 0)} arc[start angle=180, end angle=0, radius=${n(R)}];`);
+      else b.add(`\\draw (0,0) circle[radius=${n(R)}];`);
+      // the flat face (hemisphere) or the equator (sphere)
+      b.add(arc(0, 0, R, ry, 180, 360));
+      // the back half is behind the dome or the ball
+      H(() => b.add(arc(0, 0, R, ry, 0, 180, 'dashed')));
+    }
     if (v.radius !== 'none') {
       b.comment('radius');
       b.add(DOT(0, 0));
       b.add(`\\draw[dashed] ${P(0, 0)} -- ${P(R, 0)};`);
       if (rLab) b.add(`\\node[above, inner sep=2pt] at ${P(R / 2, 0)} {${rLab}};`);
     }
-    ext.push({ x: R + 0.8, y: R });
+    ext.push({ x: R + 0.8, y: bowl ? ry : R });
   } else {
     // prisms and pyramids: the front face flat on the page, depth going back at an angle
     const g = ((Number(v.depthAngle) || 35) * Math.PI) / 180;
@@ -218,15 +230,46 @@ function generate(v) {
       const T = { x: O.x, y: O.y + Hh };
       b.add(`\\draw ${line(A, B, C2)} ${line(A, T, B)} ${line(T, C2)};`);
       H(() => b.add(`\\draw[dashed] ${line(A, A2, C2)} ${line(A2, T)};`));
-      if (hLab) {
+      const aLab = String(v.aLabel ?? '').trim();
+      const showAngle = v.angle === 'corner';
+      if (hLab || showAngle) {
         b.comment('height');
         b.add(`\\draw[dashed] ${line(T, O)};`);
-        b.add(DOT(O.x, O.y));
-        b.add(`\\node[right, inner sep=2pt] at ${P(O.x, O.y + Hh * 0.45)} {${hLab}};`);
+        if (showAngle) rightAngle(b, O, T, A, 0.25);
+        else b.add(DOT(O.x, O.y));
+        if (hLab) b.add(`\\node[right, inner sep=2pt] at ${P(O.x, O.y + Hh * 0.45)} {${hLab}};`);
+      }
+      if (showAngle) {
+        // the angle between an edge up to the top and the base, at a corner
+        b.comment('angle between the edge and the base');
+        b.add(`\\draw[dashed] ${line(A, O)};`);
+        const deg = (p) => (Math.atan2(p.y, p.x) * 180) / Math.PI;
+        const a1 = deg(O);
+        const a2 = deg(T);
+        const rr = Math.min(1, Math.hypot(O.x, O.y) * 0.35);
+        b.add(`\\draw ${P(rr * Math.cos((a1 * Math.PI) / 180), rr * Math.sin((a1 * Math.PI) / 180))} arc[start angle=${n(a1)}, end angle=${n(a2)}, radius=${n(rr)}];`);
+        if (aLab && aLab !== '-') {
+          const mid = (((a1 + a2) / 2) * Math.PI) / 180;
+          b.add(`\\node at ${P((rr + 0.3) * Math.cos(mid), (rr + 0.3) * Math.sin(mid))} {${titleText(aLab)}};`);
+        }
       }
       b.comment('labels');
       edgeLabel(b, A, B, wLab, { x: 0, y: -1 });
       edgeLabel(b, B, C2, dLab, { x: o.y, y: -o.x });
+      const sLab = String(v.sLabel ?? '').trim();
+      if (sLab && sLab !== '-') edgeLabel(b, A, T, titleText(sLab), { x: -T.y, y: T.x });
+      // corner names: front left, front right, back right, back left, top, centre of the base
+      const names = String(v.names ?? '').trim().split(/[\s,]+/).filter(Boolean);
+      if (names.length) {
+        b.comment('names');
+        const c = { x: O.x, y: O.y + Hh / 3 };
+        [A, B, C2, A2, T].forEach((p, i) => {
+          if (!names[i] || names[i] === '-') return;
+          const L = Math.hypot(p.x - c.x, p.y - c.y) || 1;
+          b.add(`\\node at ${P(p.x + ((p.x - c.x) / L) * 0.3, p.y + ((p.y - c.y) / L) * 0.3)} {${nameText(names[i])}};`);
+        });
+        if (names[5] && names[5] !== '-') b.add(`\\node[below right, inner sep=2pt] at ${P(O.x, O.y)} {${nameText(names[5])}};`);
+      }
       ext.push(C2, T);
     }
   }
@@ -260,7 +303,7 @@ const schema = [
       { value: 'hemisphere', label: 'Hemisphere' },
       { value: 'cuboid', label: 'Cuboid' },
       { value: 'prism', label: 'Triangular prism' },
-      { value: 'pyramid', label: 'Pyramid (rectangular base)' },
+      { value: 'pyramid', label: 'Pyramid (square or rectangular base)' },
     ],
   },
   {
@@ -287,6 +330,17 @@ const schema = [
         max: 1,
         showIf: (v) => v.solid === 'prism',
       },
+      {
+        type: 'select',
+        key: 'flat',
+        label: 'Flat side',
+        default: 'up',
+        options: [
+          { value: 'up', label: 'Up (a bowl)' },
+          { value: 'down', label: 'Down (a dome)' },
+        ],
+        showIf: (v) => v.solid === 'hemisphere',
+      },
     ],
   },
   {
@@ -299,7 +353,7 @@ const schema = [
         fields: [
           { type: 'text', key: 'rLabel', label: 'Radius label', default: '', placeholder: 'auto', help: LABEL_HELP, showIf: (v) => round(v) && v.radius !== 'none' },
           { type: 'text', key: 'hLabel', label: 'Height label', default: '', placeholder: 'auto', showIf: (v) => v.solid !== 'sphere' && v.solid !== 'hemisphere' },
-          { type: 'text', key: 'sLabel', label: 'Slant height label', default: '', placeholder: 'none', showIf: (v) => v.solid === 'cone' },
+          { type: 'text', key: 'sLabel', label: 'Slant edge label', default: '', placeholder: 'none', showIf: (v) => v.solid === 'cone' || v.solid === 'pyramid' },
         ],
       },
       {
@@ -321,6 +375,23 @@ const schema = [
           { value: 'arrows', label: 'Arrows' },
         ],
         showIf: (v) => v.solid === 'cylinder',
+      },
+      {
+        type: 'row',
+        fields: [
+          { type: 'select', key: 'angle', label: 'Angle', default: 'none', options: [{ value: 'none', label: 'None' }, { value: 'corner', label: 'Between an edge and the base' }] },
+          { type: 'text', key: 'aLabel', label: 'Angle label', default: '$\\theta$', showIf: (v) => v.angle === 'corner' },
+        ],
+        showIf: (v) => v.solid === 'pyramid',
+      },
+      {
+        type: 'text',
+        key: 'names',
+        label: 'Corner names',
+        default: '',
+        placeholder: 'e.g. A B C D M O',
+        help: 'Front left, front right, back right, back left, the top, then the centre of the base. - skips one.',
+        showIf: (v) => v.solid === 'pyramid',
       },
       { type: 'checkbox', key: 'notToScale', label: 'NOT TO SCALE', default: true },
     ],

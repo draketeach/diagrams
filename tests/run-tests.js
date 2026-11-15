@@ -756,9 +756,11 @@ test('solids: each solid draws; hidden edges only when asked', () => {
   const d = defaultValues(solids.schema);
   for (const solid of ['cylinder', 'cone', 'sphere', 'hemisphere', 'cuboid', 'prism', 'pyramid']) {
     const off = solids.generate({ ...d, solid }).code;
-    const on = solids.generate({ ...d, solid, hidden: 'dashed' }).code;
+    const flat = solid === 'hemisphere' ? 'down' : 'up'; // a bowl hides nothing
+    const off2 = solids.generate({ ...d, solid, flat }).code;
+    const on = solids.generate({ ...d, solid, flat, hidden: 'dashed' }).code;
     assert.ok(off.includes('\\begin{tikzpicture}'), solid);
-    assert.ok(on.split('dashed').length > off.split('dashed').length, `${solid}: hidden edges dashed`);
+    assert.ok(off.includes('\\draw') && on.split('dashed').length > off2.split('dashed').length, `${solid}: hidden edges dashed`);
   }
   const cyl = solids.generate({ ...d, solid: 'cylinder', r: 4, h: 10 }).code;
   assert.ok(cyl.includes('{4 cm}') && cyl.includes('{10 cm}') && cyl.includes('NOT TO'), 'cylinder labels');
@@ -766,6 +768,10 @@ test('solids: each solid draws; hidden edges only when asked', () => {
   assert.ok(!cyl.includes('arrows.meta'), 'bars only: no arrow library');
   const own = solids.generate({ ...d, solid: 'cylinder', rLabel: '$r$', hLabel: '-', notToScale: false }).code;
   assert.ok(own.includes('{$r$}') && !own.includes('10 cm') && !own.includes('NOT TO'), 'own labels, none, no NOT TO SCALE');
+  const bowl = solids.generate({ ...d, solid: 'hemisphere' }).code;
+  assert.ok(bowl.includes('ellipse') && bowl.includes('start angle=180, end angle=360, radius='), 'hemisphere is flat side up by default');
+  const pyr = solids.generate({ ...d, solid: 'pyramid', names: 'A B C D M O', angle: 'corner', sLabel: '$\\ell$' }).code;
+  assert.ok(['{$A$}', '{$M$}', '{$O$}', '{$\\theta$}', '{$\\ell$}'].every((t) => pyr.includes(t)), 'pyramid names, angle and slant label');
   assert.ok(solids.generate({ ...d, solid: 'cylinder', ends: 'both' }).code.includes('usetikzlibrary{arrows.meta}'), 'arrowheads load arrows.meta');
 });
 
