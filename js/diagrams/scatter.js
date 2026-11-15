@@ -312,10 +312,18 @@ function generate(values) {
   const xs = points.map((p) => p.x);
   const ys = points.map((p) => p.y);
   const isManual = values.windowMode === 'manual';
-  const [xlo, xhi] = isManual ? [values.xmin, values.xmax] : xs.length ? [Math.min(...xs), Math.max(...xs)] : [0, 10];
-  const [ylo, yhi] = isManual ? [values.ymin, values.ymax] : ys.length ? [Math.min(...ys), Math.max(...ys)] : [0, 10];
-  if (!(xhi > xlo) && isManual) throw new Error('"x to" must be bigger than "x from".');
-  if (!(yhi > ylo) && isManual) throw new Error('"y to" must be bigger than "y from".');
+  const fromData = (vs) => (vs.length ? [Math.min(...vs), Math.max(...vs)] : [0, 10]);
+  let [xlo, xhi] = isManual ? [values.xmin, values.xmax] : fromData(xs);
+  let [ylo, yhi] = isManual ? [values.ymin, values.ymax] : fromData(ys);
+  // a range typed the wrong way round (e.g. 3 to 3) is worked out from the data instead
+  if (isManual && !(xhi > xlo)) {
+    warnings.push(`x from (${n(xlo)}) must be less than x to (${n(xhi)}), so the x range is automatic. For −3 to 3, type -3 in "x from".`);
+    [xlo, xhi] = fromData(xs);
+  }
+  if (isManual && !(yhi > ylo)) {
+    warnings.push(`y from (${n(ylo)}) must be less than y to (${n(yhi)}), so the y range is automatic. For −3 to 3, type -3 in "y from".`);
+    [ylo, yhi] = fromData(ys);
+  }
   const pad = (lo, hi) => (hi > lo ? [lo, hi] : [lo - 1, hi + 1]);
   const X = axisPlan(...pad(xlo, xhi), {
     grid: !!values.showGrid, step: values.xStep, gridStep: values.gridX, dp: values.xDp, mode: values.axisBreak, sizeCm: values.width || 8, isManual,

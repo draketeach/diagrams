@@ -114,6 +114,12 @@ edge, commas included, as plain text: `600 m`; `-0.09` gets a real minus sign an
 (a loop), `A-B` on two lines (two edges), `D` (a vertex on its own). Vertices and edges still listed
 keep their places; new vertices go on a circle to be dragged into place.
 
+### Ranges typed the wrong way round
+
+In every graph type, a range whose "from" isn't less than its "to" (e.g. 3 to 3,
+when −3 to 3 was meant) is worked out automatically instead, with a warning
+saying so.
+
 ### Complex plane
 
 Regions and loci in the complex plane, one condition per line; the region where

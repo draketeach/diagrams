@@ -135,7 +135,7 @@ function generate(input) {
     const [xmin, xmax] = pad(xs);
     const [ymin, ymax] = pad(ys);
     return { xmin, xmax, ymin, ymax };
-  });
+  }, warnings);
   if (pts.some((p) => p.x < win.xmin || p.x > win.xmax || p.y < win.ymin || p.y > win.ymax)) {
     warnings.push('Some points are outside the axes range.');
   }

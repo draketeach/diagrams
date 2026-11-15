@@ -420,14 +420,27 @@ export function autoWindow({ xs = [], ys = [], f = null, padX = 0.3, padY = 0.3 
   };
 }
 
-export function resolveWindow(values, auto) {
+/**
+ * The window: typed (manual) or worked out (auto). A typed range that runs the
+ * wrong way (e.g. from 3 to 3, when -3 to 3 was meant) is worked out instead,
+ * with a note pushed to `notes` to say so.
+ */
+export function resolveWindow(values, auto, notes = []) {
   if (values.windowMode === 'manual') {
     const w = { xmin: values.xmin, xmax: values.xmax, ymin: values.ymin, ymax: values.ymax };
     for (const [k, v] of Object.entries(w)) {
       if (v === null || !isFinite(v)) throw new Error(`Window value "${k}" is missing`);
     }
-    if (w.xmin >= w.xmax) throw new Error('x min must be less than x max');
-    if (w.ymin >= w.ymax) throw new Error('y min must be less than y max');
+    let a = null;
+    const fit = () => (a ??= auto());
+    if (!(w.xmin < w.xmax)) {
+      notes.push(`x min (${n(w.xmin)}) must be less than x max (${n(w.xmax)}), so the x range is automatic. For −3 to 3, type -3 in "x min".`);
+      [w.xmin, w.xmax] = [fit().xmin, fit().xmax];
+    }
+    if (!(w.ymin < w.ymax)) {
+      notes.push(`y min (${n(w.ymin)}) must be less than y max (${n(w.ymax)}), so the y range is automatic. For −3 to 3, type -3 in "y min".`);
+      [w.ymin, w.ymax] = [fit().ymin, fit().ymax];
+    }
     return w;
   }
   return auto();

@@ -119,6 +119,7 @@ const schema = [
 // ------------------------------------------------------------------ generate
 
 function generate(input) {
+  windowNotes = [];
   const values = { ...legacyValues(input) };
   // graphs in other letters (t = 4 - p): read as x and y, and name the axes after them
   const names = renameVariables(values.graphs);
@@ -147,6 +148,7 @@ function generate(input) {
       : main.kind === 'ysq'
         ? generateYSquared(v, main, others, style)
         : generateFormula(v, main, others, style);
+  result.warnings = [...windowNotes, ...(result.warnings ?? [])];
   return result;
 }
 
@@ -164,13 +166,12 @@ function ticks(b, win, values, skipX, skipY) {
   return [...drawScaleTicks(b, win, values, { skipX, skipY }), ...drawCustomTicks(b, win, values, { skipX, skipY })];
 }
 
+let windowNotes = []; // notes about a typed window, for the warnings
 function featureWindow(values, f, xs, ys, others, { fallbackF = null } = {}) {
   const extra = extraGraphFeatures(others, f);
   for (const a of parseAsymptotes(values.asymptotes)) (a.axis === 'x' ? extra.xs : extra.ys).push(a.value);
   for (const [s, t] of parseShades(values.shade)) extra.xs.push(s, t);
-  return resolveWindow(values, () =>
-    autoWindow({ xs: [...xs, ...extra.xs], ys: [...ys, ...extra.ys].filter(isFinite), f: fallbackF })
-  );
+  return resolveWindow(values, () => autoWindow({ xs: [...xs, ...extra.xs], ys: [...ys, ...extra.ys].filter(isFinite), f: fallbackF }), windowNotes);
 }
 
 // ---- an ordinary function of x

@@ -106,7 +106,7 @@ function generate(input) {
       ymin: niceRound(ylo - 0.15 * yspan),
       ymax: niceRound(yhi + 0.15 * yspan),
     };
-  });
+  }, warnings);
 
   const { options } = scaleOptions(win, values);
   const b = new TikzBuilder();

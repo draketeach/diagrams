@@ -937,6 +937,17 @@ test('geometry: a point can be labelled with its own text, e.g. its coordinates'
   assert.ok(code.includes('node {$A\\,(4, 5, 2)$};') && code.includes('\\coordinate (A) at'), 'label text, name kept for TikZ');
 });
 
+test('graphs: a range typed the wrong way round warns and is worked out instead', () => {
+  const back = /must be less than .*so the x range is automatic/;
+  const fnv = { ...defaultValues(fn.schema), windowMode: 'manual', xmin: 3, xmax: 3, ymin: -3, ymax: 3 };
+  assert.ok(fn.generate(fnv).warnings.some((w) => back.test(w)), 'function');
+  assert.ok(blank.generate({ ...defaultValues(blank.schema), windowMode: 'manual', xmin: 3, xmax: 3, ymin: -3, ymax: 3 }).warnings.some((w) => back.test(w)), 'blank axes');
+  assert.ok(sketch.generate({ ...defaultValues(sketch.schema), windowMode: 'manual', xmin: 3, xmax: 3, ymin: -3, ymax: 3 }).warnings.some((w) => back.test(w)), 'sketch');
+  assert.ok(realgraph.generate({ ...defaultValues(realgraph.schema), xmin: 3, xmax: 3 }).warnings.some((w) => back.test(w)), 'real-world graph');
+  assert.ok(scatter.generate({ ...defaultValues(scatter.schema), windowMode: 'manual', xmin: 3, xmax: 3, ymin: 0, ymax: 10 }).warnings.some((w) => back.test(w)), 'scatterplot');
+  assert.ok(slopefield.generate({ ...defaultValues(slopefield.schema), fxmin: 3, fxmax: 3 }).warnings.some((w) => /Field from x \(3\) must be less/.test(w)), 'slope field');
+});
+
 test('gallery: every entry generates cleanly and has its image', () => {
   const modules = { realgraph, function: fn, sketch, blank, normal, scatter, slopefield, geometry, network, probtree, solids, dotplot, boxplot, complex };
   const ids = new Set();

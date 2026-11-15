@@ -166,11 +166,21 @@ function generate(v) {
   const xStep = Number(v.xStep) || 1;
   const yStep = Number(v.yStep) || 1;
   const pick = (val, auto) => (val === null || val === undefined || val === '' || !isFinite(Number(val)) ? auto : Number(val));
-  const xmin = pick(v.xmin, Math.min(0, ...all.map((p) => p.x)));
-  const ymin = pick(v.ymin, Math.min(0, ...all.map((p) => p.y)));
-  const xmax = pick(v.xmax, (Math.ceil(Math.max(...all.map((p) => p.x)) / xStep - 1e-9) + 1) * xStep);
-  const ymax = pick(v.ymax, (Math.ceil(Math.max(...all.map((p) => p.y)) / yStep - 1e-9) + 1) * yStep);
-  if (!(xmax > xmin) || !(ymax > ymin)) throw new Error('The axes need max bigger than min.');
+  const autoX = [Math.min(0, ...all.map((p) => p.x)), (Math.ceil(Math.max(...all.map((p) => p.x)) / xStep - 1e-9) + 1) * xStep];
+  const autoY = [Math.min(0, ...all.map((p) => p.y)), (Math.ceil(Math.max(...all.map((p) => p.y)) / yStep - 1e-9) + 1) * yStep];
+  let xmin = pick(v.xmin, autoX[0]);
+  let ymin = pick(v.ymin, autoY[0]);
+  let xmax = pick(v.xmax, autoX[1]);
+  let ymax = pick(v.ymax, autoY[1]);
+  // a range typed the wrong way round (e.g. 3 to 3) is worked out from the data instead
+  if (!(xmax > xmin)) {
+    warnings.push(`x min (${n(xmin)}) must be less than x max (${n(xmax)}), so the x range is automatic. For −3 to 3, type -3 in "x min".`);
+    [xmin, xmax] = autoX[1] > autoX[0] ? autoX : [0, 10];
+  }
+  if (!(ymax > ymin)) {
+    warnings.push(`y min (${n(ymin)}) must be less than y max (${n(ymax)}), so the y range is automatic. For −3 to 3, type -3 in "y min".`);
+    [ymin, ymax] = autoY[1] > autoY[0] ? autoY : [0, 10];
+  }
   const W = Number(v.width) || 8;
   const H = Number(v.height) || 6;
   const xu = W / (xmax - xmin);

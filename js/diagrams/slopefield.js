@@ -303,11 +303,19 @@ function generate(values) {
   const eq = parseEquation(values.equation);
   const f = eq.evaluate;
   const points = parsePoints(values.points);
-  const fx0 = values.fxmin ?? -5;
-  const fx1 = values.fxmax ?? 5;
-  const fy0 = values.fymin ?? -5;
-  const fy1 = values.fymax ?? 5;
-  if (!(fx1 > fx0) || !(fy1 > fy0)) throw new Error('The field range is empty: "to" must be bigger than "from".');
+  let fx0 = values.fxmin ?? -5;
+  let fx1 = values.fxmax ?? 5;
+  let fy0 = values.fymin ?? -5;
+  let fy1 = values.fymax ?? 5;
+  // a range typed the wrong way round (e.g. 3 to 3) goes back to the usual -5 to 5
+  if (!(fx1 > fx0)) {
+    warnings.push(`Field from x (${n(fx0)}) must be less than field to x (${n(fx1)}), so it runs from −5 to 5. For −3 to 3, type -3 in "Field from x".`);
+    [fx0, fx1] = [-5, 5];
+  }
+  if (!(fy1 > fy0)) {
+    warnings.push(`Field from y (${n(fy0)}) must be less than field to y (${n(fy1)}), so it runs from −5 to 5. For −3 to 3, type -3 in "Field from y".`);
+    [fy0, fy1] = [-5, 5];
+  }
   const dx = values.dx > 0 ? values.dx : 1;
   const dy = values.dy > 0 ? values.dy : 1;
   if ((fx1 - fx0) / dx > 80 || (fy1 - fy0) / dy > 80) throw new Error('The spacing is too small for this range (more than 80 segments across).');
