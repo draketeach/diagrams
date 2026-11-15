@@ -922,6 +922,8 @@ test('complex plane: conditions are read and the region where they all hold is s
   assert.ok(code.includes('\\clip (-2,-3) circle[radius=1];') && code.includes('\\fill[gray!35]'), 'disc clip and shading');
   assert.ok(code.includes('\\draw (-2,-3) circle[radius=1];') && code.includes('\\fill (-2,-3) circle[radius=1.5pt];'), 'circle and centre dot');
   assert.ok(!code.includes('foreach'), 'no scales by default');
+  const flat = complex.generate({ ...d, conditions: 'Re(z) + Im(z) < 3', xmin: '3', xmax: '3', ymin: '3', ymax: '3' });
+  assert.ok(flat.warnings.some((w) => /x from \(3\) must be less than x to/.test(w)) && flat.code.includes('(-1,0) -- (1,0)'), 'a range from 3 to 3 warns and falls back to automatic');
   const strict = complex.generate({ ...d, conditions: '|z - 1| > 2' }).code;
   assert.ok(strict.includes('\\draw[dashed] (1,0) circle[radius=2];'), 'strict boundaries dashed');
   const locus = complex.generate({ ...d, conditions: '|z| = 2\nIm(z) >= 0' }).code;

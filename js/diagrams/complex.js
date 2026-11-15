@@ -405,8 +405,16 @@ function generate(v) {
   let x1 = auto(v.xmax) ? niceUp(Math.max(...xs) + pad) : Number(v.xmax);
   let y0 = auto(v.ymin) ? niceDown(Math.min(...ys) - pad) : Number(v.ymin);
   let y1 = auto(v.ymax) ? niceUp(Math.max(...ys) + pad) : Number(v.ymax);
-  if (x1 <= x0) [x0, x1] = [x0, x0 + 1];
-  if (y1 <= y0) [y0, y1] = [y0, y0 + 1];
+  // a range that runs the wrong way (e.g. from 3 to 3, when -3 to 3 was meant) falls back to automatic
+  if (x1 <= x0) {
+    warnings.push(`x from (${n(x0)}) must be less than x to (${n(x1)}), so the x range is automatic. For −3 to 3, type -3 in "x from".`);
+    [x0, x1] = [niceDown(Math.min(...xs) - pad), niceUp(Math.max(...xs) + pad)];
+  }
+  if (y1 <= y0) {
+    warnings.push(`y from (${n(y0)}) must be less than y to (${n(y1)}), so the y range is automatic. For −3 to 3, type -3 in "y from".`);
+    [y0, y1] = [niceDown(Math.min(...ys) - pad), niceUp(Math.max(...ys) + pad)];
+  }
+  if (x0 > 0 || x1 < 0 || y0 > 0 || y1 < 0) warnings.push('The range leaves out the origin, so an axis is off the picture.');
   const box = { x0, x1, y0, y1 };
   const unit = (Number(v.size) > 0 ? Number(v.size) : 6) / Math.max(x1 - x0, y1 - y0);
   const P = (p) => `(${n(p.x)},${n(p.y)})`;
