@@ -23,7 +23,7 @@ import normal, { normalProbability } from '../js/diagrams/normal.js';
 import geometry from '../js/diagrams/geometry.js';
 import realgraph, { parseCurve, curveRuns, titleText } from '../js/diagrams/realgraph.js';
 import network, { DEFAULT_NETWORK } from '../js/diagrams/network.js';
-import solids, { vectorTex } from '../js/diagrams/solids.js';
+import solids, { vectorTex, vectorShortcuts } from '../js/diagrams/solids.js';
 import complex, { parseCondition, parseComplex, parseAngle } from '../js/diagrams/complex.js';
 import { tildeVectors, plainLabel, bendThrough, loopThrough, edgeShape, shapeAt } from '../js/geometry/scene.js';
 import dotplot, { parseDots } from '../js/diagrams/dotplot.js';
@@ -1024,6 +1024,15 @@ test('geometry: ~a is a vector with a tilde under it', () => {
   assert.equal(tildeVectors('force $~F$ and ~b'), 'force $\\mathop{F\\kern0pt}\\limits_{\\sim}$ and ~b', 'only inside maths');
   const scene = { settings: { grid: 0.25 }, points: [{ id: 'A', name: 'A', x: 0, y: 0 }, { id: 'B', name: 'B', x: 3, y: 0 }], items: [{ id: 's', type: 'segment', a: 'A', b: 'B', label: '~a', tip: 'b' }] };
   assert.ok(sceneToTikz(scene).code.includes('{$\\mathop{a\\kern0pt}\\limits_{\\sim}$}'));
+});
+
+test('3D solids: ~a in a label is a vector in the chosen style', () => {
+  assert.equal(vectorShortcuts('~a cm'), '$\\mathop{a\\kern0pt}\\limits_{\\sim}$ cm');
+  assert.equal(vectorShortcuts('$2~b$', 'bold'), '$2\\mathbf{b}$', 'inside maths it stays maths');
+  assert.equal(vectorShortcuts('$~v$', 'arrow'), '$\\vec{v}$');
+  assert.equal(vectorShortcuts('4 cm'), '4 cm');
+  const code = solids.generate({ ...defaultValues(solids.schema), solid: 'cuboid', hLabel: '~h' }).code;
+  assert.ok(code.includes('{$\\mathop{h\\kern0pt}\\limits_{\\sim}$}'), "used in a solid's label");
 });
 
 test('gallery.html versions are up to date', () => {

@@ -230,7 +230,25 @@ function planeVectors(b, v, R, ry, warnings) {
 
 // ---------------------------------------------------------------- the solids
 
-function generate(v) {
+/**
+ * "~a" in a label is the vector a in the chosen vector style (tilde under, bold or
+ * arrow over); in plain text it becomes maths, inside $…$ it stays there.
+ */
+export function vectorShortcuts(text, style = 'tilde') {
+  const t = String(text ?? '');
+  if (!t.includes('~')) return t;
+  const head = (c) => vectorTex(c, style).slice(1, -1);
+  const sub = (m, wrap) => m.replace(/~([A-Za-z])(?![A-Za-z])/g, (_, c) => (wrap ? `$${head(c)}$` : head(c)));
+  return t
+    .split(/(\$[^$]*\$)/)
+    .map((part, i) => sub(part, i % 2 === 0))
+    .join('');
+}
+
+function generate(vIn) {
+  // labels may name vectors with ~a
+  const v = { ...vIn };
+  for (const k of ['rLabel', 'wLabel', 'dLabel', 'hLabel', 'sLabel', 'aLabel']) v[k] = vectorShortcuts(v[k], vIn.vecStyle);
   const warnings = [];
   const b = new TikzBuilder();
   const S = new Solid(b);
