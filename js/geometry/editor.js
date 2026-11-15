@@ -904,6 +904,10 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
       }
       drag = { type: 'point', id: target.id, moved: false, exclude: dependentsOf(scene, target.id).add(target.id) };
       begin();
+    } else if (target?.kind === 'note') {
+      const at = notToScalePlace(scene);
+      drag = { type: 'note', dx: at.x - raw.x, dy: at.y - raw.y, moved: false };
+      begin();
     } else if (target?.kind === 'item' && findItem(target.id)?.type === 'text') {
       const it = findItem(target.id);
       drag = { type: 'text', id: it.id, dx: it.x - raw.x, dy: it.y - raw.y, moved: false };
@@ -935,6 +939,11 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
         it.x = round(s.point ? raw.x + drag.dx : s.x);
         it.y = round(s.point ? raw.y + drag.dy : s.y);
         render();
+      } else if (drag.type === 'note') {
+        // in the drawing's own units (its page scale is applied when the TikZ is made)
+        const s = snap({ x: raw.x + drag.dx, y: raw.y + drag.dy }, { lines: false });
+        scene.settings.notePos = { x: round(s.point ? raw.x + drag.dx : s.x), y: round(s.point ? raw.y + drag.dy : s.y) };
+        render();
       } else if (drag.type === 'label') {
         moveLabel(drag.target, raw);
         render();
@@ -958,6 +967,7 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     const d = drag;
     drag = null;
     if (d.type === 'pan') return; // the view is saved with the drawing but isn't an edit
+    if (d.type === 'note' && d.moved) showProps(); // offer to put it back
     if (d.moved) commit();
     else before = null;
     if (d.type === 'label' && !d.moved) select({ kind: d.target.kind, id: d.target.id });
@@ -1338,7 +1348,8 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     // NOT TO SCALE (as in the TikZ)
     if (scene.settings.notToScale && scene.points.length) {
       const { x, y } = notToScalePlace(scene);
-      parts.push(`<text x="${sx(x)}" y="${sy(y)}" class="free-text" dominant-baseline="hanging"><tspan x="${sx(x)}">NOT TO</tspan><tspan x="${sx(x)}" dy="1.2em">SCALE</tspan></text>`);
+      // drag it to place it yourself
+      parts.push(`<text data-kind="note" data-id="note" x="${sx(x)}" y="${sy(y)}" class="free-text is-draggable" dominant-baseline="hanging"><tspan x="${sx(x)}">NOT TO</tspan><tspan x="${sx(x)}" dy="1.2em">SCALE</tspan></text>`);
     }
 
     // pending tool feedback
@@ -1474,6 +1485,9 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
           checkbox('Show grid', S.showGrid, (v) => (S.showGrid = v)),
           checkbox('NOT TO SCALE', S.notToScale, (v) => (S.notToScale = v))
         ),
+        ...(S.notToScale && S.notePos
+          ? [row(actionButton('Put NOT TO SCALE back in its automatic place', () => change(() => delete S.notePos)))]
+          : []),
         row(
           field('New points start at', letterInput()),
           isNet() ? el('span') : field('Lengths shown to', selectInput([[0, 'Whole numbers'], [1, '1 decimal place'], [2, '2 decimal places']], S.lengthDecimals, (v) => (S.lengthDecimals = Number(v)))),

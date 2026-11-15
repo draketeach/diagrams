@@ -31,7 +31,7 @@
 //     { id, type: 'ticks', a, b, ticks },
 //     { id, type: 'curve', pts: [ids], dirs: [degrees or null], style },  (a smooth curve through the points)                     (equal-length marks only, e.g. the halves of a midpoint)
 //   ],
-//   settings: { grid, snap, showGrid, lineWidth, fontSize, notToScale, firstLetter,
+//   settings: { grid, snap, showGrid, lineWidth, fontSize, notToScale, notePos: {x, y} (dragged), firstLetter,
 //               lengthDecimals, view: {x0, y0, w, h} },
 // A side's or angle's label of null means "its measured size"; '' means none.
 // }
@@ -966,6 +966,7 @@ export function scaledScene(scene) {
       it.y = r4(it.y * k);
     }
   }
+  if (out.settings.notePos) out.settings.notePos = { x: r4(out.settings.notePos.x * k), y: r4(out.settings.notePos.y * k) };
   out.settings = { ...out.settings, scale: 1, lengthFactor: 1 / k };
   return resolvePoints(out);
 }
@@ -1208,10 +1209,13 @@ export function sceneToTikz(sceneIn) {
 }
 
 /**
- * Where the NOT TO SCALE note goes (its top-left corner): to the right of
- * everything drawn, including free text, level with the top of the visible points.
+ * Where the NOT TO SCALE note goes (its top-left corner): where it was dragged
+ * (settings.notePos), or else to the right of everything drawn, including free
+ * text, level with the top of the visible points.
  */
 export function notToScalePlace(scene) {
+  const own = scene.settings?.notePos; // dragged there in the editor
+  if (own && isFinite(own.x) && isFinite(own.y)) return { x: own.x, y: own.y };
   const pts = pointMap(scene);
   const xs = [];
   for (const p of scene.points) xs.push(p.x);

@@ -352,6 +352,7 @@ a.button:hover { filter: brightness(1.1); }
 .geo-small:hover { border-color: var(--accent); }
 .geo-edgelist textarea { width: 100%; min-width: 16em; font-family: var(--mono, monospace); font-size: 13px; }
 .geo-edgelist .geo-field { display: flex; }
+.geo-svg .is-draggable { cursor: move; }
 .geo-note { font-size: 12px; color: var(--muted); margin: 4px 0 0; }
 
 /* ---- drag handles between the panels */

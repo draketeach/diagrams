@@ -859,6 +859,14 @@ test('geometry: shading follows a circle between two corners on it, unless a lin
   assert.ok(!geometry.generate({ scene: JSON.stringify(sc) }).code.includes('arc[start angle=0, end angle=22'), 'a line XY keeps it straight');
 });
 
+test('geometry: NOT TO SCALE goes where it was dragged, scaled with the drawing', () => {
+  const sc = JSON.parse(GALLERY.find((e) => e.id === 'geometry-circle-triangle').values.scene);
+  sc.settings.notePos = { x: 5, y: -2 };
+  assert.ok(geometry.generate({ scene: JSON.stringify(sc) }).code.includes('at (5,-2) {NOT TO\\\\SCALE}'), 'dragged place');
+  sc.settings.scale = 0.5;
+  assert.ok(geometry.generate({ scene: JSON.stringify(sc) }).code.includes('at (2.5,-1) {NOT TO\\\\SCALE}'), 'scaled with the drawing');
+});
+
 test('gallery: every entry generates cleanly and has its image', () => {
   const modules = { realgraph, function: fn, sketch, blank, normal, scatter, slopefield, geometry, network, probtree, solids, dotplot, boxplot };
   const ids = new Set();

@@ -216,7 +216,8 @@ Delete, zoom and Fit.
   (bearings, a North line), equal-length ticks or parallel arrows. Polygons can
   be shaded grey, dotted (the exam-paper stipple) or hatched; between two
   corners on a circle (with no line joining them), or at the ends of a curve or
-  arc, the shading follows it.
+  arc, the shading follows it. NOT TO SCALE can be dragged to where you want it
+  (and put back in its automatic place from the Drawing panel).
 - Midpoint (click a line, or two points; equal-length ticks go on both halves)
   and Perpendicular (click a point and a line: a dashed line to the foot, with
   a right angle there, and the line extended dashed if the foot is beyond its
