@@ -103,7 +103,8 @@ Fractions in labels are drawn full size (`\\displaystyle`), as on exam papers.
 ### Network (visual editor)
 
 Networks (graphs) drawn on the geometry editor's canvas, with network tools:
-Vertex, Edge, Directed edge, Label and Text. Vertices are dots with their
+Vertex, Edge, Directed edge, Curve, Label and Text. The Curve tool's points are
+hidden guides rather than vertices, for a dashed cut through a flow network. Vertices are dots with their
 letter beside them (names can be hidden per vertex; a name that's a word of
 three or more letters, like Start or Finish, is set upright as text). Clicking a vertex twice
 with the Edge tool makes a loop; joining two vertices again makes a second
@@ -203,7 +204,8 @@ joins them with a straight line (`10,6.6 -- 10,5.8` is a vertical drop) and `|`
 leaves a gap. After a point, `>` makes the curve level there (`0,8>`) and
 `@30` sets its direction on the page in degrees (`@-90` straight down), `*`
 gives a filled dot, `o` an open dot, and `:P` labels it. Settings follow `;`:
-`dashed`, `dotted`, a line width, `straight` (all joins straight) and a label:
+`dashed`, `dotted`, a line width, `straight` (all joins straight), `arrow` (an
+arrowhead at the end; `arrow start`, or `arrows` for both) and a label:
 `label: text` goes right of the end; `label below: text`, `label start: text`,
 `label middle above: text` and the like put it elsewhere (start or middle or
 end, then above, below, left, right or a mix). Each axis can have a letter at its arrow (`t`, `A`), the grid can have darker

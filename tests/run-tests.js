@@ -1057,6 +1057,13 @@ test('graphs: tick numbers move clear of the curve and of each other', () => {
   assert.ok(!blank.generate({ ...defaultValues(blank.schema), xScaleTicks: true, xScaleNumbers: true }).code.includes('north west'));
 });
 
+test('real-world graph: ; arrow puts an arrowhead on the end of a curve', () => {
+  const d = { ...defaultValues(realgraph.schema), xmin: 0, xmax: 4, ymin: 0, ymax: 20 };
+  assert.ok(realgraph.generate({ ...d, curves: '0,15 1,11 2,9 3,7; arrow' }).code.includes('-to]'));
+  assert.ok(realgraph.generate({ ...d, curves: '0,15 1,11 2,9 3,7; arrows' }).code.includes('to-to]'));
+  assert.ok(!realgraph.generate({ ...d, curves: '0,15 1,11 2,9 3,7' }).code.includes('-to]'));
+});
+
 test('gallery.html versions are up to date', () => {
   const html = readFileSync(new URL('../gallery.html', import.meta.url), 'utf8');
   assert.equal(html, buildIndex(html));

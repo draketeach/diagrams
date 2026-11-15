@@ -440,6 +440,13 @@ export const GALLERY = [
     values: {"data": "0.8, 1.12\n2.36, 2.12\n3.6, 3.24\n5.24, 3.72\n6.28, 4.84\n7.4, 4.96\n8.4, 5.4", "line": "typed", "lineEquation": "0.61x", "lineExtent": "axes", "xTitle": "", "yTitle": "", "xAxisLabel": "", "yAxisLabel": "", "scales": false, "windowMode": "manual", "xmin": 0, "xmax": 10, "ymin": 0, "ymax": 7.5, "showGrid": false, "axisBreak": "off", "width": 7, "height": 5.2},
   },
   {
+    id: 'scatter-points-grid',
+    type: 'scatter',
+    title: 'Scatterplot for a line of best fit',
+    description: 'Fifteen points on a grid every 1 across and every 2 up, with axis letters and no titles, for plotting two points of a line.',
+    values: {"data": "0, 16\n0, 12\n1, 16\n1, 14\n1, 10\n1, 8\n2, 11\n2, 9\n3, 10\n3, 8\n3, 6\n4, 9\n4, 3\n5, 5\n5, 3", "line": "none", "xTitle": "", "yTitle": "", "windowMode": "manual", "xmin": 0, "xmax": 6, "ymin": 0, "ymax": 18, "xStep": 1, "yStep": 2, "gridX": 1, "gridY": 2, "axisBreak": "off", "width": 9, "height": 7.5},
+  },
+  {
     id: 'network-curved',
     type: 'network',
     title: "Network with curved edges",
@@ -458,6 +465,42 @@ export const GALLERY = [
     },
   },
   {
+    id: 'network-degree',
+    type: 'network',
+    title: "Network for vertex degrees",
+    description: "Six vertices A\u2013F with straight edges, one vertex off to the side, for questions about degree.",
+    values: {
+      scene: JSON.stringify({"settings": {"mode": "network", "grid": 0.25, "snap": true, "showGrid": true, "lineWidth": "thin", "fontSize": "", "notToScale": false, "view": {"x0": -1, "y0": -1, "w": 8, "h": 4}}, "points": [{"id": "A", "name": "A", "x": 0, "y": 2, "dot": true, "showLabel": true}, {"id": "B", "name": "B", "x": 2, "y": 2, "dot": true, "showLabel": true}, {"id": "C", "name": "C", "x": 4, "y": 2, "dot": true, "showLabel": true}, {"id": "D", "name": "D", "x": 6, "y": 2, "dot": true, "showLabel": true}, {"id": "E", "name": "E", "x": 0, "y": 0, "dot": true, "showLabel": true}, {"id": "F", "name": "F", "x": 4, "y": 0, "dot": true, "showLabel": true}], "items": [{"id": "ab", "type": "segment", "a": "A", "b": "B", "label": ""}, {"id": "bc", "type": "segment", "a": "B", "b": "C", "label": ""}, {"id": "cd", "type": "segment", "a": "C", "b": "D", "label": ""}, {"id": "ae", "type": "segment", "a": "A", "b": "E", "label": ""}, {"id": "be", "type": "segment", "a": "B", "b": "E", "label": ""}, {"id": "bf", "type": "segment", "a": "B", "b": "F", "label": ""}, {"id": "cf", "type": "segment", "a": "C", "b": "F", "label": ""}, {"id": "ef", "type": "segment", "a": "E", "b": "F", "label": ""}]}),
+    },
+  },
+  {
+    id: 'network-spanning-tree',
+    type: 'network',
+    title: "Weighted network for a spanning tree",
+    description: "Six unnamed towns, nine roads labelled with distances, and NOT TO SCALE.",
+    values: {
+      scene: JSON.stringify({"settings": {"mode": "network", "grid": 0.25, "snap": true, "showGrid": true, "lineWidth": "thin", "fontSize": "", "notToScale": true, "view": {"x0": -1, "y0": -1, "w": 7.5, "h": 5.5}, "notePos": {"x": 4.3, "y": 3.2}}, "points": [{"id": "T", "name": "T", "x": 1.15, "y": 3.65, "dot": true, "showLabel": false}, {"id": "L", "name": "L", "x": 0.45, "y": 1.42, "dot": true, "showLabel": false}, {"id": "R", "name": "R", "x": 3.07, "y": 1.28, "dot": true, "showLabel": false}, {"id": "X", "name": "X", "x": 0, "y": 0, "dot": true, "showLabel": false}, {"id": "M", "name": "M", "x": 1.7, "y": 0, "dot": true, "showLabel": false}, {"id": "Z", "name": "Z", "x": 4.08, "y": 0, "dot": true, "showLabel": false}], "items": [{"id": "tl", "type": "segment", "a": "T", "b": "L", "label": "9"}, {"id": "tr", "type": "segment", "a": "T", "b": "R", "label": "10"}, {"id": "lr", "type": "segment", "a": "L", "b": "R", "label": "8"}, {"id": "lx", "type": "segment", "a": "L", "b": "X", "label": "7"}, {"id": "lm", "type": "segment", "a": "L", "b": "M", "label": "4"}, {"id": "mr", "type": "segment", "a": "M", "b": "R", "label": "5"}, {"id": "rz", "type": "segment", "a": "R", "b": "Z", "label": "5"}, {"id": "xm", "type": "segment", "a": "X", "b": "M", "label": "6"}, {"id": "mz", "type": "segment", "a": "M", "b": "Z", "label": "7"}]}),
+    },
+  },
+  {
+    id: 'network-critical-path',
+    type: 'network',
+    title: "Activity network for a critical path",
+    description: "Directed edges labelled A, 3 to H, 5 (italic activity letters), with unnamed vertices.",
+    values: {
+      scene: JSON.stringify({"settings": {"mode": "network", "grid": 0.25, "snap": true, "showGrid": true, "lineWidth": "thin", "fontSize": "", "notToScale": false, "view": {"x0": -1, "y0": -1, "w": 10, "h": 4.8}}, "points": [{"id": "S", "name": "S", "x": 0, "y": 1, "dot": true, "showLabel": false}, {"id": "P1", "name": "P1", "x": 1.25, "y": 2.2, "dot": true, "showLabel": false}, {"id": "P2", "name": "P2", "x": 1.42, "y": 0, "dot": true, "showLabel": false}, {"id": "M", "name": "M", "x": 3, "y": 1.37, "dot": true, "showLabel": false}, {"id": "N", "name": "N", "x": 5.22, "y": 1.45, "dot": true, "showLabel": false}, {"id": "U", "name": "U", "x": 6.82, "y": 2.9, "dot": true, "showLabel": false}, {"id": "V", "name": "V", "x": 7.83, "y": 1.08, "dot": true, "showLabel": false}], "items": [{"id": "a", "type": "segment", "a": "S", "b": "P1", "label": "$A$, 3", "arrows": 1}, {"id": "b", "type": "segment", "a": "S", "b": "P2", "label": "$B$, 4", "arrows": 1}, {"id": "c", "type": "segment", "a": "P1", "b": "M", "label": "$C$, 3", "arrows": 1}, {"id": "d", "type": "segment", "a": "P2", "b": "M", "label": "$D$, 5", "arrows": 1}, {"id": "e", "type": "segment", "a": "M", "b": "N", "label": "$E$, 5", "arrows": 1}, {"id": "f", "type": "segment", "a": "N", "b": "U", "label": "$F$, 7", "arrows": 1}, {"id": "h", "type": "segment", "a": "U", "b": "V", "label": "$H$, 5", "arrows": 1}, {"id": "g", "type": "segment", "a": "N", "b": "V", "label": "$G$, 3", "arrows": 1}]}),
+    },
+  },
+  {
+    id: 'network-flow-cut',
+    type: 'network',
+    title: "Flow network with a cut",
+    description: "Directed pipes labelled with capacities, and a dashed curve for the cut, drawn with the Curve tool and labelled Cut.",
+    values: {
+      scene: JSON.stringify({"settings": {"mode": "network", "grid": 0.25, "snap": true, "showGrid": true, "lineWidth": "thin", "fontSize": "", "notToScale": false, "view": {"x0": -1, "y0": -2, "w": 10, "h": 6.5}}, "points": [{"id": "A", "name": "A", "x": 0, "y": 1.25, "dot": true, "showLabel": true}, {"id": "B", "name": "B", "x": 2.4, "y": 2.78, "dot": true, "showLabel": true}, {"id": "D", "name": "D", "x": 5.32, "y": 3.28, "dot": true, "showLabel": true}, {"id": "E", "name": "E", "x": 4.62, "y": 1.38, "dot": true, "showLabel": true}, {"id": "C", "name": "C", "x": 2.45, "y": 0, "dot": true, "showLabel": true}, {"id": "F", "name": "F", "x": 6.4, "y": 0, "dot": true, "showLabel": true}, {"id": "G", "name": "G", "x": 7.53, "y": 1.8, "dot": true, "showLabel": true}, {"id": "g1", "name": "g1", "x": 5.15, "y": 3.95, "dot": false, "showLabel": false, "hidden": true}, {"id": "g2", "name": "g2", "x": 5.4, "y": 2.6, "dot": false, "showLabel": false, "hidden": true}, {"id": "g3", "name": "g3", "x": 4.9, "y": 1.1, "dot": false, "showLabel": false, "hidden": true}, {"id": "g4", "name": "g4", "x": 4.0, "y": -0.2, "dot": false, "showLabel": false, "hidden": true}, {"id": "g5", "name": "g5", "x": 3.9, "y": -1.25, "dot": false, "showLabel": false, "hidden": true}], "items": [{"id": "ab", "type": "segment", "a": "A", "b": "B", "label": "24", "arrows": 1}, {"id": "ac", "type": "segment", "a": "A", "b": "C", "label": "35", "arrows": 1}, {"id": "cb", "type": "segment", "a": "C", "b": "B", "label": "14", "arrows": 1}, {"id": "bd", "type": "segment", "a": "B", "b": "D", "label": "26", "arrows": 1}, {"id": "de", "type": "segment", "a": "D", "b": "E", "label": "8", "arrows": 1}, {"id": "ce", "type": "segment", "a": "C", "b": "E", "label": "17", "arrows": 1}, {"id": "dg", "type": "segment", "a": "D", "b": "G", "label": "15", "arrows": 1}, {"id": "eg", "type": "segment", "a": "E", "b": "G", "label": "24", "arrows": 1}, {"id": "fe", "type": "segment", "a": "F", "b": "E", "label": "6", "arrows": 1}, {"id": "cf", "type": "segment", "a": "C", "b": "F", "label": "12", "arrows": 1}, {"id": "fg", "type": "segment", "a": "F", "b": "G", "label": "11", "arrows": 1}, {"id": "cut", "type": "curve", "pts": ["g1", "g2", "g3", "g4", "g5"], "dirs": [null, null, null, null, null], "style": "dashed"}, {"id": "cutT", "type": "text", "text": "Cut", "x": 4.35, "y": -1.35}]}),
+    },
+  },
+  {
     id: 'realgraph-linear',
     type: 'realgraph',
     title: "Straight-line graph on a grid",
@@ -470,6 +513,20 @@ export const GALLERY = [
     title: "Exponential growth on a fine grid",
     description: "A = 5 × 2^(3t): dots at each day joined by a smooth curve, a fine grey grid with darker lines every day and every 20 000, spaced thousands, and axis letters.",
     values: {"curves": "0,5* 1,40* 1.5,113 2,320* 2.5,905 3,2560* 3.25,4305 3.5,7241 3.75,12177 4,20480*", "xTitle": "Number of days", "yTitle": "Mass (mg)", "xLetter": "t", "yLetter": "A", "xmin": 0, "xmax": 5.6, "ymin": 0, "ymax": 212000, "xStep": 1, "yStep": 20000, "xNumbers": "1, 2, 3, 4, 5", "yNumbers": "", "origin": "corner", "width": 11, "height": 6.6, "showGrid": true, "gridX": 0.25, "gridY": 10000, "gridXmax": 5.5, "gridYmax": 200000, "gridColour": "grey", "majorX": 1, "majorY": 20000, "spaceThousands": true},
+  },
+  {
+    id: 'realgraph-salvage-value',
+    type: 'realgraph',
+    title: 'Salvage value (declining balance)',
+    description: 'V = 55 000 × 0.8^t over 5 years on a grid every year by $11 000, with a 0 on each axis and spaced thousands.',
+    values: {"curves": "0,55000 1,44000 2,35200 3,28160 4,22528 5,18022.4", "xTitle": "Time (years)", "yTitle": "Value (\\$)", "xLetter": "", "yLetter": "", "xmin": 0, "xmax": 5.5, "ymin": 0, "ymax": 61000, "xStep": 1, "yStep": 11000, "xNumbers": "", "yNumbers": "", "origin": "both", "width": 5.4, "height": 5.2, "showGrid": true, "gridX": 1, "gridY": 11000, "gridXmax": 5, "gridYmax": 55000, "gridColour": "black", "curveWidth": "thin", "spaceThousands": true},
+  },
+  {
+    id: 'realgraph-medication',
+    type: 'realgraph',
+    title: 'Exponential decay on a fine grid',
+    description: 'y = 15(√0.6)^x with dots at (0, 15) and (2, 9), an arrowhead at the end (; arrow), a grey grid every 0.2 by 1 with darker lines every 1 and 5, and two-line titles.',
+    values: {"curves": "0,15.0000* 0.5,13.2017 1,11.6190 1.5,10.2260 2,9.0000* 2.5,7.9210 3,6.9714; arrow", "xTitle": "Number of hours after taking\\\\a dose of medication", "yTitle": "Amount of medication remaining in a person (mg)", "xLetter": "x", "yLetter": "y", "xmin": 0, "xmax": 3.5, "ymin": 0, "ymax": 21.5, "xStep": 1, "yStep": 5, "xNumbers": "0, 1, 2", "yNumbers": "", "origin": "both", "width": 5.2, "height": 6.8, "dotSize": 1.5, "showGrid": true, "gridX": 0.2, "gridY": 1, "gridXmax": 3, "gridYmax": 20, "gridColour": "grey", "majorX": 1, "majorY": 5, "curveWidth": "thin"},
   },
   {
     id: 'geometry-semicircle',
@@ -768,6 +825,15 @@ export const GALLERY = [
     description: 'Vectors a, b and c (tilde under, typed ~a) drawn from one point, with the angle θ between a and b and NOT TO SCALE.',
     values: {
       scene: JSON.stringify({"settings": {"grid": 0.25, "snap": true, "showGrid": true, "lineWidth": "thin", "fontSize": "", "notToScale": true, "notePos": {"x": 1.6, "y": -1.4}, "unit": "", "lengthDecimals": 0, "view": {"x0": -2.5, "y0": -2.5, "w": 6.5, "h": 5.5}}, "points": [{"id": "O", "name": "O", "x": 0, "y": 0, "showLabel": false}, {"id": "A", "name": "A", "x": 2.5, "y": -0.1, "showLabel": false}, {"id": "B", "name": "B", "x": 0, "y": 2.4, "showLabel": false}, {"id": "C", "name": "C", "x": -1.7, "y": -1.8, "showLabel": false}], "items": [{"id": "a", "type": "segment", "a": "O", "b": "A", "label": "~a", "tip": "b"}, {"id": "b", "type": "segment", "a": "O", "b": "B", "label": "~b", "tip": "b"}, {"id": "c", "type": "segment", "a": "O", "b": "C", "label": "~c", "tip": "b"}, {"id": "th", "type": "angle", "v": "O", "a": "A", "b": "B", "label": "\\theta", "radius": 0.35}]}),
+    },
+  },
+  {
+    id: 'geometry-curved-top-prism',
+    type: 'geometry',
+    title: 'Solid with a curved top',
+    description: 'A uniform cross-section with a wavy, dot-shaded top (a polygon following two curves), dashed hidden edges, right angles, ticks, two measurement lines and a curved arrow to a label.',
+    values: {
+      scene: JSON.stringify({"settings": {"grid": 0.25, "snap": true, "showGrid": true, "lineWidth": "thin", "fontSize": "", "notToScale": true, "notePos": {"x": 9.9, "y": 1.0}, "unit": "", "lengthDecimals": 0, "view": {"x0": -1.5, "y0": -1, "w": 13.5, "h": 5.5}}, "points": [{"id": "FL", "name": "FL", "x": 0, "y": 0, "showLabel": false}, {"id": "FR", "name": "FR", "x": 5.92, "y": 0, "showLabel": false}, {"id": "FT", "name": "FT", "x": 0, "y": 1.83, "showLabel": false}, {"id": "BT", "name": "BT", "x": 2.75, "y": 3.62, "showLabel": false}, {"id": "BB", "name": "BB", "x": 2.75, "y": 1.79, "showLabel": false}, {"id": "BR", "name": "BR", "x": 8.67, "y": 1.79, "showLabel": false}, {"id": "Q", "name": "Q", "x": 2.95, "y": 0, "showLabel": false}, {"id": "Qt", "name": "Qt", "x": 2.95, "y": 1.25, "showLabel": false}, {"id": "f1", "name": "f1", "x": 1.25, "y": 1.53, "showLabel": false, "hidden": true}, {"id": "f3", "name": "f3", "x": 3.75, "y": 0.95, "showLabel": false, "hidden": true}, {"id": "f4", "name": "f4", "x": 4.92, "y": 0.75, "showLabel": false, "hidden": true}, {"id": "f5", "name": "f5", "x": 5.6, "y": 0.45, "showLabel": false, "hidden": true}, {"id": "b1", "name": "b1", "x": 4.08, "y": 3.22, "showLabel": false, "hidden": true}, {"id": "b2", "name": "b2", "x": 4.58, "y": 3.42, "showLabel": false, "hidden": true}, {"id": "b3", "name": "b3", "x": 5.58, "y": 3.0, "showLabel": false, "hidden": true}, {"id": "b4", "name": "b4", "x": 7.08, "y": 2.67, "showLabel": false, "hidden": true}, {"id": "b5", "name": "b5", "x": 8.25, "y": 2.42, "showLabel": false, "hidden": true}, {"id": "t1", "name": "t1", "x": 1.47, "y": 0, "showLabel": false, "hidden": true}, {"id": "t1u", "name": "t1u", "x": 1.47, "y": 0.15, "showLabel": false, "hidden": true}, {"id": "t2", "name": "t2", "x": 4.42, "y": 0, "showLabel": false, "hidden": true}, {"id": "t2u", "name": "t2u", "x": 4.42, "y": 0.15, "showLabel": false, "hidden": true}, {"id": "a1", "name": "a1", "x": 6.65, "y": 3.45, "showLabel": false, "hidden": true}, {"id": "a2", "name": "a2", "x": 5.0, "y": 2.6, "showLabel": false, "hidden": true}, {"id": "m1", "name": "m1", "x": 0, "y": 0, "showLabel": false, "hidden": true, "dep": {"kind": "offset", "p": "FL", "a": "FL", "b": "FR", "d": -0.3}}, {"id": "m2", "name": "m2", "x": 0, "y": 0, "showLabel": false, "hidden": true, "dep": {"kind": "offset", "p": "FR", "a": "FL", "b": "FR", "d": -0.3}}, {"id": "n1", "name": "n1", "x": 0, "y": 0, "showLabel": false, "hidden": true, "dep": {"kind": "offset", "p": "FR", "a": "FR", "b": "BR", "d": -0.3}}, {"id": "n2", "name": "n2", "x": 0, "y": 0, "showLabel": false, "hidden": true, "dep": {"kind": "offset", "p": "BR", "a": "FR", "b": "BR", "d": -0.3}}], "items": [{"id": "top", "type": "polygon", "pts": ["FT", "BT", "BR", "FR"], "fill": "dots"}, {"id": "front", "type": "curve", "pts": ["FT", "f1", "Qt", "f3", "f4", "f5", "FR"], "dirs": [null, null, null, null, null, null, null], "style": "solid"}, {"id": "back", "type": "curve", "pts": ["BT", "b1", "b2", "b3", "b4", "b5", "BR"], "dirs": [null, null, null, null, null, null, null], "style": "solid"}, {"id": "left", "type": "segment", "a": "FT", "b": "FL", "label": "6.0\\ \\mathrm{cm}"}, {"id": "bottom", "type": "segment", "a": "FL", "b": "FR", "label": ""}, {"id": "ftbt", "type": "segment", "a": "FT", "b": "BT", "label": ""}, {"id": "rt", "type": "segment", "a": "FR", "b": "BR", "label": ""}, {"id": "h1", "type": "segment", "a": "BT", "b": "BB", "label": "", "style": "dashed"}, {"id": "h2", "type": "segment", "a": "BB", "b": "FL", "label": "", "style": "dashed"}, {"id": "h3", "type": "segment", "a": "BB", "b": "BR", "label": "", "style": "dashed"}, {"id": "q", "type": "segment", "a": "Q", "b": "Qt", "label": "3.8\\ \\mathrm{cm}"}, {"id": "tk1", "type": "segment", "a": "t1", "b": "t1u", "label": ""}, {"id": "tk2", "type": "segment", "a": "t2", "b": "t2u", "label": ""}, {"id": "r1", "type": "right", "v": "FL", "a": "FT", "b": "FR", "size": 0.22}, {"id": "r2", "type": "right", "v": "Q", "a": "Qt", "b": "FR", "size": 0.22}, {"id": "r3", "type": "right", "v": "BB", "a": "BT", "b": "BR", "size": 0.22}, {"id": "m", "type": "segment", "a": "m1", "b": "m2", "label": "10.2\\ \\mathrm{cm}", "style": "dashed", "tip": "both", "gap": true, "bars": true}, {"id": "n", "type": "segment", "a": "n1", "b": "n2", "label": "40.0\\ \\mathrm{cm}", "style": "dashed", "tip": "both", "bars": true, "sloped": true}, {"id": "arr", "type": "segment", "a": "a1", "b": "a2", "label": "", "tip": "b", "bend": -25}, {"id": "cs", "type": "text", "text": "Curved surface", "x": 7.85, "y": 3.45}]}),
     },
   },
   {

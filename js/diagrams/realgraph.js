@@ -30,7 +30,8 @@ function num(s, where) {
  * gap. After a point: > makes the curve level there (or @30 sets its direction
  * on the page in degrees), * gives a filled dot and o an open one, and ":text"
  * labels it. Settings follow ";": dashed, dotted, a line width, straight
- * (every join straight), and label: text — at the end of the curve, or e.g.
+ * (every join straight), arrow (an arrowhead at the end; "arrow start", or
+ * "arrows" for both), and label: text — at the end of the curve, or e.g.
  * "label below: text", "label start above: text", "label middle: text".
  */
 export function parseCurve(line, index) {
@@ -43,7 +44,7 @@ export function parseCurve(line, index) {
     .trim()
     .split(/\s+/)
     .filter(Boolean);
-  const curve = { points: [], joins: [], style: '', width: '', straight: false, label: '', labelAt: 'end', labelSide: '' };
+  const curve = { points: [], joins: [], style: '', width: '', straight: false, label: '', labelAt: 'end', labelSide: '', arrowStart: false, arrowEnd: false };
   for (const st of settings.map((x) => x.trim()).filter(Boolean)) {
     const m = st.match(/^label((?:\s+(?:at|start|end|middle|above|below|left|right))*)\s*:\s*(.*)$/i);
     if (m) {
@@ -57,7 +58,10 @@ export function parseCurve(line, index) {
     else if (/^(dashed|dotted|densely dashed|densely dotted|loosely dashed|loosely dotted)$/i.test(st)) curve.style = st.toLowerCase();
     else if (SETTINGS_WIDTHS.includes(st.toLowerCase())) curve.width = st.toLowerCase();
     else if (/^straight$/i.test(st)) curve.straight = true;
-    else throw new Error(`${where}: "${st}" isn't a setting. Try dashed, dotted, thick, straight or label: text.`);
+    else if (/^arrow( at the)?( end)?$/i.test(st)) curve.arrowEnd = true;
+    else if (/^arrow( at the)? start$/i.test(st)) curve.arrowStart = true;
+    else if (/^arrows$/i.test(st)) curve.arrowStart = curve.arrowEnd = true;
+    else throw new Error(`${where}: "${st}" isn't a setting. Try dashed, dotted, thick, straight, arrow or label: text.`);
   }
   let join = null;
   for (const t of tokens) {
@@ -270,11 +274,15 @@ function generate(v) {
     b.comment(`curve ${i + 1}`);
     const opts = [c.width || width, c.style, 'line join=round', 'line cap=round'].filter(Boolean).join(', ');
     const tension = v.tension === undefined || v.tension === null || v.tension === '' ? 0.5 : Number(v.tension);
-    for (const run of curveRuns(c)) {
+    const runs = curveRuns(c);
+    runs.forEach((run, k) => {
+      // arrowheads (as on function graphs) at the curve's first and last ends
+      const tip = c.arrowStart && k === 0 ? (c.arrowEnd && k === runs.length - 1 ? 'to-to' : 'to-') : c.arrowEnd && k === runs.length - 1 ? '-to' : '';
+      const o = [opts, tip].filter(Boolean).join(', ');
       const bent = run.kind === 'smooth' && (run.points.length > 2 || run.points.some((p) => p.dir !== null));
-      if (!bent) b.add(`\\draw[${opts}] ${run.points.map((p) => pt(p.x, p.y)).join(' -- ')};`);
-      else b.add(`\\draw[${opts}] ${smoothPath(run.points, tension, xu, yu)};`);
-    }
+      if (!bent) b.add(`\\draw[${o}] ${run.points.map((p) => pt(p.x, p.y)).join(' -- ')};`);
+      else b.add(`\\draw[${o}] ${smoothPath(run.points, tension, xu, yu)};`);
+    });
     for (const p of c.points) {
       if (p.dot === 'filled') b.add(`\\fill ${pt(p.x, p.y)} circle[radius=${R}];`);
       else if (p.dot === 'open') b.add(`\\draw[thin, fill=white] ${pt(p.x, p.y)} circle[radius=${R}];`);
@@ -314,6 +322,7 @@ const CURVE_EXAMPLES = {
     ['0,2 4,2* | 4,5o 8,5', 'A gap; filled (*) and open (o) dots'],
     ['3,4:P', 'A point labelled P'],
     ['0,20 6,35 12,22; dashed; label: Melbourne', 'A dashed curve with a label at its end'],
+    ['0,15* 2,9* 3,7; arrow', 'An arrowhead at the end (arrow start, or arrows for both)'],
     ['…; label below: Car', 'Label below the end (also above, left, right)'],
     ['…; label start above: Car', 'Label at the start (or middle) of the curve'],
   ],

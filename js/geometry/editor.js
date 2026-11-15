@@ -97,11 +97,12 @@ const icon = (name) =>
   `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">${ICONS[name]}</svg>`;
 
 // in a network: fewer tools, with network names
-const NETWORK_TOOLS = ['select', 'point', 'segment', 'directed', 'label', 'text'];
+const NETWORK_TOOLS = ['select', 'point', 'segment', 'directed', 'curve', 'label', 'text'];
 const NETWORK_NAMES = {
   point: ['Vertex', 'Click to add a vertex (it snaps to the grid and to other vertices).'],
   segment: ['Edge', 'Click two vertices to join them. Click a vertex twice for a loop; joining two vertices again curves the new edge.'],
   label: ['Label', 'Click an edge to label it (e.g. a weight), or a vertex to rename it.'],
+  curve: ['Curve', 'Click points for a smooth curve, e.g. a dashed cut; click the last point again (or press Enter) to finish. Set it dashed in its settings, and add "Cut" with Text.'],
 };
 
 const LINE_STYLES = [
@@ -344,9 +345,12 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
   }
 
   /** The point at a snap result: an existing one, or a new one. */
-  function pointAt(s) {
+  function pointAt(s, { guide = false } = {}) {
     if (s.point) return s.point;
-    const p = normalPoint({ id: newId('p'), name: nextName(), x: round(s.x), y: round(s.y), dot: isNet() });
+    // a curve's points in a network (e.g. a cut) are hidden guides, not vertices
+    const p = guide
+      ? normalPoint({ id: newId('g'), name: newId('g'), x: round(s.x), y: round(s.y), dot: false, showLabel: false, hidden: true })
+      : normalPoint({ id: newId('p'), name: nextName(), x: round(s.x), y: round(s.y), dot: isNet() });
     scene.points.push(p);
     return p.id;
   }
@@ -465,7 +469,7 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     if (tool === 'curve') {
       const sp = snap(raw);
       begin();
-      const id = pointAt(sp);
+      const id = pointAt(sp, { guide: isNet() });
       if (pending.length >= 2 && id === pending[pending.length - 1]) {
         finishCurve();
         return;
