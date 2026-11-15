@@ -912,6 +912,11 @@ test('complex plane: conditions are read and the region where they all hold is s
   assert.ok(a.kind === 'arg' && a.lo === 0 && !a.loStrict && a.hiStrict && a.v.x === 1);
   assert.ok(parseCondition('arg(z) = pi/3').eq > 1.04, 'a ray');
   assert.ok(parseCondition('banana').error, 'unreadable lines are reported');
+  // typed the LaTeX way, or with brackets
+  assert.deepEqual(parseCondition('|z-(2+3i)| \\le 1').c, { x: 2, y: 3 });
+  assert.equal(parseCondition('\\operatorname{Im}(z) \\geq \\operatorname{Re}(z)').op, '>=');
+  assert.equal(parseCondition('Re z > 1').kind, 'half');
+  assert.equal(parseCondition('-\\pi/2 < Arg(z) \\le \\pi/3').hi, Math.PI / 3);
   const d = defaultValues(complex.schema);
   const code = complex.generate({ ...d, ...GALLERY.find((e) => e.id === 'complex-disc-line').values }).code;
   assert.ok(code.includes('\\clip (-2,-3) circle[radius=1];') && code.includes('\\fill[gray!35]'), 'disc clip and shading');

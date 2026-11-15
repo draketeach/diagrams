@@ -46,7 +46,9 @@ export function parseComplex(text) {
 function modCentre(inner) {
   const m = inner.replace(/\s+/g, '').match(/^z(.*)$/);
   if (!m) return null;
-  const w = parseComplex(m[1]);
+  // z - (2 + 3i): take the sign through the brackets
+  const br = m[1].match(/^([+-])\((.*)\)$/);
+  const w = br ? (() => { const q = parseComplex(br[2]); return q && (br[1] === '-' ? { x: -q.x, y: -q.y } : q); })() : parseComplex(m[1]);
   return w && { x: -w.x + 0, y: -w.y + 0 };
 }
 
@@ -82,12 +84,19 @@ function parseLinear(text) {
 }
 
 const OPS = /(<=|>=|<|>|=)/;
+// the same condition however it's typed: ≤ or \le or <=, \operatorname{Re}(z) or Re z, \left| … \right|, $ … $
 const normOps = (s) =>
   String(s)
-    .replace(/≤|=</g, '<=')
-    .replace(/≥|=>/g, '>=')
-    .replace(/\\le(q)?\b/g, '<=')
-    .replace(/\\ge(q)?\b/g, '>=');
+    .replace(/\$/g, '')
+    .replace(/\\left|\\right/g, '')
+    .replace(/\\[lr]vert|\\mid/g, '|')
+    .replace(/\\(operatorname|text|mathrm)\{(Re|Im|arg|Arg)\}/g, '$2')
+    .replace(/\\(Re|Im|arg)\b/g, '$1')
+    .replace(/\b(Re|Im|arg|Arg)\s*z\b/g, '$1(z)')
+    .replace(/Arg\(/g, 'arg(')
+    .replace(/\\pi/g, 'pi')
+    .replace(/≤|=<|\\leqslant|\\leq|\\le\b/g, '<=')
+    .replace(/≥|=>|\\geqslant|\\geq|\\ge\b/g, '>=');
 const flip = { '<': '>', '<=': '>=', '>': '<', '>=': '<=', '=': '=' };
 
 /**
@@ -109,6 +118,7 @@ export function parseCondition(line) {
     let loStrict = true; // the principal argument is > -π
     let hiStrict = false;
     let eq = null;
+    const text = {}; // the angles as typed, for labels
     const side = (txt, before) => {
       const m = before ? txt.match(/^(.*?)(<=|>=|<|>|=)\s*$/) : txt.match(/^\s*(<=|>=|<|>|=)(.*)$/);
       if (!m) return txt.trim() ? 'bad' : null;
@@ -116,6 +126,10 @@ export function parseCondition(line) {
       if (before) op = flip[op]; // θ < arg  is  arg > θ
       const th = parseAngle(angleText);
       if (th === null) return 'bad';
+      if (op === '=') {
+        eq = th;
+        text.eq = angleText.trim();
+      } else text[op[0] === '<' ? 'hi' : 'lo'] = angleText.trim();
       if (op === '=') eq = th;
       else if (op[0] === '<') {
         hi = th;
@@ -127,8 +141,8 @@ export function parseCondition(line) {
       return 'ok';
     };
     if (side(left, true) === 'bad' || side(right, false) === 'bad') return { error: 'can\'t read the angles (e.g. 0 <= arg(z) <= pi/4)' };
-    if (eq !== null) return { kind: 'arg', v, eq };
-    return { kind: 'arg', v, lo, hi, loStrict, hiStrict };
+    if (eq !== null) return { kind: 'arg', v, eq, text };
+    return { kind: 'arg', v, lo, hi, loStrict, hiStrict, text };
   }
   const parts = s.split(OPS);
   if (parts.length !== 3) return { error: 'needs one comparison: <, <=, >, >= or =' };
@@ -159,6 +173,26 @@ export function parseCondition(line) {
   const h = { a: l.a - r.a, b: l.b - r.b, c: l.c - r.c };
   if (!h.a && !h.b) return { error: 'has no Re(z) or Im(z) in it' };
   return { kind: 'half', ...h, op };
+}
+
+/** A complex number for a label: 2 - 3i, -i, 4, 0. */
+export function complexTex(p) {
+  const r = (v) => n(v, 3);
+  const re = Math.abs(p.x) > 1e-9 ? r(p.x) : '';
+  const imAbs = Math.abs(p.y);
+  if (imAbs < 1e-9) return re || '0';
+  const im = `${Math.abs(imAbs - 1) < 1e-9 ? '' : r(imAbs)}i`;
+  if (!re) return `${p.y < 0 ? '-' : ''}${im}`;
+  return `${re} ${p.y < 0 ? '-' : '+'} ${im}`;
+}
+
+/** An angle as typed (3pi/4, -pi/2, 0.5) set in maths: \frac{3\pi}{4}. */
+export function angleTex(text) {
+  const t = String(text).replace(/\s+/g, '').replace(/π/g, 'pi').replace(/−/g, '-');
+  const m = t.match(/^([+-]?)(\d*\.?\d*)(pi)?(?:\/(\d+\.?\d*))?$/);
+  if (!m) return t;
+  const top = `${m[2] && !(m[3] && m[2] === '1') ? m[2] : ''}${m[3] ? '\\pi' : ''}` || '1';
+  return `${m[1] === '-' ? '-' : ''}${m[4] ? `\\frac{${top}}{${m[4]}}` : top}`;
 }
 
 // ---------------------------------------------------------------- geometry
@@ -266,6 +300,28 @@ const schema = [
   },
   {
     type: 'group',
+    label: 'Labels',
+    fields: [
+      {
+        type: 'row',
+        fields: [
+          { type: 'checkbox', key: 'labelPoints', label: 'Label centres and ray starts (e.g. −2 − 3i)', default: false },
+          { type: 'checkbox', key: 'labelAngles', label: 'Show the angle of each ray', default: false },
+        ],
+      },
+      {
+        type: 'textarea',
+        key: 'points',
+        label: 'Points to mark, one per line',
+        rows: 2,
+        default: '',
+        placeholder: 'e.g. 1 + i  or  2i : P',
+        help: 'A dot at each point, labelled with its number, or with what you type after a colon.',
+      },
+    ],
+  },
+  {
+    type: 'group',
     label: 'Axes',
     fields: [
       {
@@ -327,7 +383,7 @@ function generate(v) {
     .forEach((line, i) => {
       const c = parseCondition(line);
       if (c.error) warnings.push(`Line ${i + 1} (${line}): ${c.error}.`);
-      else conds.push({ ...c, text: line });
+      else conds.push({ ...c, src: line });
     });
 
   // ---- the window: the origin, every circle and every ray's start, with room around them
@@ -438,6 +494,11 @@ function generate(v) {
     const line = c.kind === 'arg' ? boundary(c, '') : boundary(c, dash(c.op === '<' || c.op === '>'));
     if (line) line.split('\n').forEach((l) => b.add(l));
   }
+  if (eqs.length && ineqs.length) {
+    // the parts the other conditions cut off stay as a dashed guide
+    b.comment('each equation in full, dashed');
+    for (const c of eqs) boundary(c, 'dashed').split('\n').filter(Boolean).forEach((l) => b.add(l));
+  }
   if (eqs.length) {
     b.comment('the locus: each equation, cut to the other conditions');
     b.add('\\begin{scope}');
@@ -456,6 +517,53 @@ function generate(v) {
   if (v.vertices !== false && args.length) {
     b.comment('where the rays start (not included)');
     for (const c of args) b.add(`\\draw[fill=white] ${P(c.v)} circle[radius=2pt];`);
+  }
+
+  // ---- labels: centres and ray starts with their numbers, angles on rays, and points you mark
+  const away = (p, dirs) => {
+    // the TikZ place (below left, …) pointing away from the given directions
+    const sx = -dirs.reduce((t, d) => t + Math.cos(d), 0);
+    const sy = -dirs.reduce((t, d) => t + Math.sin(d), 0);
+    const a = (((Math.atan2(sy || -1, sx || -1) * 180) / Math.PI + 360 + 22.5) % 360) / 45;
+    return ['right', 'above right', 'above', 'above left', 'left', 'below left', 'below', 'below right'][Math.floor(a)];
+  };
+  const rayAngles = (c) => (c.eq !== undefined ? [c.eq] : [c.lo, c.hi].filter((t) => Math.abs(Math.abs(t) - Math.PI) > 1e-9));
+  if (v.labelPoints) {
+    b.comment('the centres and where rays start, labelled');
+    const done = new Set(); // one label for a point that is both a centre and a ray's start
+    const once = (p) => !done.has(`${n(p.x)},${n(p.y)}`) && done.add(`${n(p.x)},${n(p.y)}`);
+    for (const c of args) if (once(c.v)) b.add(`\\node[${away(c.v, rayAngles(c))}, inner sep=3pt] at ${P(c.v)} {$${complexTex(c.v)}$};`);
+    for (const c of circles) if (once(c.c)) b.add(`\\node[below, inner sep=3pt] at ${P(c.c)} {$${complexTex(c.c)}$};`);
+  }
+  if (v.labelAngles && args.length) {
+    b.comment('angles: from the direction of the positive real axis to each ray');
+    const r = 0.55 / unit;
+    for (const c of args) {
+      const list = c.eq !== undefined ? [[c.eq, c.text?.eq]] : [[c.lo, c.text?.lo], [c.hi, c.text?.hi]].filter(([t]) => Math.abs(Math.abs(t) - Math.PI) > 1e-9);
+      // off the real axis, a short dashed line shows where the angle is measured from
+      if (Math.abs(c.v.y) > 1e-9 && list.some(([t]) => Math.abs(t) > 1e-9)) b.add(`\\draw[dashed] ${P(c.v)} -- ++(${n(0.9 / unit)},0);`);
+      for (const [t, txt] of list) {
+        if (Math.abs(t) < 1e-9 || txt === undefined) continue;
+        const deg = (t * 180) / Math.PI;
+        const mid = (deg / 2) * (Math.PI / 180);
+        b.add(`\\draw[->] (${n(c.v.x + r)},${n(c.v.y)}) arc[start angle=0, end angle=${n(deg)}, radius=${n(r)}];`);
+        b.add(`\\node at (${n(c.v.x + (r + 0.32 / unit) * Math.cos(mid))},${n(c.v.y + (r + 0.32 / unit) * Math.sin(mid))}) {$${angleTex(txt)}$};`);
+      }
+    }
+  }
+  const marks = String(v.points ?? '')
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
+  if (marks.length) {
+    b.comment('points you marked');
+    marks.forEach((line, i) => {
+      const [num, ...rest] = line.split(':');
+      const p = parseComplex(num.replace(/\$/g, ''));
+      if (!p) return warnings.push(`Point ${i + 1} (${line}): can't read ${num.trim()} as a complex number.`);
+      const label = rest.join(':').trim();
+      b.add(`\\fill ${P(p)} circle[radius=1.5pt] node[above right, inner sep=2pt] {${label ? mathLabel(label) : `$${complexTex(p)}$`}};`);
+    });
   }
 
   const opts = [`x=${n(unit)}cm`, `y=${n(unit)}cm`, v.lineWidth && v.lineWidth !== 'thin' ? v.lineWidth : '', v.fontSize ? `font=${v.fontSize}` : ''];

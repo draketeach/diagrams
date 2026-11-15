@@ -122,8 +122,11 @@ they all hold is shaded. It understands circles and discs (`|z+2+3i| <= 1`,
 `Re(z) + Im(z) < 3`, or with x and y), perpendicular bisectors
 (`|z - 1| <= |z + i|`) and arguments (`0 <= arg(z - 1) < 3pi/4`, or
 `arg(z) = pi/3` for a ray). Boundaries are solid for ≤, ≥ and =, dashed for <
-and >; an equation is drawn as a locus cut to the other conditions, with no
-shading. Circles get a dot at their centre and rays an open dot where they
+and >; an equation is drawn as a locus cut to the other conditions (the rest of it
+dashed), with no shading. Conditions can be typed plainly or the LaTeX way
+(`\le`, `\operatorname{Re}(z)`, `|z-(2+3i)|`). Centres and ray starts can be
+labelled with their numbers (−2 − 3i), rays with their angles (an arc from the
+real direction), and any points marked (`2i : P`). Circles get a dot at their centre and rays an open dot where they
 start. Axes are x and y by default (or Re and Im), with optional ticks and
 numbers; the window fits the conditions unless you set it.
 
