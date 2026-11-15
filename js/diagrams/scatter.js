@@ -257,7 +257,7 @@ const fixed = (v, dp) => {
 const tex = (s) => String(s).replace(/([&%$#_{}])/g, '\\$1').replace(/'/g, '\u2019');
 
 /** One axis: ticks, grid range and whether it has a zig-zag break. */
-function axisPlan(lo, hi, { step, gridStep, dp, dataDp = 0, mode, sizeCm, isManual, grid = false }) {
+function axisPlan(lo, hi, { step, gridStep, dp, mode, sizeCm, isManual, grid = false }) {
   const span = Math.max(hi - lo, 1e-9);
   const s = auto(step) || step <= 0 ? niceStep(span, 5) : step;
   let start = isManual ? lo : Math.floor((lo + 1e-9) / s) * s;
@@ -298,7 +298,8 @@ function axisPlan(lo, hi, { step, gridStep, dp, dataDp = 0, mode, sizeCm, isManu
       gap = g;
     } else gap = BREAK / unit;
   }
-  return { step: s, start, end, ticks, grid: g, dp: auto(dp) ? Math.max(dpOf(s), Math.min(dataDp, 3)) : dp, brk, gap, cross, unit };
+  // automatic decimals: as many as the tick spacing has (ticks every 1 give 0, 1, 2 …)
+  return { step: s, start, end, ticks, grid: g, dp: auto(dp) ? dpOf(s) : dp, brk, gap, cross, unit };
 }
 
 // ------------------------------------------------------------------ generate
@@ -316,10 +317,10 @@ function generate(values) {
   if (!(yhi > ylo) && isManual) throw new Error('"y to" must be bigger than "y from".');
   const pad = (lo, hi) => (hi > lo ? [lo, hi] : [lo - 1, hi + 1]);
   const X = axisPlan(...pad(xlo, xhi), {
-    grid: !!values.showGrid, step: values.xStep, gridStep: values.gridX, dp: values.xDp, dataDp: Math.max(0, ...points.map((p) => p.dx)), mode: values.axisBreak, sizeCm: values.width || 8, isManual,
+    grid: !!values.showGrid, step: values.xStep, gridStep: values.gridX, dp: values.xDp, mode: values.axisBreak, sizeCm: values.width || 8, isManual,
   });
   const Y = axisPlan(...pad(ylo, yhi), {
-    grid: !!values.showGrid, step: values.yStep, gridStep: values.gridY, dp: values.yDp, dataDp: Math.max(0, ...points.map((p) => p.dy)), mode: values.axisBreak, sizeCm: values.height || 5.5, isManual,
+    grid: !!values.showGrid, step: values.yStep, gridStep: values.gridY, dp: values.yDp, mode: values.axisBreak, sizeCm: values.height || 5.5, isManual,
   });
 
   // corner where the axes meet, and the far ends of the arrows

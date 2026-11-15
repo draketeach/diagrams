@@ -488,8 +488,6 @@ export const GALLERY = [
       ymax: 8,
       xStep: 5,
       yStep: 1,
-      xDp: 0,
-      yDp: 0,
       gridX: 5,
       gridY: 1,
       axisBreak: 'off',

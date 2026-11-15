@@ -823,6 +823,14 @@ test('normal: an unshaded region labelled above a dashed arrow between rising li
   assert.ok(top > Math.exp(-2) + 0.1, 'the boundary line rises past the curve');
 });
 
+test('scatter: automatic decimals follow the tick spacing, not the data', () => {
+  const d = defaultValues(scatter.schema);
+  const code = scatter.generate({ ...d, data: '3, 3.8\n14, 8', line: 'none', windowMode: 'manual', xmin: 0, xmax: 15, ymin: 0, ymax: 8, xStep: 5, yStep: 1 }).code;
+  assert.ok(code.includes('{$1$}') && !code.includes('{$1.0$}'), 'ticks every 1 are whole numbers');
+  const half = scatter.generate({ ...d, data: '1, 1\n2, 2', windowMode: 'manual', xmin: 0, xmax: 3, ymin: 0, ymax: 3, yStep: 0.5 }).code;
+  assert.ok(half.includes('{$1.5$}') && half.includes('{$1.0$}'), 'ticks every 0.5 all have one decimal');
+});
+
 test('gallery: every entry generates cleanly and has its image', () => {
   const modules = { realgraph, function: fn, sketch, blank, normal, scatter, slopefield, geometry, network, probtree, solids, dotplot, boxplot };
   const ids = new Set();
