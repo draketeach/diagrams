@@ -20,7 +20,8 @@
 //   bg: true on a text, angle or line gives its label a white background (to read over shading)
 //   settings.scale: the drawing's size on the page (1 = 1 cm a unit); text, marks and gaps stay full size
 //   settings.mode: 'geometry' or 'network' (network: dots, no lengths, edges can repeat)
-//     { id, type: 'polygon', pts: [ids], fill },              (shading only: a grey, or a pattern in PATTERNS)
+//     { id, type: 'polygon', pts: [ids], fill },              (shading only: a grey, or a pattern in PATTERNS;
+//        between two corners on a circle, or a curve's or arc's ends, it follows that)
 //     { id, type: 'angle', v, a, b, label, labelPos, arcs, radius, reflex, arrow },
 //       arrow: null, or the id of the arm (a or b) the arc's arrowhead points at
 //     { id, type: 'right', v, a, b, size },
@@ -798,14 +799,54 @@ export function polygonEdges(scene, it, pts) {
     const curve = scene.items.find((c) => c.type === 'curve' && c.pts.length >= 2 && ((c.pts[0] === a && c.pts[c.pts.length - 1] === b) || (c.pts[0] === b && c.pts[c.pts.length - 1] === a)));
     const cs = curve && curveSections(curve, pts);
     if (cs) edges.push({ a, b, sections: curve.pts[0] === a ? cs.sections : reverseSections(cs.start, cs.sections) });
-    else edges.push({ a, b, sections: null });
+    else edges.push({ a, b, sections: null, arc: arcBetween(scene, a, b, pts) });
   }
   return edges;
+}
+
+/**
+ * When two corners of a shaded shape both lie on a circle (or are the ends of
+ * an arc), the shading's edge between them follows it: { c, r, s, e } in
+ * degrees, going from a to b (the shorter way round a circle; an arc's own way).
+ */
+function arcBetween(scene, a, b, pts) {
+  const A = pts.get(a);
+  const B = pts.get(b);
+  if (!A || !B) return null;
+  // a line drawn between them keeps that edge straight (a shaded triangle in a circle)
+  if (scene.items.some((it) => it.type === 'segment' && !it.bend && ((it.a === a && it.b === b) || (it.a === b && it.b === a)))) return null;
+  const deg = (c, p) => (Math.atan2(p.y - c.y, p.x - c.x) * 180) / Math.PI;
+  for (const it of scene.items) {
+    if (it.type === 'arc' && ((it.a === a && it.b === b) || (it.a === b && it.b === a))) {
+      const C = pts.get(it.c);
+      if (!C) continue;
+      const r = Math.hypot(pts.get(it.a).x - C.x, pts.get(it.a).y - C.y);
+      let s0 = deg(C, pts.get(it.a));
+      let e0 = deg(C, pts.get(it.b));
+      while (e0 <= s0) e0 += 360; // an arc goes anticlockwise from its a to its b
+      return it.a === a ? { c: it.c, r, s: s0, e: e0 } : { c: it.c, r, s: e0, e: s0 };
+    }
+    if (it.type === 'circle') {
+      const C = pts.get(it.c);
+      const P = pts.get(it.p);
+      if (!C || !P) continue;
+      const r = Math.hypot(P.x - C.x, P.y - C.y);
+      const on = (Q) => Math.abs(Math.hypot(Q.x - C.x, Q.y - C.y) - r) < 0.02 * Math.max(1, r);
+      if (r < 1e-6 || !on(A) || !on(B)) continue;
+      const s0 = deg(C, A);
+      let e0 = deg(C, B);
+      while (e0 - s0 > 180) e0 -= 360;
+      while (e0 - s0 <= -180) e0 += 360;
+      return { c: it.c, r, s: s0, e: e0 };
+    }
+  }
+  return null;
 }
 function fillPath(scene, it, pts, name) {
   let out = `(${name(it.pts[0])})`;
   for (const e of polygonEdges(scene, it, pts)) {
-    if (!e.sections) out += ` -- (${name(e.b)})`;
+    if (e.arc) out += ` arc[start angle=${fmt(e.arc.s)}, end angle=${fmt(e.arc.e)}, radius=${fmt(e.arc.r)}]`;
+    else if (!e.sections) out += ` -- (${name(e.b)})`;
     else e.sections.forEach((sec, i) => {
       const end = i === e.sections.length - 1 ? `(${name(e.b)})` : `(${fmt(sec.p.x)},${fmt(sec.p.y)})`;
       out += ` .. controls (${fmt(sec.c1.x)},${fmt(sec.c1.y)}) and (${fmt(sec.c2.x)},${fmt(sec.c2.y)}) .. ${end}`;

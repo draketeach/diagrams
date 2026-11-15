@@ -1128,7 +1128,11 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
       let d = `M ${sx(ps[0].x)} ${sy(ps[0].y)}`;
       for (const e of polygonEdges(scene, it, pts)) {
         const q = pts.get(e.b);
-        if (!e.sections) d += ` L ${sx(q.x)} ${sy(q.y)}`;
+        if (e.arc) {
+          // y runs down on screen, so anticlockwise on the page is SVG's sweep 0
+          const rp = Math.abs(sx(e.arc.r) - sx(0));
+          d += ` A ${rp} ${rp} 0 ${Math.abs(e.arc.e - e.arc.s) > 180 ? 1 : 0} ${e.arc.e > e.arc.s ? 0 : 1} ${sx(q.x)} ${sy(q.y)}`;
+        } else if (!e.sections) d += ` L ${sx(q.x)} ${sy(q.y)}`;
         else for (const sec of e.sections) d += ` C ${sx(sec.c1.x)} ${sy(sec.c1.y)} ${sx(sec.c2.x)} ${sy(sec.c2.y)} ${sx(sec.p.x)} ${sy(sec.p.y)}`;
       }
       parts.push(`<path data-kind="item" data-id="${it.id}" d="${d} Z" class="poly${sel('item', it.id) ? ' is-sel' : ''}" style="fill:${fill || 'transparent'}"/>`);
