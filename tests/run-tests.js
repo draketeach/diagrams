@@ -956,7 +956,7 @@ test('complex plane: conditions are read and the region where they all hold is s
 });
 
 test('geometry: a point can be labelled with its own text, e.g. its coordinates', () => {
-  const code = geometry.generate(GALLERY.find((e) => e.id === 'geometry-perpendicular-3d').values).code;
+  const code = geometry.generate({ scene: JSON.stringify({"settings": {"grid": 0.25, "snap": true, "showGrid": true, "lineWidth": "thin", "fontSize": "", "notToScale": false, "unit": "", "lengthDecimals": 0, "view": {"x0": -1.5, "y0": -1, "w": 9, "h": 7}}, "points": [{"id": "L1", "name": "L1", "x": 0.66, "y": 5.32, "showLabel": false, "dot": false, "hidden": true}, {"id": "L2", "name": "L2", "x": 5.42, "y": 0.66, "showLabel": false, "dot": false, "hidden": true}, {"id": "A", "name": "A", "x": 2.982, "y": 3.046, "showLabel": true, "dot": true, "text": "A\\,(4, 5, 2)", "label": {"dx": 0.95, "dy": 0.35}}, {"id": "B", "name": "B", "x": 0.0, "y": 0.0, "showLabel": true, "dot": true, "text": "B\\,(3b, 4b, 4b)", "label": {"dx": 1.05, "dy": -0.42}}], "items": [{"id": "l", "type": "segment", "a": "L1", "b": "L2", "label": ""}, {"id": "ab", "type": "segment", "a": "A", "b": "B", "label": "", "style": "dashed"}, {"id": "ra", "type": "right", "v": "A", "a": "B", "b": "L2", "size": 0.25}, {"id": "tl", "type": "text", "x": 1.21, "y": 5.27, "text": "$\\ell$"}]}) }).code;
   assert.ok(code.includes('node {$A\\,(4, 5, 2)$};') && code.includes('\\coordinate (A) at'), 'label text, name kept for TikZ');
 });
 
