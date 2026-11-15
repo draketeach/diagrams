@@ -109,7 +109,8 @@ or set its curve; a loop can be pointed any way and resized.
 
 With nothing selected, the panel shows the network as an **edge list** you can
 edit, one edge per line: `A-B`, `A->B` (directed), `A-B 5` or `A->B A, 8`
-(labelled — the label is everything after the edge, commas included), `A-A`
+(labelled — the label is everything after the
+edge, commas included, as plain text: `600 m`; `-0.09` gets a real minus sign and `$…$` is maths), `A-A`
 (a loop), `A-B` on two lines (two edges), `D` (a vertex on its own). Vertices and edges still listed
 keep their places; new vertices go on a circle to be dragged into place.
 
