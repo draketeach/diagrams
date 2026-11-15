@@ -119,6 +119,11 @@ measurements and a unit; each length is labelled with its value and unit
 have a dashed radius from a dot at the centre; a cylinder's height goes on a
 measurement line beside it (bars, arrows, or both at its ends), and a cone's
 or pyramid's height is dashed inside it, with an optional slant height label on a cone.
+A hemisphere sits flat side up (a bowl) or down (a dome). Cuboids, prisms and
+pyramids can have their corners named (`A B C D E F G H`; `-` skips one). A
+pyramid can show the angle between an edge and the base (at a corner) or between
+a face and the base (at the middle of the front edge), with dashed lines to the
+centre of the base, a right angle there, and an arc with an arrowhead pointing at the base.
 Hidden edges are left out, or drawn dashed. Under Drawing: the size, how flat
 round faces look, and the angle the depth goes back at.
 

@@ -772,6 +772,12 @@ test('solids: each solid draws; hidden edges only when asked', () => {
   assert.ok(bowl.includes('ellipse') && bowl.includes('start angle=180, end angle=360, radius='), 'hemisphere is flat side up by default');
   const pyr = solids.generate({ ...d, solid: 'pyramid', names: 'A B C D M O', angle: 'corner', sLabel: '$\\ell$' }).code;
   assert.ok(['{$A$}', '{$M$}', '{$O$}', '{$\\theta$}', '{$\\ell$}'].every((t) => pyr.includes(t)), 'pyramid names, angle and slant label');
+  assert.ok(pyr.includes('-{Stealth[length=4pt]}') && pyr.includes('usetikzlibrary{arrows.meta}'), 'the angle arc has an arrowhead');
+  const face = solids.generate({ ...d, solid: 'pyramid', names: 'A B C D M O N', angle: 'face' }).code;
+  assert.ok(face.includes('{$N$}') && face.includes('angle between a face'), 'face angle at the middle of an edge');
+  const cub = solids.generate({ ...d, solid: 'cuboid', names: 'A B C D E F G H' }).code;
+  assert.ok(['{$A$}', '{$H$}'].every((t) => cub.includes(t)), 'cuboid corner names');
+  assert.ok(solids.generate({ ...d, solid: 'prism', names: 'P - R' }).code.includes('{$R$}'), 'prism corner names, - skips');
   assert.ok(solids.generate({ ...d, solid: 'cylinder', ends: 'both' }).code.includes('usetikzlibrary{arrows.meta}'), 'arrowheads load arrows.meta');
 });
 

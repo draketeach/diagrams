@@ -58,10 +58,41 @@ function nameText(t) {
   return /^[A-Za-z]{3,}$/.test(t) ? titleText(t) : `$${t.replace(/^([A-Za-z])(\d+)$/, '$1_{$2}')}$`;
 }
 
+/**
+ * Names beside corners, each pushed 0.3 cm away from the solid's middle c.
+ * names: the typed list; pts: the corners in the same order; - skips one.
+ */
+function cornerNames(b, names, pts, c) {
+  if (!names.some((t) => t && t !== '-')) return;
+  b.comment('names');
+  pts.forEach((p, i) => {
+    const t = names[i];
+    if (!p || !t || t === '-') return;
+    const L = Math.hypot(p.x - c.x, p.y - c.y) || 1;
+    b.add(`\\node at ${P(p.x + ((p.x - c.x) / L) * 0.3, p.y + ((p.y - c.y) / L) * 0.3)} {${nameText(t)}};`);
+  });
+}
+
+/** An angle arc at V from the arm towards p to the arm towards q, with an arrowhead at q's arm, and its label. */
+function angleMark(b, V, p, q, label, r) {
+  const deg = (u) => (Math.atan2(u.y - V.y, u.x - V.x) * 180) / Math.PI;
+  const a1 = deg(p);
+  let a2 = deg(q);
+  while (a2 - a1 > 180) a2 -= 360;
+  while (a2 - a1 < -180) a2 += 360;
+  const at = (a, rad) => ({ x: V.x + rad * Math.cos((a * Math.PI) / 180), y: V.y + rad * Math.sin((a * Math.PI) / 180) });
+  const s = at(a1, r);
+  b.add(`\\draw[-{Stealth[length=4pt]}] ${P(s.x, s.y)} arc[start angle=${n(a1)}, end angle=${n(a2)}, radius=${n(r)}];`);
+  if (label) {
+    const m = at((a1 + a2) / 2, r + 0.3);
+    b.add(`\\node at ${P(m.x, m.y)} {${label}};`);
+  }
+}
+
 /** A label beside the middle of an edge p→q, pushed off it by 0.3 cm towards `side` (a direction). */
-function edgeLabel(b, p, q, text, side, sloped = false) {
+function edgeLabel(b, p, q, text, side, sloped = false, t = 0.5) {
   if (!text) return;
-  const m = { x: (p.x + q.x) / 2, y: (p.y + q.y) / 2 };
+  const m = { x: p.x + (q.x - p.x) * t, y: p.y + (q.y - p.y) * t };
   const L = Math.hypot(side.x, side.y) || 1;
   let rot = '';
   if (sloped) {
@@ -189,6 +220,7 @@ function generate(v) {
     const line = (...ps) => ps.map((p) => P(p.x, p.y)).join(' -- ');
     const A = { x: 0, y: 0 };
     const B = { x: W, y: 0 };
+    const names = String(v.names ?? '').trim().split(/[\s,]+/).filter(Boolean);
     if (v.solid === 'cuboid') {
       b.comment(`cuboid: ${n(w)} by ${n(d)} by ${n(h)}`);
       const C = { x: W, y: Hh };
@@ -200,6 +232,8 @@ function generate(v) {
       edgeLabel(b, A, B, wLab, { x: 0, y: -1 });
       edgeLabel(b, A, E, hLab, { x: -1, y: 0 });
       edgeLabel(b, B, add(B), dLab, { x: o.y, y: -o.x });
+      // front: bottom left, bottom right, top right, top left; then the back the same way
+      cornerNames(b, names, [A, B, C, E, add(A), add(B), add(C), add(E)], { x: W / 2 + o.x / 2, y: Hh / 2 + o.y / 2 });
       ext.push(add(C));
     } else if (v.solid === 'prism') {
       const ax = Math.max(0, Math.min(1, Number(v.apex ?? 0.5))) * W;
@@ -221,6 +255,8 @@ function generate(v) {
           b.add(`\\node[${ax < W / 2 ? 'right' : 'left'}, inner sep=2pt] at ${P(ax, Hh * 0.4)} {${hLab}};`);
         }
       }
+      // front: left, right, top; then the back the same way
+      cornerNames(b, names, [A, B, T, add(A), add(B), add(T)], { x: W / 2 + o.x / 2, y: Hh / 3 + o.y / 2 });
       ext.push(add(T), add(B));
     } else if (v.solid === 'pyramid') {
       b.comment(`pyramid: base ${n(w)} by ${n(d)}, height ${n(h)}`);
@@ -231,45 +267,33 @@ function generate(v) {
       b.add(`\\draw ${line(A, B, C2)} ${line(A, T, B)} ${line(T, C2)};`);
       H(() => b.add(`\\draw[dashed] ${line(A, A2, C2)} ${line(A2, T)};`));
       const aLab = String(v.aLabel ?? '').trim();
-      const showAngle = v.angle === 'corner';
-      if (hLab || showAngle) {
+      const ang = ['corner', 'face'].includes(v.angle) ? v.angle : '';
+      const N = { x: W / 2, y: 0 }; // the middle of the front edge of the base
+      const foot = ang === 'face' ? N : A; // where the angle is
+      if (hLab || ang) {
         b.comment('height');
         b.add(`\\draw[dashed] ${line(T, O)};`);
-        if (showAngle) rightAngle(b, O, T, A, 0.25);
+        if (ang) rightAngle(b, O, T, foot, 0.25);
         else b.add(DOT(O.x, O.y));
         if (hLab) b.add(`\\node[right, inner sep=2pt] at ${P(O.x, O.y + Hh * 0.45)} {${hLab}};`);
       }
-      if (showAngle) {
-        // the angle between an edge up to the top and the base, at a corner
-        b.comment('angle between the edge and the base');
-        b.add(`\\draw[dashed] ${line(A, O)};`);
-        const deg = (p) => (Math.atan2(p.y, p.x) * 180) / Math.PI;
-        const a1 = deg(O);
-        const a2 = deg(T);
-        const rr = Math.min(1, Math.hypot(O.x, O.y) * 0.35);
-        b.add(`\\draw ${P(rr * Math.cos((a1 * Math.PI) / 180), rr * Math.sin((a1 * Math.PI) / 180))} arc[start angle=${n(a1)}, end angle=${n(a2)}, radius=${n(rr)}];`);
-        if (aLab && aLab !== '-') {
-          const mid = (((a1 + a2) / 2) * Math.PI) / 180;
-          b.add(`\\node at ${P((rr + 0.3) * Math.cos(mid), (rr + 0.3) * Math.sin(mid))} {${titleText(aLab)}};`);
-        }
+      if (ang) {
+        b.comment(ang === 'face' ? 'angle between a face and the base' : 'angle between an edge and the base');
+        b.add(`\\draw[dashed] ${line(foot, O)};`);
+        if (ang === 'face') b.add(`\\draw[dashed] ${line(N, T)};`);
+        const r0 = Math.max(0.4, Math.min(1, Math.hypot(O.x - foot.x, O.y - foot.y) * 0.45));
+        angleMark(b, foot, T, O, aLab && aLab !== '-' ? titleText(aLab) : '', r0);
       }
       b.comment('labels');
-      edgeLabel(b, A, B, wLab, { x: 0, y: -1 });
+      // the width label moves aside for the name of the middle of the front edge
+      edgeLabel(b, A, B, wLab, { x: 0, y: -1 }, false, ang === 'face' && names[6] && names[6] !== '-' ? 0.25 : 0.5);
       edgeLabel(b, B, C2, dLab, { x: o.y, y: -o.x });
       const sLab = String(v.sLabel ?? '').trim();
       if (sLab && sLab !== '-') edgeLabel(b, A, T, titleText(sLab), { x: -T.y, y: T.x });
-      // corner names: front left, front right, back right, back left, top, centre of the base
-      const names = String(v.names ?? '').trim().split(/[\s,]+/).filter(Boolean);
-      if (names.length) {
-        b.comment('names');
-        const c = { x: O.x, y: O.y + Hh / 3 };
-        [A, B, C2, A2, T].forEach((p, i) => {
-          if (!names[i] || names[i] === '-') return;
-          const L = Math.hypot(p.x - c.x, p.y - c.y) || 1;
-          b.add(`\\node at ${P(p.x + ((p.x - c.x) / L) * 0.3, p.y + ((p.y - c.y) / L) * 0.3)} {${nameText(names[i])}};`);
-        });
-        if (names[5] && names[5] !== '-') b.add(`\\node[below right, inner sep=2pt] at ${P(O.x, O.y)} {${nameText(names[5])}};`);
-      }
+      // front left, front right, back right, back left, the top, the centre of the base, the middle of the front edge
+      cornerNames(b, names, [A, B, C2, A2, T], { x: O.x, y: O.y + Hh / 3 });
+      if (names[5] && names[5] !== '-') b.add(`\\node[${ang === 'face' ? 'above right' : 'below right'}, inner sep=2pt] at ${P(O.x, O.y)} {${nameText(names[5])}};`);
+      if (ang === 'face' && names[6] && names[6] !== '-') b.add(`\\node[below, inner sep=3pt] at ${P(N.x, N.y)} {${nameText(names[6])}};`);
       ext.push(C2, T);
     }
   }
@@ -279,7 +303,7 @@ function generate(v) {
     const y = Math.max(...ext.map((p) => p.y));
     b.add(`\\node[anchor=north west, align=center] at ${P(x, y)} {NOT TO \\\\ SCALE};`);
   }
-  if (b.lines.some((l) => l.includes(TIP))) b.usePreamble('\\usetikzlibrary{arrows.meta}');
+  if (b.lines.some((l) => l.includes('Stealth'))) b.usePreamble('\\usetikzlibrary{arrows.meta}');
   const opts = [v.lineWidth && v.lineWidth !== 'thin' ? v.lineWidth : '', v.fontSize ? `font=${v.fontSize}` : ''];
   return { code: b.toString(opts), warnings };
 }
@@ -379,7 +403,7 @@ const schema = [
       {
         type: 'row',
         fields: [
-          { type: 'select', key: 'angle', label: 'Angle', default: 'none', options: [{ value: 'none', label: 'None' }, { value: 'corner', label: 'Between an edge and the base' }] },
+          { type: 'select', key: 'angle', label: 'Angle', default: 'none', options: [{ value: 'none', label: 'None' }, { value: 'corner', label: 'Between an edge and the base' }, { value: 'face', label: 'Between a face and the base' }] },
           { type: 'text', key: 'aLabel', label: 'Angle label', default: '$\\theta$', showIf: (v) => v.angle === 'corner' },
         ],
         showIf: (v) => v.solid === 'pyramid',
@@ -389,9 +413,9 @@ const schema = [
         key: 'names',
         label: 'Corner names',
         default: '',
-        placeholder: 'e.g. A B C D M O',
-        help: 'Front left, front right, back right, back left, the top, then the centre of the base. - skips one.',
-        showIf: (v) => v.solid === 'pyramid',
+        placeholder: 'e.g. A B C D E F G H',
+        help: 'Pyramid: front left, front right, back right, back left, the top, the centre of the base, then the middle of the front edge (for a face angle). Cuboid: the front face from bottom left going round, then the back face the same way. Prism: front left, right, top, then the back. - skips one.',
+        showIf: (v) => ['pyramid', 'cuboid', 'prism'].includes(v.solid),
       },
       { type: 'checkbox', key: 'notToScale', label: 'NOT TO SCALE', default: true },
     ],
