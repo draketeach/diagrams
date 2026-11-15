@@ -124,6 +124,10 @@ pyramids can have their corners named (`A B C D E F G H`; `-` skips one). A
 pyramid can show the angle between an edge and the base (at a corner) or between
 a face and the base (on the right-hand side face, at the middle of its base edge), with dashed lines to the
 centre of the base, a right angle there, and an arc with an arrowhead pointing at the base.
+A pyramid has its own measurements, a 6 by 6 base and height 6 by default.
+The code names each corner with `\coordinate` first, draws from the names, and
+puts every label relative to what it labels (`node[midway, above]` on a line,
+`\node[below left] at (A)` beside a corner), so it is easy to adjust by hand.
 Hidden edges are left out, or drawn dashed. Under Drawing: the size, how flat
 round faces look, and the angle the depth goes back at.
 

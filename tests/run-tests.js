@@ -765,7 +765,8 @@ test('solids: each solid draws; hidden edges only when asked', () => {
   const cyl = solids.generate({ ...d, solid: 'cylinder', r: 4, h: 10 }).code;
   assert.ok(cyl.includes('{4 cm}') && cyl.includes('{10 cm}') && cyl.includes('NOT TO'), 'cylinder labels');
   assert.ok(cyl.includes('circle[radius=1.5pt]'), 'centre dot');
-  assert.ok(!cyl.includes('arrows.meta'), 'bars only: no arrow library');
+  assert.ok(cyl.includes('{Bar[width=8pt]}-{Bar[width=8pt]}') && cyl.includes('node[midway, fill=white] {10 cm}'), 'height line with bars, label on it');
+  assert.ok(cyl.includes('\\coordinate (T)') && cyl.includes('node[midway, above] {4 cm}'), 'labels placed relative to what they label');
   const own = solids.generate({ ...d, solid: 'cylinder', rLabel: '$r$', hLabel: '-', notToScale: false }).code;
   assert.ok(own.includes('{$r$}') && !own.includes('10 cm') && !own.includes('NOT TO'), 'own labels, none, no NOT TO SCALE');
   const bowl = solids.generate({ ...d, solid: 'hemisphere' }).code;

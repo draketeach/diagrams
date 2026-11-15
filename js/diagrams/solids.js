@@ -2,15 +2,19 @@
 // 3D solids drawn as on exam papers (no shading): cylinders, cones, spheres,
 // hemispheres, cuboids, triangular prisms and pyramids. Round faces are
 // ellipses seen from a little above; prisms recede at an angle. Hidden edges
-// are left out, or dashed. Lengths are labelled with a radius from a centre
-// dot, a measurement line for a height, and labels on edges.
+// are left out, or dashed.
+//
+// The code names every corner with \coordinate first, draws from those names,
+// and places each label relative to what it labels: a node partway along the
+// edge or line (midway, pos=…) or beside the corner (below left, …), so the
+// code reads like the picture and is easy to adjust by hand.
 
 import { TikzBuilder, n } from '../lib/tikz.js';
 import { titleText } from './realgraph.js';
 
 const P = (x, y) => `(${n(x)},${n(y)})`;
-const DOT = (x, y) => `\\fill ${P(x, y)} circle[radius=1.5pt];`;
 const TIP = '{Stealth[length=5pt]}'; // as Geometry's arrowheads
+const BAR = '{Bar[width=8pt]}';
 
 /** A length's label: blank gives "4 cm" from the value and unit; "-" gives none. */
 function lengthLabel(text, value, unit) {
@@ -20,101 +24,114 @@ function lengthLabel(text, value, unit) {
   return titleText(`${n(value)}${unit ? ` ${unit}` : ''}`);
 }
 
-/** An elliptical arc from angle a to b (degrees) round centre (cx, cy). */
-function arc(cx, cy, rx, ry, a, b, style = '') {
-  const x = cx + rx * Math.cos((a * Math.PI) / 180);
-  const y = cy + ry * Math.sin((a * Math.PI) / 180);
-  return `\\draw${style ? `[${style}]` : ''} ${P(x, y)} arc[start angle=${n(a)}, end angle=${n(b)}, x radius=${n(rx)}, y radius=${n(ry)}];`;
-}
-
-/**
- * A measurement line from p to q with its label in a gap in the middle:
- * ends are 'bars' (short bars across), 'arrows', or 'both'.
- */
-function measure(b, p, q, label, ends = 'bars') {
-  const L = Math.hypot(q.x - p.x, q.y - p.y);
-  const ux = (q.x - p.x) / L;
-  const uy = (q.y - p.y) / L;
-  const nx = -uy * 0.15;
-  const ny = ux * 0.15;
-  const tips = ends !== 'bars';
-  const a1 = tips ? `[${TIP}-]` : '';
-  const a2 = tips ? `[-${TIP}]` : '';
-  const chars = label.replace(/\$[^$]*\$/g, 'xx').replace(/\\[a-z]+/gi, '').length;
-  const w = Math.max(1, chars) * 0.19 + 0.1;
-  const half = Math.min(L / 2 - 0.15, (w / 2) * Math.abs(ux) + 0.22 * Math.abs(uy) + 0.08);
-  const m = { x: (p.x + q.x) / 2, y: (p.y + q.y) / 2 };
-  if (label && half > 0.05) {
-    b.add(`\\draw${a1} ${P(p.x, p.y)} -- ${P(m.x - ux * half, m.y - uy * half)};`);
-    b.add(`\\draw${a2} ${P(m.x + ux * half, m.y + uy * half)} -- ${P(q.x, q.y)};`);
-    b.add(`\\node at ${P(m.x, m.y)} {${label}};`);
-  } else b.add(`\\draw${tips ? `[${TIP}-${TIP}]` : ''} ${P(p.x, p.y)} -- ${P(q.x, q.y)};`);
-  if (ends !== 'arrows') for (const e of [p, q]) b.add(`\\draw ${P(e.x + nx, e.y + ny)} -- ${P(e.x - nx, e.y - ny)};`);
-}
-
 /** A corner's name: a letter (or letter and digits) in maths, a word upright. */
 function nameText(t) {
   if (t.includes('$')) return titleText(t);
   return /^[A-Za-z]{3,}$/.test(t) ? titleText(t) : `$${t.replace(/^([A-Za-z])(\d+)$/, '$1_{$2}')}$`;
 }
 
-/**
- * Names beside corners, each pushed 0.3 cm away from the solid's middle c.
- * names: the typed list; pts: the corners in the same order; - skips one.
- */
-function cornerNames(b, names, pts, c) {
-  if (!names.some((t) => t && t !== '-')) return;
-  b.comment('names');
-  pts.forEach((p, i) => {
+/** The TikZ placement (above, below left, …) for a label off towards direction (dx, dy). */
+function placeFor(dx, dy) {
+  const a = (((Math.atan2(dy, dx) * 180) / Math.PI + 360 + 22.5) % 360) / 45;
+  return ['right', 'above right', 'above', 'above left', 'left', 'below left', 'below', 'below right'][Math.floor(a)];
+}
+
+/** Writes the picture, keeping each named corner's place for the labels. */
+class Solid {
+  constructor(b) {
+    this.b = b;
+    this.at = new Map();
+  }
+  /** \coordinate (id) at (x,y); */
+  coord(id, x, y) {
+    this.at.set(id, { x, y });
+    this.b.add(`\\coordinate (${id}) at ${P(x, y)};`);
+    return id;
+  }
+  p(id) {
+    return this.at.get(id);
+  }
+  /** A path through named corners: (A) -- (B) -- (C) */
+  path(...ids) {
+    return ids.map((id) => `(${id})`).join(' -- ');
+  }
+  /** A label partway along the line a→b (t = 0.5 is midway), off towards the side (a direction). */
+  edgeLabel(a, c, text, side, { t = 0.5, sloped = false } = {}) {
+    if (!text) return;
+    const pos = t === 0.5 ? 'midway' : `pos=${n(t)}`;
+    let place = placeFor(side.x, side.y);
+    if (sloped) {
+      // above or below the line as it is turned to read along it
+      const p = this.p(a);
+      const q = this.p(c);
+      let dx = q.x - p.x;
+      let dy = q.y - p.y;
+      if (dx < 0 || (dx === 0 && dy < 0)) [dx, dy] = [-dx, -dy];
+      place = `sloped, ${-dy * side.x + dx * side.y >= 0 ? 'above' : 'below'}`;
+    }
+    this.b.add(`\\path (${a}) -- (${c}) node[${pos}, ${place}] {${text}};`);
+  }
+  /** A corner's name beside it, on the side away from the point `from`. */
+  name(id, text, from, place) {
+    if (!text || text === '-') return;
+    const p = this.p(id);
+    const pl = place ?? placeFor(p.x - from.x, p.y - from.y);
+    this.b.add(`\\node[${pl}] at (${id}) {${nameText(text)}};`);
+  }
+  /** A right-angle mark at corner v between the lines to a and c (size cm), drawn from v. */
+  rightAngle(v, a, c, size = 0.22) {
+    const V = this.p(v);
+    const u = (id) => {
+      const q = this.p(id);
+      const L = Math.hypot(q.x - V.x, q.y - V.y) || 1;
+      return { x: ((q.x - V.x) / L) * size, y: ((q.y - V.y) / L) * size };
+    };
+    const p = u(a);
+    const q = u(c);
+    const sh = (x, y) => `([shift={${P(x, y)}}]${v})`;
+    this.b.add(`\\draw ${sh(p.x, p.y)} -- ${sh(p.x + q.x, p.y + q.y)} -- ${sh(q.x, q.y)};`);
+  }
+  /**
+   * An angle arc at corner v from the line to a round to the line to c, with
+   * an arrowhead on c's line, and its label just inside the arc.
+   */
+  angle(v, a, c, label, r) {
+    const V = this.p(v);
+    const deg = (id) => {
+      const q = this.p(id);
+      return (Math.atan2(q.y - V.y, q.x - V.x) * 180) / Math.PI;
+    };
+    const a1 = deg(a);
+    let a2 = deg(c);
+    while (a2 - a1 > 180) a2 -= 360;
+    while (a2 - a1 < -180) a2 += 360;
+    // the label sits inside a wide arc, outside a small one
+    const mid = (a1 + a2) / 2;
+    const node = label ? ` node[midway, anchor=${n(r >= 0.8 ? mid : mid + 180, 1)}] {${label}}` : '';
+    this.b.add(`\\draw[-{Stealth[length=4pt]}] ([shift={(${n(a1, 2)}:${n(r)})}]${v}) arc[start angle=${n(a1, 2)}, end angle=${n(a2, 2)}, radius=${n(r)}]${node};`);
+  }
+  dot(id) {
+    this.b.add(`\\fill (${id}) circle[radius=1.5pt];`);
+  }
+}
+
+/** An elliptical arc round corner c from angle a to b (degrees). */
+function arc(c, rx, ry, a, b, style = '') {
+  const x = rx * Math.cos((a * Math.PI) / 180);
+  const y = ry * Math.sin((a * Math.PI) / 180);
+  return `\\draw${style ? `[${style}]` : ''} ([shift={${P(x, y)}}]${c}) arc[start angle=${n(a)}, end angle=${n(b)}, x radius=${n(rx)}, y radius=${n(ry)}];`;
+}
+
+/** Corner ids from the typed names where they make good TikZ names, otherwise the defaults. */
+function cornerIds(names, defaults) {
+  const used = new Set();
+  return defaults.map((d, i) => {
     const t = names[i];
-    if (!p || !t || t === '-') return;
-    const L = Math.hypot(p.x - c.x, p.y - c.y) || 1;
-    b.add(`\\node at ${P(p.x + ((p.x - c.x) / L) * 0.3, p.y + ((p.y - c.y) / L) * 0.3)} {${nameText(t)}};`);
+    const id = t && /^[A-Za-z][A-Za-z0-9]*$/.test(t) && !used.has(t) ? t : d;
+    const free = used.has(id) ? `${d}${i}` : id;
+    used.add(free);
+    return free;
   });
-}
-
-/** An angle arc at V from the arm towards p to the arm towards q, with an arrowhead at q's arm, and its label. */
-function angleMark(b, V, p, q, label, r) {
-  const deg = (u) => (Math.atan2(u.y - V.y, u.x - V.x) * 180) / Math.PI;
-  const a1 = deg(p);
-  let a2 = deg(q);
-  while (a2 - a1 > 180) a2 -= 360;
-  while (a2 - a1 < -180) a2 += 360;
-  const at = (a, rad) => ({ x: V.x + rad * Math.cos((a * Math.PI) / 180), y: V.y + rad * Math.sin((a * Math.PI) / 180) });
-  const s = at(a1, r);
-  b.add(`\\draw[-{Stealth[length=4pt]}] ${P(s.x, s.y)} arc[start angle=${n(a1)}, end angle=${n(a2)}, radius=${n(r)}];`);
-  if (label) {
-    const m = at((a1 + a2) / 2, r + 0.3);
-    b.add(`\\node at ${P(m.x, m.y)} {${label}};`);
-  }
-}
-
-/** A label beside the middle of an edge p→q, pushed off it by 0.3 cm towards `side` (a direction). */
-function edgeLabel(b, p, q, text, side, sloped = false, t = 0.5) {
-  if (!text) return;
-  const m = { x: p.x + (q.x - p.x) * t, y: p.y + (q.y - p.y) * t };
-  const L = Math.hypot(side.x, side.y) || 1;
-  let rot = '';
-  if (sloped) {
-    let g = (Math.atan2(q.y - p.y, q.x - p.x) * 180) / Math.PI;
-    if (g > 90) g -= 180;
-    if (g <= -90) g += 180;
-    rot = `, rotate=${n(g)}`;
-  }
-  // far enough off the edge for the label's own size in that direction
-  const d = 0.12 + (sloped ? 0.2 : 0.2 + 0.1 * Math.abs(side.x / L) * Math.max(1, text.length / 4));
-  b.add(`\\node[inner sep=1pt${rot}] at ${P(m.x + (side.x / L) * d, m.y + (side.y / L) * d)} {${text}};`);
-}
-
-/** A right-angle mark at v between the directions to a and c (size cm). */
-function rightAngle(b, v, a, c, size = 0.22, style = '') {
-  const u = (p) => {
-    const L = Math.hypot(p.x - v.x, p.y - v.y) || 1;
-    return { x: ((p.x - v.x) / L) * size, y: ((p.y - v.y) / L) * size };
-  };
-  const p = u(a);
-  const q = u(c);
-  b.add(`\\draw${style ? `[${style}]` : ''} ${P(v.x + p.x, v.y + p.y)} -- ${P(v.x + p.x + q.x, v.y + p.y + q.y)} -- ${P(v.x + q.x, v.y + q.y)};`);
 }
 
 // ---------------------------------------------------------------- the solids
@@ -122,15 +139,16 @@ function rightAngle(b, v, a, c, size = 0.22, style = '') {
 function generate(v) {
   const warnings = [];
   const b = new TikzBuilder();
+  const S = new Solid(b);
   const unit = String(v.unit ?? '').trim();
   const hid = v.hidden === 'dashed';
-  const H = (s) => (hid ? s() : null); // hidden edges, only when shown
   const k = Math.max(0.1, Math.min(0.8, Number(v.ellipse) || 0.3)); // how flat round faces look
   const num = (key, d) => (Number(v[key]) > 0 ? Number(v[key]) : d);
+  const pyr = v.solid === 'pyramid';
   const r = num('r', 4);
-  const h = num('h', 10);
-  const w = num('w', 6);
-  const d = num('d', 4);
+  const h = pyr ? num('ph', 6) : num('h', 10);
+  const w = pyr ? num('pw', 6) : num('w', 6);
+  const d = pyr ? num('pd', 6) : num('d', 4);
   // drawn size: the biggest dimension comes out `size` cm across
   const big = { cylinder: Math.max(2 * r, h), cone: Math.max(2 * r, h), sphere: 2 * r, hemisphere: 2 * r }[v.solid] ?? Math.max(w, h, d * 0.6);
   const s = (Number(v.size) || 5) / big;
@@ -139,171 +157,185 @@ function generate(v) {
   const W = w * s;
   const D = d * s;
   const ry = R * k;
-  const ext = []; // drawn points, for NOT TO SCALE's place
 
   const rLab = lengthLabel(v.rLabel, r, unit);
   const hLab = lengthLabel(v.hLabel, h, unit);
   const wLab = lengthLabel(v.wLabel, w, unit);
   const dLab = lengthLabel(v.dLabel, d, unit);
+  const sLab = String(v.sLabel ?? '').trim() && String(v.sLabel).trim() !== '-' ? titleText(v.sLabel) : '';
+  const names = String(v.names ?? '').trim().split(/[\s,]+/).filter(Boolean);
 
   if (v.solid === 'cylinder') {
     b.comment(`cylinder: radius ${n(r)}, height ${n(h)}`);
-    b.add(`\\draw (0,${n(Hh)}) ellipse [x radius=${n(R)}, y radius=${n(ry)}];`);
-    b.add(`\\draw ${P(-R, 0)} -- ${P(-R, Hh)} ${P(R, 0)} -- ${P(R, Hh)};`);
-    b.add(arc(0, 0, R, ry, 180, 360));
-    H(() => b.add(arc(0, 0, R, ry, 0, 180, 'dashed')));
+    S.coord('O', 0, 0); // centre of the base
+    S.coord('T', 0, Hh); // centre of the top
+    b.add(`\\draw (T) ellipse [x radius=${n(R)}, y radius=${n(ry)}];`);
+    b.add(`\\draw ([xshift=-${n(R)}cm]O) -- ([xshift=-${n(R)}cm]T) ([xshift=${n(R)}cm]O) -- ([xshift=${n(R)}cm]T);`);
+    b.add(arc('O', R, ry, 180, 360));
+    if (hid) b.add(arc('O', R, ry, 0, 180, 'dashed'));
     if (v.radius !== 'none') {
       b.comment('radius');
-      b.add(DOT(0, Hh));
-      b.add(`\\draw[dashed] ${P(0, Hh)} -- ${P(R, Hh)};`);
-      if (rLab) b.add(`\\node[above, inner sep=2pt] at ${P(R / 2, Hh)} {${rLab}};`);
+      S.dot('T');
+      b.add(`\\draw[dashed] (T) -- ([xshift=${n(R)}cm]T)${rLab ? ` node[midway, above] {${rLab}}` : ''};`);
     }
     if (hLab) {
-      b.comment('height');
-      measure(b, { x: R + 0.6, y: 0 }, { x: R + 0.6, y: Hh }, hLab, v.ends);
+      b.comment('height, on a line beside the cylinder');
+      const ends = v.ends === 'arrows' ? `${TIP}-${TIP}` : v.ends === 'both' ? '{Bar[width=8pt]Stealth[length=5pt]}-{Stealth[length=5pt]Bar[width=8pt]}' : `${BAR}-${BAR}`;
+      const x = n(R + 0.6);
+      b.add(`\\draw[${ends}] ([xshift=${x}cm]O) -- ([xshift=${x}cm]T) node[midway, fill=white] {${hLab}};`);
     }
-    ext.push({ x: R + 0.6 + 0.5, y: Hh + ry });
   } else if (v.solid === 'cone') {
     b.comment(`cone: radius ${n(r)}, height ${n(h)}`);
     // the sides touch the base where lines from the apex are tangent to it
     const t0 = (Math.asin(Math.min(0.99, ry / Hh)) * 180) / Math.PI;
     const tx = R * Math.cos((t0 * Math.PI) / 180);
     const ty = ry * Math.sin((t0 * Math.PI) / 180);
-    b.add(`\\draw ${P(-tx, ty)} -- ${P(0, Hh)} -- ${P(tx, ty)};`);
-    b.add(arc(0, 0, R, ry, 180 - t0, 360 + t0));
-    H(() => b.add(arc(0, 0, R, ry, t0, 180 - t0, 'dashed')));
+    S.coord('O', 0, 0); // centre of the base
+    S.coord('T', 0, Hh); // the top
+    S.coord('L', -tx, ty);
+    S.coord('R', tx, ty);
+    b.add(`\\draw ${S.path('L', 'T', 'R')};`);
+    b.add(arc('O', R, ry, 180 - t0, 360 + t0));
+    if (hid) b.add(arc('O', R, ry, t0, 180 - t0, 'dashed'));
     if (v.radius !== 'none') {
       b.comment('radius');
-      b.add(DOT(0, 0));
-      b.add(`\\draw[dashed] ${P(0, 0)} -- ${P(R, 0)};`);
-      if (rLab) b.add(`\\node[above, inner sep=2pt] at ${P(R / 2, 0)} {${rLab}};`);
+      S.dot('O');
+      b.add(`\\draw[dashed] (O) -- ([xshift=${n(R)}cm]O)${rLab ? ` node[midway, above] {${rLab}}` : ''};`);
     }
     if (hLab) {
       b.comment('height');
-      b.add(`\\draw[dashed] ${P(0, 0)} -- ${P(0, Hh)};`);
-      rightAngle(b, { x: 0, y: 0 }, { x: 0, y: 1 }, { x: -1, y: 0 }, 0.22);
-      b.add(`\\node[left, inner sep=2pt] at ${P(0, Hh * 0.45)} {${hLab}};`);
+      b.add(`\\draw[dashed] (O) -- (T) node[pos=0.45, left] {${hLab}};`);
+      b.add(`\\draw ([shift={(-0.22,0)}]O) -- ([shift={(-0.22,0.22)}]O) -- ([shift={(0,0.22)}]O);`);
     }
-    const sLab = String(v.sLabel ?? '').trim();
-    if (sLab && sLab !== '-') {
+    if (sLab) {
       b.comment('slant height');
-      edgeLabel(b, { x: tx, y: ty }, { x: 0, y: Hh }, titleText(sLab), { x: Hh, y: tx }, true);
+      S.edgeLabel('R', 'T', sLab, { x: Hh, y: tx }, { sloped: true });
     }
-    ext.push({ x: R + 0.8, y: Hh });
   } else if (v.solid === 'sphere' || v.solid === 'hemisphere') {
     const half = v.solid === 'hemisphere';
     const bowl = half && v.flat !== 'down'; // flat face on top, curved side below
     b.comment(`${v.solid}${half ? (bowl ? ', flat side up' : ', flat side down') : ''}: radius ${n(r)}`);
+    S.coord('O', 0, 0); // the centre
     if (bowl) {
-      b.add(`\\draw (0,0) ellipse [x radius=${n(R)}, y radius=${n(ry)}];`);
-      b.add(`\\draw ${P(-R, 0)} arc[start angle=180, end angle=360, radius=${n(R)}];`);
+      b.add(`\\draw (O) ellipse [x radius=${n(R)}, y radius=${n(ry)}];`);
+      b.add(`\\draw ([xshift=-${n(R)}cm]O) arc[start angle=180, end angle=360, radius=${n(R)}];`);
     } else {
-      if (half) b.add(`\\draw ${P(-R, 0)} arc[start angle=180, end angle=0, radius=${n(R)}];`);
-      else b.add(`\\draw (0,0) circle[radius=${n(R)}];`);
+      if (half) b.add(`\\draw ([xshift=-${n(R)}cm]O) arc[start angle=180, end angle=0, radius=${n(R)}];`);
+      else b.add(`\\draw (O) circle[radius=${n(R)}];`);
       // the flat face (hemisphere) or the equator (sphere)
-      b.add(arc(0, 0, R, ry, 180, 360));
+      b.add(arc('O', R, ry, 180, 360));
       // the back half is behind the dome or the ball
-      H(() => b.add(arc(0, 0, R, ry, 0, 180, 'dashed')));
+      if (hid) b.add(arc('O', R, ry, 0, 180, 'dashed'));
     }
     if (v.radius !== 'none') {
       b.comment('radius');
-      b.add(DOT(0, 0));
-      b.add(`\\draw[dashed] ${P(0, 0)} -- ${P(R, 0)};`);
-      if (rLab) b.add(`\\node[above, inner sep=2pt] at ${P(R / 2, 0)} {${rLab}};`);
+      S.dot('O');
+      b.add(`\\draw[dashed] (O) -- ([xshift=${n(R)}cm]O)${rLab ? ` node[midway, above] {${rLab}}` : ''};`);
     }
-    ext.push({ x: R + 0.8, y: bowl ? ry : R });
   } else {
     // prisms and pyramids: the front face flat on the page, depth going back at an angle
     const g = ((Number(v.depthAngle) || 35) * Math.PI) / 180;
     const o = { x: D * 0.6 * Math.cos(g), y: D * 0.6 * Math.sin(g) };
-    const add = (p, q = o) => ({ x: p.x + q.x, y: p.y + q.y });
-    const line = (...ps) => ps.map((p) => P(p.x, p.y)).join(' -- ');
-    const A = { x: 0, y: 0 };
-    const B = { x: W, y: 0 };
-    const names = String(v.names ?? '').trim().split(/[\s,]+/).filter(Boolean);
+    const dSide = { x: o.y, y: -o.x }; // off the depth edge, outwards
     if (v.solid === 'cuboid') {
       b.comment(`cuboid: ${n(w)} by ${n(d)} by ${n(h)}`);
-      const C = { x: W, y: Hh };
-      const E = { x: 0, y: Hh };
-      b.add(`\\draw ${line(A, B, C, E)} -- cycle;`);
-      b.add(`\\draw ${line(E, add(E), add(C), C)} ${line(add(C), add(B), B)};`);
-      H(() => b.add(`\\draw[dashed] ${line(A, add(A), add(B))} ${line(add(A), add(E))};`));
+      // front face from the bottom left going round, then the back face
+      const [A, B, C, E, A2, B2, C2, E2] = cornerIds(names, ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']);
+      S.coord(A, 0, 0);
+      S.coord(B, W, 0);
+      S.coord(C, W, Hh);
+      S.coord(E, 0, Hh);
+      S.coord(A2, o.x, o.y);
+      S.coord(B2, W + o.x, o.y);
+      S.coord(C2, W + o.x, Hh + o.y);
+      S.coord(E2, o.x, Hh + o.y);
+      b.add(`\\draw ${S.path(A, B, C, E)} -- cycle;`);
+      b.add(`\\draw ${S.path(E, E2, C2, C)} ${S.path(C2, B2, B)};`);
+      if (hid) b.add(`\\draw[dashed] ${S.path(A, A2, B2)} ${S.path(A2, E2)};`);
       b.comment('labels');
-      edgeLabel(b, A, B, wLab, { x: 0, y: -1 });
-      edgeLabel(b, A, E, hLab, { x: -1, y: 0 });
-      edgeLabel(b, B, add(B), dLab, { x: o.y, y: -o.x });
-      // front: bottom left, bottom right, top right, top left; then the back the same way
-      cornerNames(b, names, [A, B, C, E, add(A), add(B), add(C), add(E)], { x: W / 2 + o.x / 2, y: Hh / 2 + o.y / 2 });
-      ext.push(add(C));
+      S.edgeLabel(A, B, wLab, { x: 0, y: -1 });
+      S.edgeLabel(A, E, hLab, { x: -1, y: 0 });
+      S.edgeLabel(B, B2, dLab, dSide);
+      const mid = { x: W / 2 + o.x / 2, y: Hh / 2 + o.y / 2 };
+      [A, B, C, E, A2, B2, C2, E2].forEach((id, i) => S.name(id, names[i], mid));
     } else if (v.solid === 'prism') {
       const ax = Math.max(0, Math.min(1, Number(v.apex ?? 0.5))) * W;
-      const T = { x: ax, y: Hh };
       b.comment(`triangular prism: base ${n(w)}, height ${n(h)}, length ${n(d)}`);
-      b.add(`\\draw ${line(A, B, T)} -- cycle;`);
-      b.add(`\\draw ${line(T, add(T), add(B), B)};`);
-      H(() => b.add(`\\draw[dashed] ${line(A, add(A), add(B))} ${line(add(A), add(T))};`));
+      // front: left, right, top; then the back
+      const [A, B, T, A2, B2, T2] = cornerIds(names, ['A', 'B', 'C', 'D', 'E', 'F']);
+      S.coord(A, 0, 0);
+      S.coord(B, W, 0);
+      S.coord(T, ax, Hh);
+      S.coord(A2, o.x, o.y);
+      S.coord(B2, W + o.x, o.y);
+      S.coord(T2, ax + o.x, Hh + o.y);
+      b.add(`\\draw ${S.path(A, B, T)} -- cycle;`);
+      b.add(`\\draw ${S.path(T, T2, B2, B)};`);
+      if (hid) b.add(`\\draw[dashed] ${S.path(A, A2, B2)} ${S.path(A2, T2)};`);
       b.comment('labels');
-      edgeLabel(b, A, B, wLab, { x: 0, y: -1 });
-      edgeLabel(b, B, add(B), dLab, { x: o.y, y: -o.x });
+      S.edgeLabel(A, B, wLab, { x: 0, y: -1 });
+      S.edgeLabel(B, B2, dLab, dSide);
       if (hLab) {
-        if (ax < 1e-6) edgeLabel(b, A, T, hLab, { x: -1, y: 0 });
+        if (ax < 1e-6) S.edgeLabel(A, T, hLab, { x: -1, y: 0 });
         else {
           // the triangle's height, dashed inside the front face, square to its base
-          const F = { x: ax, y: 0 };
-          b.add(`\\draw[dashed] ${line(T, F)};`);
-          rightAngle(b, F, T, ax < W / 2 ? B : A, 0.2);
-          b.add(`\\node[${ax < W / 2 ? 'right' : 'left'}, inner sep=2pt] at ${P(ax, Hh * 0.4)} {${hLab}};`);
+          S.coord('foot', ax, 0);
+          b.add(`\\draw[dashed] (foot) -- (${T}) node[pos=0.4, ${ax < W / 2 ? 'right' : 'left'}] {${hLab}};`);
+          S.rightAngle('foot', T, ax < W / 2 ? B : A, 0.2);
         }
       }
-      // front: left, right, top; then the back the same way
-      cornerNames(b, names, [A, B, T, add(A), add(B), add(T)], { x: W / 2 + o.x / 2, y: Hh / 3 + o.y / 2 });
-      ext.push(add(T), add(B));
-    } else if (v.solid === 'pyramid') {
+      const mid = { x: W / 2 + o.x / 2, y: Hh / 3 + o.y / 2 };
+      [A, B, T, A2, B2, T2].forEach((id, i) => S.name(id, names[i], mid));
+    } else if (pyr) {
       b.comment(`pyramid: base ${n(w)} by ${n(d)}, height ${n(h)}`);
-      const C2 = add(B);
-      const A2 = add(A);
-      const O = { x: W / 2 + o.x / 2, y: o.y / 2 };
-      const T = { x: O.x, y: O.y + Hh };
-      b.add(`\\draw ${line(A, B, C2)} ${line(A, T, B)} ${line(T, C2)};`);
-      H(() => b.add(`\\draw[dashed] ${line(A, A2, C2)} ${line(A2, T)};`));
+      // front left, front right, back right, back left, the top, the centre of the base,
+      // the middle of the right-hand edge of the base
+      const [A, B, C, E, T, O, N] = cornerIds(names, ['A', 'B', 'C', 'D', 'M', 'O', 'N']);
+      S.coord(A, 0, 0);
+      S.coord(B, W, 0);
+      S.coord(C, W + o.x, o.y);
+      S.coord(E, o.x, o.y);
+      S.coord(O, W / 2 + o.x / 2, o.y / 2);
+      S.coord(T, W / 2 + o.x / 2, o.y / 2 + Hh);
+      b.add(`\\draw ${S.path(A, B, C)} ${S.path(A, T, B)} ${S.path(T, C)};`);
+      if (hid) b.add(`\\draw[dashed] ${S.path(A, E, C)} ${S.path(E, T)};`);
       const aLab = String(v.aLabel ?? '').trim();
       const ang = ['corner', 'face'].includes(v.angle) ? v.angle : '';
-      const N = { x: W + o.x / 2, y: o.y / 2 }; // the middle of the right-hand edge of the base, on the side face
+      if (ang === 'face') S.coord(N, W + o.x / 2, o.y / 2);
       const foot = ang === 'face' ? N : A; // where the angle is
       if (hLab || ang) {
         b.comment('height');
-        b.add(`\\draw[dashed] ${line(T, O)};`);
-        if (ang) rightAngle(b, O, T, foot, 0.25);
-        else b.add(DOT(O.x, O.y));
-        if (hLab) b.add(`\\node[right, inner sep=2pt] at ${P(O.x, O.y + Hh * 0.45)} {${hLab}};`);
+        b.add(`\\draw[dashed] (${O}) -- (${T})${hLab ? ` node[pos=0.45, right] {${hLab}}` : ''};`);
+        if (ang) S.rightAngle(O, T, foot, 0.25);
+        else S.dot(O);
       }
       if (ang) {
         b.comment(ang === 'face' ? 'angle between a face and the base' : 'angle between an edge and the base');
-        b.add(`\\draw[dashed] ${line(foot, O)};`);
-        if (ang === 'face') b.add(`\\draw[dashed] ${line(N, T)};`);
-        const r0 = Math.max(0.4, Math.min(ang === 'face' ? 0.6 : 1, Math.hypot(O.x - foot.x, O.y - foot.y) * 0.45));
-        angleMark(b, foot, T, O, aLab && aLab !== '-' ? titleText(aLab) : '', r0);
+        b.add(`\\draw[dashed] ${S.path(foot, O)};`);
+        if (ang === 'face') b.add(`\\draw[dashed] ${S.path(N, T)};`);
+        const F = S.p(foot);
+        const Op = S.p(O);
+        const r0 = Math.max(0.4, Math.min(ang === 'face' ? 0.6 : 1, Math.hypot(Op.x - F.x, Op.y - F.y) * 0.35));
+        S.angle(foot, T, O, aLab && aLab !== '-' ? titleText(aLab) : '', r0);
       }
       b.comment('labels');
-      edgeLabel(b, A, B, wLab, { x: 0, y: -1 });
-      // the depth label moves aside for the name of the middle of that edge
-      edgeLabel(b, B, C2, dLab, { x: o.y, y: -o.x }, false, ang === 'face' && names[6] && names[6] !== '-' ? 0.8 : 0.5);
-      const sLab = String(v.sLabel ?? '').trim();
-      if (sLab && sLab !== '-') edgeLabel(b, A, T, titleText(sLab), { x: -T.y, y: T.x });
-      // front left, front right, back right, back left, the top, the centre of the base, the middle of the front edge
-      cornerNames(b, names, [A, B, C2, A2, T], { x: O.x, y: O.y + Hh / 3 });
-      if (names[5] && names[5] !== '-') b.add(`\\node[${ang === 'face' ? 'below left' : 'below right'}, inner sep=2pt] at ${P(O.x, O.y)} {${nameText(names[5])}};`);
-      if (ang === 'face' && names[6] && names[6] !== '-') b.add(`\\node[below, inner sep=3pt] at ${P(N.x, N.y)} {${nameText(names[6])}};`);
-      ext.push(C2, T);
+      S.edgeLabel(A, B, wLab, { x: 0, y: -1 });
+      // the depth label moves along for the name of the middle of that edge
+      S.edgeLabel(B, C, dLab, dSide, { t: ang === 'face' && names[6] && names[6] !== '-' ? 0.8 : 0.5 });
+      if (sLab) S.edgeLabel(A, T, sLab, { x: -1, y: 1 });
+      const base = S.p(O);
+      S.name(A, names[0], base, 'below left');
+      S.name(B, names[1], base, 'below');
+      S.name(C, names[2], base);
+      S.name(E, names[3], base);
+      S.name(T, names[4], base, 'above');
+      S.name(O, names[5], base, ang === 'face' ? 'below left' : 'below right');
+      if (ang === 'face') S.name(N, names[6], base, 'below');
     }
   }
 
-  if (v.notToScale) {
-    const x = Math.max(...ext.map((p) => p.x)) + 0.4;
-    const y = Math.max(...ext.map((p) => p.y));
-    b.add(`\\node[anchor=north west, align=center] at ${P(x, y)} {NOT TO \\\\ SCALE};`);
-  }
-  if (b.lines.some((l) => l.includes('Stealth'))) b.usePreamble('\\usetikzlibrary{arrows.meta}');
+  if (v.notToScale) b.add(`\\node[anchor=north west, align=center] at ([xshift=0.3cm]current bounding box.north east) {NOT TO \\\\ SCALE};`);
+  if (b.lines.some((l) => l.includes('Stealth') || l.includes('Bar['))) b.usePreamble('\\usetikzlibrary{arrows.meta}');
   const opts = [v.lineWidth && v.lineWidth !== 'thin' ? v.lineWidth : '', v.fontSize ? `font=${v.fontSize}` : ''];
   return { code: b.toString(opts), warnings };
 }
@@ -338,9 +370,13 @@ const schema = [
         type: 'row',
         fields: [
           { type: 'number', key: 'r', label: 'Radius', default: 4, step: 0.5, min: 0, showIf: round },
-          { type: 'number', key: 'w', label: 'Width', default: 6, step: 0.5, min: 0, showIf: flat },
-          { type: 'number', key: 'd', label: 'Depth', default: 4, step: 0.5, min: 0, showIf: flat },
-          { type: 'number', key: 'h', label: 'Height', default: 10, step: 0.5, min: 0, showIf: (v) => v.solid !== 'sphere' && v.solid !== 'hemisphere' },
+          { type: 'number', key: 'w', label: 'Width', default: 6, step: 0.5, min: 0, showIf: (v) => flat(v) && v.solid !== 'pyramid' },
+          { type: 'number', key: 'd', label: 'Depth', default: 4, step: 0.5, min: 0, showIf: (v) => flat(v) && v.solid !== 'pyramid' },
+          { type: 'number', key: 'h', label: 'Height', default: 10, step: 0.5, min: 0, showIf: (v) => !['sphere', 'hemisphere', 'pyramid'].includes(v.solid) },
+          // a pyramid's own measurements: a square base by default
+          { type: 'number', key: 'pw', label: 'Width', default: 6, step: 0.5, min: 0, showIf: (v) => v.solid === 'pyramid' },
+          { type: 'number', key: 'pd', label: 'Depth', default: 6, step: 0.5, min: 0, showIf: (v) => v.solid === 'pyramid' },
+          { type: 'number', key: 'ph', label: 'Height', default: 6, step: 0.5, min: 0, showIf: (v) => v.solid === 'pyramid' },
           { type: 'text', key: 'unit', label: 'Unit', default: 'cm' },
         ],
       },

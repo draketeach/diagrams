@@ -431,6 +431,6 @@ export const GALLERY = [
     type: 'solids',
     title: 'Square-based pyramid',
     description: 'Corners named, hidden edges dashed, a slant edge labelled, O the centre of the base with a right angle under the top, and the angle θ between an edge and the base.',
-    values: { solid: 'pyramid', w: 6, d: 6, h: 6, hLabel: '-', wLabel: '-', dLabel: '-', sLabel: '$\\ell$ cm', angle: 'corner', aLabel: '$\\theta$', names: 'A B C D M O', hidden: 'dashed', depthAngle: 25, notToScale: false },
+    values: { solid: 'pyramid', pw: 6, pd: 6, ph: 5, size: 5.2, depthAngle: 24, hLabel: '-', wLabel: '-', dLabel: '-', sLabel: '$\\ell$ cm', angle: 'corner', aLabel: '$\\theta$', names: 'A B C D M O', hidden: 'dashed', notToScale: false },
   },
 ];
