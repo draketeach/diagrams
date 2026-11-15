@@ -567,8 +567,8 @@ export const GALLERY = [
     id: 'realgraph-exponential',
     type: 'realgraph',
     title: "Exponential growth on a fine grid",
-    description: "Dots at each day joined by a smooth curve, a fine grey grid with darker lines every day and every 20 000, spaced thousands, and axis letters.",
-    values: {"curves": "0,2* 1,20* 2,200* 2.5,632 3,2000* 3.25,3557 3.5,6325 3.75,11247 4,20000*", "xTitle": "Number of days", "yTitle": "Mass (mg)", "xLetter": "t", "yLetter": "A", "xmin": 0, "xmax": 5.6, "ymin": 0, "ymax": 212000, "xStep": 1, "yStep": 20000, "xNumbers": "1, 2, 3, 4, 5", "yNumbers": "", "origin": "corner", "width": 11, "height": 6.6, "showGrid": true, "gridX": 0.25, "gridY": 10000, "gridXmax": 5.5, "gridYmax": 200000, "gridColour": "grey", "majorX": 1, "majorY": 20000, "spaceThousands": true},
+    description: "A = 5 × 2^(3t): dots at each day joined by a smooth curve, a fine grey grid with darker lines every day and every 20 000, spaced thousands, and axis letters.",
+    values: {"curves": "0,5* 1,40* 1.5,113 2,320* 2.5,905 3,2560* 3.25,4305 3.5,7241 3.75,12177 4,20480*", "xTitle": "Number of days", "yTitle": "Mass (mg)", "xLetter": "t", "yLetter": "A", "xmin": 0, "xmax": 5.6, "ymin": 0, "ymax": 212000, "xStep": 1, "yStep": 20000, "xNumbers": "1, 2, 3, 4, 5", "yNumbers": "", "origin": "corner", "width": 11, "height": 6.6, "showGrid": true, "gridX": 0.25, "gridY": 10000, "gridXmax": 5.5, "gridYmax": 200000, "gridColour": "grey", "majorX": 1, "majorY": 20000, "spaceThousands": true},
   },
   {
     id: 'geometry-semicircle',

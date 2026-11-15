@@ -266,8 +266,8 @@ export function pointLabelOffset(scene, p, pts = pointMap(scene)) {
 // ---------------------------------------------------------------- curved edges and loops
 
 const rad = (d) => (d * Math.PI) / 180;
-const LOOP_SPREAD = 35; // degrees either side of a loop's direction
-const LOOP_REACH = 1.6; // control-point distance per cm of loop size
+export const LOOP_SPREAD = 35; // degrees either side of a loop's direction
+export const LOOP_REACH = 1.6; // control-point distance per cm of loop size
 
 /** Which way a loop at point v points by default: away from its other edges. */
 export function loopAutoDir(scene, v, pts = pointMap(scene)) {
@@ -319,6 +319,28 @@ export function edgeShape(it, pts, scene = null) {
     c1: { x: a.x + k * Math.cos(rad(g + it.bend)), y: a.y + k * Math.sin(rad(g + it.bend)) },
     c2: { x: b.x + k * Math.cos(rad(g + 180 - it.bend)), y: b.y + k * Math.sin(rad(g + 180 - it.bend)) },
   };
+}
+
+/**
+ * The bend (degrees, + bends left) that puts a curved edge's middle at q:
+ * TikZ's bend left=θ (looseness 1) puts the middle 0.2936·d·sin θ off the
+ * straight line, d its length. Near 0 it snaps straight; at most ±80°.
+ */
+export function bendThrough(a, b, q) {
+  const d = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+  const h = ((b.x - a.x) * (q.y - a.y) - (b.y - a.y) * (q.x - a.x)) / d; // + on the left of a→b
+  const lim = Math.sin((80 * Math.PI) / 180);
+  const deg = (Math.asin(Math.max(-lim, Math.min(lim, h / (0.2936 * d)))) * 180) / Math.PI;
+  return Math.abs(deg) < 3 ? 0 : Math.round(deg);
+}
+
+/** A loop's direction and size that put its far end at q. */
+export function loopThrough(a, q) {
+  const dist = Math.hypot(q.x - a.x, q.y - a.y);
+  const dir = ((Math.atan2(q.y - a.y, q.x - a.x) * 180) / Math.PI + 360) % 360;
+  // a loop's far end is 0.75·r·cos(spread) from its point, r = size·LOOP_REACH
+  const size = dist / (0.75 * LOOP_REACH * Math.cos((LOOP_SPREAD * Math.PI) / 180));
+  return { dir: Math.round(dir), size: Math.round(Math.max(0.3, Math.min(3, size)) * 20) / 20 };
 }
 
 /** A point part-way (t from 0 to 1) along a line's shape. */

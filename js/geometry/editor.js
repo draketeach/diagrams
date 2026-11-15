@@ -23,6 +23,8 @@ import {
   slopeDeg,
   isWordName,
   curveSections,
+  bendThrough,
+  loopThrough,
   polygonEdges,
   labelGap,
   edgeShape,
@@ -904,6 +906,9 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
       }
       drag = { type: 'point', id: target.id, moved: false, exclude: dependentsOf(scene, target.id).add(target.id) };
       begin();
+    } else if (target?.kind === 'bend') {
+      drag = { type: 'bend', id: target.id, moved: false };
+      begin();
     } else if (target?.kind === 'note') {
       const at = notToScalePlace(scene);
       drag = { type: 'note', dx: at.x - raw.x, dy: at.y - raw.y, moved: false };
@@ -939,6 +944,15 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
         it.x = round(s.point ? raw.x + drag.dx : s.x);
         it.y = round(s.point ? raw.y + drag.dy : s.y);
         render();
+      } else if (drag.type === 'bend') {
+        const it = findItem(drag.id);
+        const pts = pointMap(scene);
+        if (it.a === it.b) {
+          const l = loopThrough(pts.get(it.a), raw);
+          it.loopDir = l.dir;
+          it.loopSize = l.size;
+        } else it.bend = bendThrough(pts.get(it.a), pts.get(it.b), raw);
+        render();
       } else if (drag.type === 'note') {
         // in the drawing's own units (its page scale is applied when the TikZ is made)
         const s = snap({ x: raw.x + drag.dx, y: raw.y + drag.dy }, { lines: false });
@@ -968,6 +982,7 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     drag = null;
     if (d.type === 'pan') return; // the view is saved with the drawing but isn't an edit
     if (d.type === 'note' && d.moved) showProps(); // offer to put it back
+    if (d.type === 'bend' && d.moved) showProps(); // the curve's number follows
     if (d.moved) commit();
     else before = null;
     if (d.type === 'label' && !d.moved) select({ kind: d.target.kind, id: d.target.id });
@@ -1372,6 +1387,16 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
         .filter(Boolean)
         .join(' ');
       parts.push(`<circle data-kind="point" data-id="${p.id}" cx="${sx(p.x)}" cy="${sy(p.y)}" r="${p.hidden ? 3 : 4.5}" class="${cls}"/>`);
+    }
+
+    // a selected network edge has a handle at its middle: drag it to bend the edge
+    // (or a loop's far end, to turn and size the loop)
+    if (isNet() && tool === 'select' && selection?.kind === 'item') {
+      const it = findItem(selection.id);
+      if (it?.type === 'segment' && pts.get(it.a) && pts.get(it.b)) {
+        const m = shapeAt(edgeShape(it, pts, scene), 0.5);
+        parts.push(`<circle data-kind="bend" data-id="${it.id}" cx="${sx(m.x)}" cy="${sy(m.y)}" r="6" class="bend-handle"><title>Drag to ${it.a === it.b ? 'turn or resize the loop' : 'bend the edge'}</title></circle>`);
+      }
     }
 
     // where a click would go

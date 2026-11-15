@@ -104,8 +104,8 @@ letter beside them (names can be hidden per vertex; a name that's a word of
 three or more letters, like Start or Finish, is set upright as text). Clicking a vertex twice
 with the Edge tool makes a loop; joining two vertices again makes a second
 edge that curves away (0°, then 25°, −25°, 45° …). A directed edge has an arrow
-at its middle. Click an edge to label it (e.g. a weight), change its direction,
-or set its curve; a loop can be pointed any way and resized.
+at its middle. Click an edge to label it (e.g. a weight) or change its direction; drag the
+handle at its middle to bend it (or a loop's far end to turn and resize it).
 
 With nothing selected, the panel shows the network as an **edge list** you can
 edit, one edge per line: `A-B`, `A->B` (directed), `A-B 5` or `A->B A, 8`

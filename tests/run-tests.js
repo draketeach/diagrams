@@ -24,7 +24,7 @@ import geometry from '../js/diagrams/geometry.js';
 import realgraph, { parseCurve, curveRuns, titleText } from '../js/diagrams/realgraph.js';
 import network, { DEFAULT_NETWORK } from '../js/diagrams/network.js';
 import solids from '../js/diagrams/solids.js';
-import { plainLabel } from '../js/geometry/scene.js';
+import { plainLabel, bendThrough, loopThrough, edgeShape, shapeAt } from '../js/geometry/scene.js';
 import dotplot, { parseDots } from '../js/diagrams/dotplot.js';
 import boxplot, { parseSummaries } from '../js/diagrams/boxplot.js';
 import { parseEdgeList, sceneToEdgeList, applyEdgeList } from '../js/geometry/edgeList.js';
@@ -878,6 +878,22 @@ test('new options: no scales, angle without an arc, spaced thousands, axis lette
   assert.ok(lin.includes('node[anchor=west, inner sep=3pt] {$P$}') && lin.includes('node[anchor=east, inner sep=3pt] {$Q$}'), 'axis letters');
   const ex = realgraph.generate({ ...defaultValues(realgraph.schema), ...g('realgraph-exponential') }).code;
   assert.ok(ex.includes('xstep=1, ystep=20000') && /y=0\.0000\d+cm/.test(ex), 'darker lines; a tiny y unit kept');
+});
+
+test('network: dragging the handle bends an edge (or turns a loop) through the pointer', () => {
+  const a = { x: 0, y: 0 };
+  const b = { x: 4, y: 0 };
+  for (const q of [{ x: 2, y: 0.8 }, { x: 1, y: -0.5 }]) {
+    const bend = bendThrough(a, b, q);
+    const mid = shapeAt(edgeShape({ a: 'a', b: 'b', bend }, new Map([['a', a], ['b', b]])), 0.5);
+    assert.ok(Math.abs(mid.y - q.y) < 0.05, `middle at the pointer's height (${bend}°)`);
+  }
+  assert.equal(bendThrough(a, b, { x: 2, y: 0.05 }), 0, 'snaps straight near the line');
+  assert.equal(bendThrough(a, b, { x: 2, y: 9 }), 80, 'no more than 80°');
+  const l = loopThrough(a, { x: 0, y: 1 });
+  assert.equal(l.dir, 90);
+  const far = shapeAt(edgeShape({ a: 'a', b: 'a', loopDir: l.dir, loopSize: l.size }, new Map([['a', a]])), 0.5);
+  assert.ok(Math.abs(far.y - 1) < 0.05, 'loop reaches the pointer');
 });
 
 test('gallery: every entry generates cleanly and has its image', () => {
