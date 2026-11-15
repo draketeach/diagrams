@@ -122,7 +122,7 @@ or pyramid's height is dashed inside it, with an optional slant height label on 
 A hemisphere sits flat side up (a bowl) or down (a dome). Cuboids, prisms and
 pyramids can have their corners named (`A B C D E F G H`; `-` skips one). A
 pyramid can show the angle between an edge and the base (at a corner) or between
-a face and the base (at the middle of the front edge), with dashed lines to the
+a face and the base (on the right-hand side face, at the middle of its base edge), with dashed lines to the
 centre of the base, a right angle there, and an arc with an arrowhead pointing at the base.
 Hidden edges are left out, or drawn dashed. Under Drawing: the size, how flat
 round faces look, and the angle the depth goes back at.

@@ -268,7 +268,7 @@ function generate(v) {
       H(() => b.add(`\\draw[dashed] ${line(A, A2, C2)} ${line(A2, T)};`));
       const aLab = String(v.aLabel ?? '').trim();
       const ang = ['corner', 'face'].includes(v.angle) ? v.angle : '';
-      const N = { x: W / 2, y: 0 }; // the middle of the front edge of the base
+      const N = { x: W + o.x / 2, y: o.y / 2 }; // the middle of the right-hand edge of the base, on the side face
       const foot = ang === 'face' ? N : A; // where the angle is
       if (hLab || ang) {
         b.comment('height');
@@ -281,18 +281,18 @@ function generate(v) {
         b.comment(ang === 'face' ? 'angle between a face and the base' : 'angle between an edge and the base');
         b.add(`\\draw[dashed] ${line(foot, O)};`);
         if (ang === 'face') b.add(`\\draw[dashed] ${line(N, T)};`);
-        const r0 = Math.max(0.4, Math.min(1, Math.hypot(O.x - foot.x, O.y - foot.y) * 0.45));
+        const r0 = Math.max(0.4, Math.min(ang === 'face' ? 0.6 : 1, Math.hypot(O.x - foot.x, O.y - foot.y) * 0.45));
         angleMark(b, foot, T, O, aLab && aLab !== '-' ? titleText(aLab) : '', r0);
       }
       b.comment('labels');
-      // the width label moves aside for the name of the middle of the front edge
-      edgeLabel(b, A, B, wLab, { x: 0, y: -1 }, false, ang === 'face' && names[6] && names[6] !== '-' ? 0.25 : 0.5);
-      edgeLabel(b, B, C2, dLab, { x: o.y, y: -o.x });
+      edgeLabel(b, A, B, wLab, { x: 0, y: -1 });
+      // the depth label moves aside for the name of the middle of that edge
+      edgeLabel(b, B, C2, dLab, { x: o.y, y: -o.x }, false, ang === 'face' && names[6] && names[6] !== '-' ? 0.8 : 0.5);
       const sLab = String(v.sLabel ?? '').trim();
       if (sLab && sLab !== '-') edgeLabel(b, A, T, titleText(sLab), { x: -T.y, y: T.x });
       // front left, front right, back right, back left, the top, the centre of the base, the middle of the front edge
       cornerNames(b, names, [A, B, C2, A2, T], { x: O.x, y: O.y + Hh / 3 });
-      if (names[5] && names[5] !== '-') b.add(`\\node[${ang === 'face' ? 'above right' : 'below right'}, inner sep=2pt] at ${P(O.x, O.y)} {${nameText(names[5])}};`);
+      if (names[5] && names[5] !== '-') b.add(`\\node[${ang === 'face' ? 'below left' : 'below right'}, inner sep=2pt] at ${P(O.x, O.y)} {${nameText(names[5])}};`);
       if (ang === 'face' && names[6] && names[6] !== '-') b.add(`\\node[below, inner sep=3pt] at ${P(N.x, N.y)} {${nameText(names[6])}};`);
       ext.push(C2, T);
     }
@@ -414,7 +414,7 @@ const schema = [
         label: 'Corner names',
         default: '',
         placeholder: 'e.g. A B C D E F G H',
-        help: 'Pyramid: front left, front right, back right, back left, the top, the centre of the base, then the middle of the front edge (for a face angle). Cuboid: the front face from bottom left going round, then the back face the same way. Prism: front left, right, top, then the back. - skips one.',
+        help: 'Pyramid: front left, front right, back right, back left, the top, the centre of the base, then the middle of the right-hand base edge (for a face angle). Cuboid: the front face from bottom left going round, then the back face the same way. Prism: front left, right, top, then the back. - skips one.',
         showIf: (v) => ['pyramid', 'cuboid', 'prism'].includes(v.solid),
       },
       { type: 'checkbox', key: 'notToScale', label: 'NOT TO SCALE', default: true },
