@@ -689,6 +689,106 @@ export function drawEquation(b, latex, f, pieces, values) {
   b.add(`\\node[anchor=west, inner sep=3pt] at ${pt(x, y)} {$y = ${latex}$};`);
 }
 
+// ---------------------------------------------------------------- tick numbers clear of curves
+
+/** A rough size (cm) for a tick number's text. */
+function tickBox(latex) {
+  const t = String(latex).replace(/\\[a-zA-Z]+/g, 'x').replace(/[{}$\\ ]/g, '');
+  const frac = /\\frac/.test(String(latex));
+  const minus = t.startsWith('-') ? 0.14 : 0;
+  return { w: 0.1 + 0.18 * Math.max(1, frac ? Math.ceil(t.length / 2) : t.length) + minus, h: frac ? 0.55 : 0.32 };
+}
+
+/**
+ * Places a tick number can go, with the TikZ options for each and the box it
+ * takes (cm, from the tick's point): the usual place first, then beside the tick
+ * (away from the origin first), then across the axis.
+ */
+function tickPlaces(t, onX, box) {
+  const g = 0.07;
+  const { w, h } = box;
+  const out = t > 0 ? 1 : -1;
+  if (onX) {
+    const side = (k) => ({
+      opts: `anchor=north ${k > 0 ? 'west' : 'east'}, inner sep=2pt, xshift=${k > 0 ? '' : '-'}2pt, yshift=-2pt`,
+      x: k > 0 ? [g, g + w] : [-g - w, -g],
+      y: [-g - h, -g],
+    });
+    return [
+      { opts: 'anchor=north, inner sep=2pt, yshift=-2pt', x: [-w / 2, w / 2], y: [-g - h, -g] },
+      side(out),
+      side(-out),
+      { opts: 'anchor=south, inner sep=2pt, yshift=2pt', x: [-w / 2, w / 2], y: [g, g + h] },
+    ];
+  }
+  const vert = (k) => ({
+    opts: `anchor=${k > 0 ? 'south' : 'north'} east, inner sep=2pt, xshift=-2pt, yshift=${k > 0 ? '' : '-'}2pt`,
+    x: [-g - w, -g],
+    y: k > 0 ? [g, g + h] : [-g - h, -g],
+  });
+  // across the axis before up or down, which could read as a different value
+  return [
+    { opts: 'anchor=east, inner sep=2pt, xshift=-2pt', x: [-g - w, -g], y: [-h / 2, h / 2] },
+    { opts: 'anchor=west, inner sep=2pt, xshift=2pt', x: [g, g + w], y: [-h / 2, h / 2] },
+    vert(out),
+    vert(-out),
+  ];
+}
+
+/** True if one of the curves runs through the box (cm, around the point (px, py)). */
+function curveHitsBox(curves, px, py, bx, by, xUnit, yUnit) {
+  const m = 0.04;
+  for (const c of curves) {
+    const N = 10;
+    let prev = null;
+    for (let i = 0; i <= N; i++) {
+      const cx = bx[0] - m + ((bx[1] - bx[0] + 2 * m) * i) / N;
+      const x = px + cx / xUnit;
+      if (x < c.lo || x > c.hi) {
+        prev = null;
+        continue;
+      }
+      const y = c.f(x);
+      if (!isFinite(y)) {
+        prev = null;
+        continue;
+      }
+      const cy = (y - py) * yUnit;
+      if (cy >= by[0] - m && cy <= by[1] + m) return true;
+      // a steep curve can jump over the box between two samples
+      if (prev !== null && Math.abs(prev - cy) < 40 && ((prev < by[0] && cy > by[1]) || (prev > by[1] && cy < by[0]))) return true;
+      prev = cy;
+    }
+  }
+  return false;
+}
+
+/**
+ * The TikZ node options for a tick number: its usual place unless a curve runs
+ * through it; a moved number also keeps clear of the other numbers on its axis
+ * (`axisTicks`: [{ t, latex }]) and of numbers already moved (avoid.taken).
+ */
+export function tickNodeOptions(t, onX, latex, avoid, axisTicks = []) {
+  let places = tickPlaces(t, onX, tickBox(latex));
+  if (!avoid?.curves?.length) return places[0].opts;
+  // on a grid, a y-axis number moved up or down would sit beside a different line
+  if (!onX && avoid.grid) places = places.slice(0, 2);
+  const { xUnit, yUnit } = avoid;
+  const [px, py] = onX ? [t, 0] : [0, t];
+  const abs = (pl, x0, y0) => ({ x: [x0 * xUnit + pl.x[0], x0 * xUnit + pl.x[1]], y: [y0 * yUnit + pl.y[0], y0 * yUnit + pl.y[1]] });
+  const overlap = (a, c) => a.x[0] < c.x[1] + 0.08 && c.x[0] < a.x[1] + 0.08 && a.y[0] < c.y[1] + 0.05 && c.y[0] < a.y[1] + 0.05;
+  avoid.taken ??= [];
+  const others = [
+    ...axisTicks.filter((o) => Math.abs(o.t - t) > 1e-9).map((o) => abs(tickPlaces(o.t, onX, tickBox(o.latex))[0], onX ? o.t : 0, onX ? 0 : o.t)),
+    ...avoid.taken,
+  ];
+  const ok = (pl, i) => !curveHitsBox(avoid.curves, px, py, pl.x, pl.y, xUnit, yUnit) && (i === 0 || !others.some((o) => overlap(abs(pl, px, py), o)));
+  const i = places.findIndex(ok);
+  const chosen = places[Math.max(0, i)];
+  if (i > 0) avoid.taken.push(abs(chosen, px, py));
+  return chosen.opts;
+}
+
 // ---------------------------------------------------------------- scale ticks
 
 /** A "nice" tick spacing (1, 2 or 5 × 10^k) giving roughly `target` ticks. */
@@ -715,7 +815,7 @@ function tickValues(lo, hi, step) {
  * skipX / skipY: values already labelled elsewhere (no duplicate number).
  * The arrow end of each axis is kept clear of ticks.
  */
-export function drawScaleTicks(b, win, values, { skipX = [], skipY = [] } = {}) {
+export function drawScaleTicks(b, win, values, { skipX = [], skipY = [], avoid = null } = {}) {
   const warnings = [];
   const width = values.axisWidth || 'thin';
   const near = (v, list, tol) => list.some((u) => Math.abs(u - v) < tol);
@@ -746,11 +846,9 @@ export function drawScaleTicks(b, win, values, { skipX = [], skipY = [] } = {}) 
         // every number has as many decimals as the spacing (0.5 → 1.0, 1.5, 2.0)
         const dp = decimalsOf(st);
         for (const t of labelled) {
-          b.add(
-            name === 'x'
-              ? `\\node[anchor=north, inner sep=2pt, yshift=-2pt] at ${pt(t, 0)} {$${tickText(t, dp)}$};`
-              : `\\node[anchor=east, inner sep=2pt, xshift=-2pt] at ${pt(0, t)} {$${tickText(t, dp)}$};`
-          );
+          const text = tickText(t, dp);
+          const opts = tickNodeOptions(t, name === 'x', text, avoid, labelled.map((u) => ({ t: u, latex: tickText(u, dp) })));
+          b.add(`\\node[${opts}] at ${name === 'x' ? pt(t, 0) : pt(0, t)} {$${text}$};`);
         }
       }
     }
@@ -790,7 +888,7 @@ export function parseTickList(src, axisName) {
  * Ticks at chosen values: below the x-axis, left of the y-axis.
  * Labels that would repeat an existing label (skipX / skipY) are left off.
  */
-export function drawCustomTicks(b, win, values, { skipX = [], skipY = [] } = {}) {
+export function drawCustomTicks(b, win, values, { skipX = [], skipY = [], avoid = null } = {}) {
   const warnings = [];
   const width = values.axisWidth || 'thin';
   const near = (v, list) => list.some((u) => Math.abs(u - v) < 1e-9);
@@ -805,7 +903,7 @@ export function drawCustomTicks(b, win, values, { skipX = [], skipY = [] } = {})
       }
       lines.push(`\\draw[${width}] ${pt(t.value, 0)} -- ++(0,-3pt);`);
       if (values.customTickLabels && Math.abs(t.value) > 1e-12 && !near(t.value, skipX)) {
-        lines.push(`\\node[anchor=north, inner sep=2pt, yshift=-2pt] at ${pt(t.value, 0)} {${mathLabel(t.latex)}};`);
+        lines.push(`\\node[${tickNodeOptions(t.value, true, t.latex, avoid, xs.map((u) => ({ t: u.value, latex: u.latex })))}] at ${pt(t.value, 0)} {${mathLabel(t.latex)}};`);
       }
     }
   }
@@ -817,7 +915,7 @@ export function drawCustomTicks(b, win, values, { skipX = [], skipY = [] } = {})
       }
       lines.push(`\\draw[${width}] ${pt(0, t.value)} -- ++(-3pt,0);`);
       if (values.customTickLabels && Math.abs(t.value) > 1e-12 && !near(t.value, skipY)) {
-        lines.push(`\\node[anchor=east, inner sep=2pt, xshift=-2pt] at ${pt(0, t.value)} {${mathLabel(t.latex)}};`);
+        lines.push(`\\node[${tickNodeOptions(t.value, false, t.latex, avoid, ys.map((u) => ({ t: u.value, latex: u.latex })))}] at ${pt(0, t.value)} {${mathLabel(t.latex)}};`);
       }
     }
   }

@@ -34,10 +34,12 @@ functions the endpoints on the x-axis and dot heights on the y-axis. Everything
 else is under **More options**: curve ends (arrow, dot or plain), line widths
 and arrowheads, tick marks and dots, the equation on the graph, decimal places
 and exact values (fractions, π, surds), points on the curve at chosen x-values
-(e.g. `2:P` labelled P(2, −6)), dashed **asymptotes** (`y = 5, x = -2`,
+(e.g. `2:P` labelled P(2, −6)), dashed or dotted **asymptotes** (`y = 5, x = -2`,
 optionally `y = 5 from 0 to 10`, labelled by value, equation, both or neither),
-shading under the graph, dots/coordinates where graphs cross, the axes (labels,
-`O`, custom ticks such as `3`, `5/2`, `pi` or `3:a`, evenly spaced scale ticks),
+shading under the graph (grey or dotted), dots/coordinates where graphs cross, the axes (labels,
+`O`, custom ticks such as `3`, `5/2`, `pi` or `3:a`, evenly spaced scale ticks;
+a tick number with the curve through it moves beside its tick, away from the
+origin, or across the axis, keeping clear of the other numbers; Sketch graphs too),
 a NOT TO SCALE note, size and range, a background grid (own range, spacing and shade), and the plot
 method.
 

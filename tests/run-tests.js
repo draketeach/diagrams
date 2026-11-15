@@ -1045,6 +1045,15 @@ test('complex: tick numbers move clear of a circle through them', () => {
   assert.ok(code.includes('\\foreach \\x in {-3,-2,2,3}'), 'the rest stay in their usual place');
 });
 
+test('graphs: tick numbers move clear of the curve and of each other', () => {
+  const base = { ...defaultValues(fn.schema), graphs: 'P = 2sin(2pi t/5); from 0 to 10.8', labelX: false, xCustomTicks: '1, 2, 3, 4, 5', windowMode: 'manual', xmin: -1.2, xmax: 11.5, ymin: -5.2, ymax: 5.3, width: 11, height: 5 };
+  const code = fn.generate(base).code;
+  assert.ok(code.includes('anchor=north west, inner sep=2pt, xshift=2pt, yshift=-2pt] at (5,0) {$5$}'), 'beside the tick where the curve crosses');
+  assert.ok(code.includes('anchor=north, inner sep=2pt, yshift=-2pt] at (1,0) {$1$}'), 'clear ones stay put');
+  // nothing to avoid: blank axes keep the usual place
+  assert.ok(!blank.generate({ ...defaultValues(blank.schema), xScaleTicks: true, xScaleNumbers: true }).code.includes('north west'));
+});
+
 test('gallery.html versions are up to date', () => {
   const html = readFileSync(new URL('../gallery.html', import.meta.url), 'utf8');
   assert.equal(html, buildIndex(html));

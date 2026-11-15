@@ -164,8 +164,14 @@ function background(b, win, values, f, shadeParts) {
   return { asym, warnings };
 }
 
-function ticks(b, win, values, skipX, skipY) {
-  return [...drawScaleTicks(b, win, values, { skipX, skipY }), ...drawCustomTicks(b, win, values, { skipX, skipY })];
+function ticks(b, win, values, skipX, skipY, avoid = null) {
+  return [...drawScaleTicks(b, win, values, { skipX, skipY, avoid }), ...drawCustomTicks(b, win, values, { skipX, skipY, avoid })];
+}
+
+/** The curves tick numbers keep clear of: these, plus the other graphs (functions of x). */
+function avoidCurves(win, curves, others, xUnit, yUnit, values) {
+  const more = (others || []).filter((g) => typeof g.f === 'function' && !g.vertical).map((g) => ({ f: g.f, lo: g.from ?? win.xmin, hi: g.to ?? win.xmax }));
+  return { curves: [...curves, ...more], xUnit, yUnit, grid: !!values.showGrid };
 }
 
 let windowNotes = []; // notes about a typed window, for the warnings
@@ -226,7 +232,8 @@ function generateFormula(values, main, others, style) {
       win,
       values,
       [...(values.labelX ? roots.map((r) => r.x) : []), ...bg.asym.skipX],
-      [...(values.labelY ? [f(0)] : []), ...bg.asym.skipY]
+      [...(values.labelY ? [f(0)] : []), ...bg.asym.skipY],
+      avoidCurves(win, [{ f, lo, hi }], others, xUnit, yUnit, values)
     )
   );
   drawCurve(b, pieces, values, { pgfExpr: main.pgf, f, method: values.plotMethod });
@@ -300,7 +307,8 @@ function generateYSquared(values, main, others, style) {
       win,
       values,
       [...(values.labelX ? xRoots : []), ...bg.asym.skipX],
-      [...(values.labelY && y0 ? [y0, -y0] : []), ...bg.asym.skipY]
+      [...(values.labelY && y0 ? [y0, -y0] : []), ...bg.asym.skipY],
+      avoidCurves(win, [{ f: top, lo: win.xmin, hi: win.xmax }, { f: (x) => -top(x), lo: win.xmin, hi: win.xmax }], others, xUnit, yUnit, values)
     )
   );
   b.comment('curve');
@@ -426,7 +434,8 @@ function generatePiecewise(values, main, others, style) {
       win,
       values,
       [...labelX, ...roots.map((r) => r.x), ...bg.asym.skipX],
-      [...labelY, ...(labelYHere ? [yHere] : []), ...bg.asym.skipY]
+      [...labelY, ...(labelYHere ? [yHere] : []), ...bg.asym.skipY],
+      avoidCurves(win, spans.map((p) => ({ f: p.expr.evaluate, lo: p.a, hi: p.b })), others, xUnit, yUnit, values)
     )
   );
 

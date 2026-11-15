@@ -170,8 +170,18 @@ function generate(input) {
     ],
     skipY: [...(yPoint && values.labelY ? [yPoint.y] : []), ...asym.skipY],
   };
-  warnings.push(...drawScaleTicks(b, win, values, skip));
-  warnings.push(...drawCustomTicks(b, win, values, skip));
+  // tick numbers keep clear of the curve (and the other graphs)
+  const avoid = {
+    curves: [
+      { f, lo: pts[0].x, hi: pts[pts.length - 1].x },
+      ...(others || []).filter((g) => typeof g.f === 'function' && !g.vertical).map((g) => ({ f: g.f, lo: g.from ?? win.xmin, hi: g.to ?? win.xmax })),
+    ],
+    xUnit,
+    yUnit,
+    grid: !!values.showGrid,
+  };
+  warnings.push(...drawScaleTicks(b, win, values, { ...skip, avoid }));
+  warnings.push(...drawCustomTicks(b, win, values, { ...skip, avoid }));
   drawHermite(b, pts, slopes, values, {
     startDot: values.leftEnd === 'dot',
     endDot: values.rightEnd === 'dot',
