@@ -939,6 +939,10 @@ test('complex plane: conditions are read and the region where they all hold is s
   assert.ok(spiral.code.includes('NOT TO\\\\SCALE'), 'NOT TO SCALE');
   const tri = complex.generate({ ...d, conditions: '', points: 'w = 1 + i @ above\n0 -> w\nw -- 2 -- 2i -- cycle dashed' }).code;
   assert.ok(tri.includes('\\draw[-latex] (0,0) -- (w);') && tri.includes('-- cycle;') && tri.includes('node[above, inner sep=2pt] {$w$}') && !tri.includes('\\fill (0,0)'), 'arrows, cycles and placed labels');
+  const tan = complex.generate({ ...d, ...GALLERY.find((e) => e.id === 'complex-tangent').values }).code;
+  assert.ok(tan.includes('% right angles') && /\\draw \(1\.3188,1\.5109\) -- \(1\.2297,1\.3921\) -- \(1\.1109,1\.4812\);/.test(tan), 'right-angle mark at z2');
+  assert.ok(!tan.includes('begin{scope}') && !tan.includes('% centres') && tan.includes('\\draw (2,1) circle[radius=1];'), 'a plain locus; the centre dot comes with w');
+  assert.ok(!tan.includes('\\fill (-0.3,-0.4)'), 'no dots at loose line ends when switched off');
   const strict = complex.generate({ ...d, conditions: '|z - 1| > 2' }).code;
   assert.ok(strict.includes('\\draw[dashed] (1,0) circle[radius=2];'), 'strict boundaries dashed');
   const locus = complex.generate({ ...d, conditions: '|z| = 2\nIm(z) >= 0' }).code;

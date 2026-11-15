@@ -213,12 +213,14 @@ const PLACES = ['right', 'above right', 'above', 'above left', 'left', 'below le
  *   z1 = 4                 a named point (dot, labelled z₁); "@ above" places its label, "@ none" hides it
  *   1 + i  or  2i : P      a point marked with a dot, labelled with its number or what follows the colon
  *   z1 -- z2 -- z3         lines (-- solid, .. dotted, -> an arrow); add "cycle" to close, "dashed" or "dotted" after
- * Returns { named: Map(name → {p, place}), marks: [{p, label, place}], segs: [{a, b, style, arrow}], problems }.
+ *   right z2 w 0           a right-angle mark at z2, between the lines to w and to 0
+ * Returns { named: Map(name → {p, place}), marks: [{p, label, place}], segs: [{a, b, style, arrow}], rights, problems }.
  */
 export function parsePointsAndLines(text) {
   const named = new Map();
   const marks = [];
   const segs = [];
+  const rights = [];
   const problems = [];
   const lines = String(text ?? '')
     .split('\n')
@@ -265,6 +267,15 @@ export function parsePointsAndLines(text) {
       continue;
     }
     if (/^[A-Za-z][A-Za-z0-9]*\s*=/.test(line)) continue; // a name, read above
+    // right z2 w 0: a right-angle mark at z2 between the directions to w and to 0
+    const ra = line.match(/^right\s+(.+)$/i);
+    if (ra) {
+      const bits = ra[1].split(/\s*,\s*|\s+(?=[A-Za-z]|-?\d)/).filter(Boolean);
+      const qs = bits.map(point);
+      if (qs.length !== 3 || qs.some((q) => !q)) problems.push(`${line}: write right, then the corner, then a point along each line (e.g. right z2 w 0).`);
+      else rights.push(qs);
+      continue;
+    }
     const [head, ...rest] = line.split(':');
     const [num, place] = head.split('@').map((x) => x.trim());
     const p = parseComplex(num);
@@ -276,7 +287,7 @@ export function parsePointsAndLines(text) {
     const [label, place2] = after.split('@').map((x) => x.trim());
     marks.push({ p, label: rest.length ? label : null, place: (place2 || place || '').trim() || null });
   }
-  return { named, marks, segs, problems };
+  return { named, marks, segs, rights, problems };
 }
 
 /**
@@ -438,6 +449,7 @@ const schema = [
             ['z1 -- z2 -- z3 -- cycle', 'Lines between points (names or numbers); cycle closes the shape'],
             ['1 .. 0.5 + 0.5i', 'A dotted line (or add dashed or dotted after any line)'],
             ['0 -> z1', 'An arrow, e.g. for a vector'],
+            ['right z2 w 0', 'A right-angle mark at z2, between the lines to w and to 0'],
           ],
           notes: ['Line ends that aren\'t named get a dot with no label. Labels go away from the lines and axes on their own.'],
         },
@@ -685,19 +697,25 @@ function generate(v) {
     b.comment('each equation in full, dashed');
     for (const c of eqs) boundary(c, 'dashed').split('\n').filter(Boolean).forEach((l) => b.add(l));
   }
-  if (eqs.length) {
+  if (eqs.length && ineqs.length) {
     b.comment('the locus: each equation, cut to the other conditions');
     b.add('\\begin{scope}');
     for (const c of ineqs) b.add(`  ${clipFor(c)}`);
-    for (const c of eqs) boundary(c, 'semithick').split('\n').filter(Boolean).forEach((l) => b.add(`  ${l}`));
+    for (const c of eqs) boundary(c, '').split('\n').filter(Boolean).forEach((l) => b.add(`  ${l}`));
     b.add('\\end{scope}');
+  } else if (eqs.length) {
+    b.comment('the locus');
+    for (const c of eqs) boundary(c, '').split('\n').filter(Boolean).forEach((l) => b.add(l));
   }
 
   // ---- marked points
   const circles = conds.filter((c) => c.kind === 'circle');
-  if (v.centres !== false && circles.length) {
+  // (a centre that is also a named point gets its dot with the points)
+  const namedAt = (q) => [...pl.named.values()].some((x) => Math.abs(x.p.x - q.x) < 1e-9 && Math.abs(x.p.y - q.y) < 1e-9);
+  const centres = circles.filter((c) => !namedAt(c.c));
+  if (v.centres !== false && centres.length) {
     b.comment('centres');
-    for (const c of circles) b.add(`\\fill ${P(c.c)} circle[radius=1.5pt];`);
+    for (const c of centres) b.add(`\\fill ${P(c.c)} circle[radius=1.5pt];`);
   }
   const args = conds.filter((c) => c.kind === 'arg');
   if (v.vertices !== false && args.length) {
@@ -760,6 +778,20 @@ function generate(v) {
       const closed = g.nodes.length > 3 && g.nodes[0] === g.nodes[g.nodes.length - 1];
       const ns = closed ? g.nodes.slice(0, -1) : g.nodes;
       b.add(`\\draw${g.st ? `[${g.st}]` : ''} ${ns.map(at).join(' -- ')}${closed ? ' -- cycle' : ''};`);
+    }
+  }
+  if (pl.rights.length) {
+    b.comment('right angles');
+    const sz = 0.22 / unit; // 0.22 cm
+    for (const [V, A, C] of pl.rights) {
+      const u = (q) => {
+        const L = Math.hypot(q.p.x - V.p.x, q.p.y - V.p.y) || 1;
+        return { x: ((q.p.x - V.p.x) / L) * sz, y: ((q.p.y - V.p.y) / L) * sz };
+      };
+      const a = u(A);
+      const c = u(C);
+      const at = (dx, dy) => `(${n(V.p.x + dx)},${n(V.p.y + dy)})`;
+      b.add(`\\draw ${at(a.x, a.y)} -- ${at(a.x + c.x, a.y + c.y)} -- ${at(c.x, c.y)};`);
     }
   }
   const dotted = new Set();

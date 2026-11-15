@@ -136,7 +136,9 @@ real direction), and any points marked (`2i : P`). Points and lines go in their 
 `z1 = 8` names a point (a dot labelled z₁, its label placed away from the
 lines and axes, or `@ above`), `z1 -- z2 -- z3 -- cycle` joins points (names
 or numbers such as `-27/8i`), `..` makes a dotted line, `->` an arrow, and
-`dashed` or `dotted` after a line styles it. Unnamed line ends get a dot. Circles get a dot at their centre and rays an open dot where they
+`dashed` or `dotted` after a line styles it, and `right z2 w 0` marks a right
+angle at z2 between the lines to w and to 0. Unnamed ends of solid lines get a
+dot (this can be switched off). Circles get a dot at their centre and rays an open dot where they
 start. Axes are x and y by default (or Re and Im), with optional ticks and
 numbers; the window fits the conditions unless you set it.
 

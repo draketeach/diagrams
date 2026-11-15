@@ -612,4 +612,22 @@ export const GALLERY = [
     description: 'z₁ = 8, z₂ = 6i, z₃ = −9/2, then −27i/8 and 81/32 (each 3i/4 times the last), joined by lines, a dotted line onward, and NOT TO SCALE.',
     values: { conditions: '', points: 'z1 = 8\nz2 = 6i\nz3 = -9/2\nz1 -- z2 -- z3 -- -27/8i -- 81/32\n81/32 .. 1.01 + 1.14i', notToScale: true, size: 8 },
   },
+  {
+    id: 'complex-tangent',
+    type: 'complex',
+    title: 'Tangent from the origin to a circle',
+    description: 'The circle |z − (2 + i)| = 1 with centre w, the tangent from O touching it at z₂ = 1.2 + 1.6i, the radius to z₂ with a right angle, and ticks.',
+    values: {
+      conditions: '|z - (2 + i)| = 1',
+      points: 'w = 2 + i @ right\nz2 = 1.2 + 1.6i\n-0.3 - 0.4i -- 1.8 + 2.4i\nz2 -- w\nright z2 w 0',
+      lineDots: false,
+      notToScale: true,
+      scales: true,
+      xmin: '-1.6',
+      xmax: '3.8',
+      ymin: '-0.6',
+      ymax: '2.4',
+      size: 8,
+    },
+  },
 ];
