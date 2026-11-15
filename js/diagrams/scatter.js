@@ -119,6 +119,7 @@ const schema = [
           { type: 'text', key: 'xAxisLabel', label: 'x label', default: 'x' },
           { type: 'text', key: 'yAxisLabel', label: 'y label', default: 'y' }
         ),
+        { type: 'checkbox', key: 'scales', label: 'Ticks and numbers on the axes', default: true },
         row(
           { type: 'number', key: 'xStep', label: 'x tick spacing', default: null, step: 0.1, min: 0 },
           { type: 'number', key: 'yStep', label: 'y tick spacing', default: null, step: 0.1, min: 0 }
@@ -363,25 +364,28 @@ function generate(values) {
   b.add(
     `\\draw[${w}${tip ? `, ${tip}` : ''}] ${pt(xAxisFrom, xAxisY)} ` +
       (X.brk ? `${zigX(cx + X.gap / 2)} ` : '') +
-      `-- ${pt(xEnd, xAxisY)} node[anchor=north east, inner sep=2pt] {${mathLabel(values.xAxisLabel ?? 'x')}};`
+      `-- ${pt(xEnd, xAxisY)}${mathLabel(values.xAxisLabel ?? 'x') ? ` node[anchor=north east, inner sep=2pt] {${mathLabel(values.xAxisLabel ?? 'x')}}` : ''};`
   );
   b.add(
     `\\draw[${w}${tip ? `, ${tip}` : ''}] ${pt(yAxisX, yAxisFrom)} ` +
       (Y.brk ? `${zigY(cy + Y.gap / 2)} ` : '') +
-      `-- ${pt(yAxisX, yEnd)} node[anchor=north east, inner sep=2pt] {${mathLabel(values.yAxisLabel ?? 'y')}};`
+      `-- ${pt(yAxisX, yEnd)}${mathLabel(values.yAxisLabel ?? 'y') ? ` node[anchor=north east, inner sep=2pt] {${mathLabel(values.yAxisLabel ?? 'y')}}` : ''};`
   );
 
   // ---- tick labels (0 at the corner when an axis is broken)
-  b.comment('scales');
-  for (const t of X.ticks) {
+  const scales = values.scales !== false; // off: bare axes, as in a sketch of the data
+  if (scales) b.comment('scales');
+  for (const t of scales ? X.ticks : []) {
     b.add(`\\draw[${w}] ${pt(t, xAxisY)} -- ++(0,-3pt) node[anchor=north, inner sep=2pt] {$${fixed(t, X.dp)}$};`);
   }
-  for (const t of Y.ticks) {
+  for (const t of scales ? Y.ticks : []) {
     b.add(`\\draw[${w}] ${pt(yAxisX, t)} -- ++(-3pt,0) node[anchor=east, inner sep=2pt] {$${fixed(t, Y.dp)}$};`);
   }
   // the 0s of broken axes: one under the x-axis and one beside the y-axis,
   // each with a tick, or a single 0 at the corner
-  if (values.zeroStyle === 'one' && (X.brk || Y.brk)) {
+  if (!scales) {
+    // no numbers, so no 0s either
+  } else if (values.zeroStyle === 'one' && (X.brk || Y.brk)) {
     b.add(`\\node[anchor=north east, inner sep=2pt] at ${pt(yAxisX, xAxisY)} {$0$};`);
   } else {
     if (X.brk) b.add(`\\draw[${w}] ${pt(cx, xAxisY)} -- ++(0,-3pt) node[anchor=north, inner sep=2pt] {$0$};`);
@@ -391,10 +395,10 @@ function generate(values) {
   // ---- axis titles
   const xTitle = values.xTitle || header?.[0] || '';
   const yTitle = values.yTitle || header?.[1] || '';
-  const yLabelChars = Math.max(1, ...Y.ticks.map((t) => fixed(t, Y.dp).length));
+  const yLabelChars = scales ? Math.max(1, ...Y.ticks.map((t) => fixed(t, Y.dp).length)) : 0;
   if (xTitle || yTitle) b.comment('axis titles');
   // below the scale numbers / left of them (distances in cm turned into graph units)
-  if (xTitle) b.add(`\\node[anchor=north] at ${pt((X.start + X.end) / 2, xAxisY - 0.6 / Y.unit)} {${tex(xTitle)}};`);
+  if (xTitle) b.add(`\\node[anchor=north] at ${pt((X.start + X.end) / 2, xAxisY - (scales ? 0.6 : 0.2) / Y.unit)} {${tex(xTitle)}};`);
   if (yTitle) {
     const off = (0.3 + 0.2 * yLabelChars) / X.unit;
     b.add(`\\node[anchor=south, rotate=90] at ${pt(yAxisX - off, (Y.start + Y.end) / 2)} {${tex(yTitle)}};`);

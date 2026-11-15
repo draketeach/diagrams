@@ -522,4 +522,61 @@ export const GALLERY = [
       scene: JSON.stringify({"settings": {"grid": 0.25, "snap": true, "showGrid": true, "lineWidth": "thin", "fontSize": "", "notToScale": true, "unit": "", "lengthDecimals": 0, "view": {"x0": -1.5, "y0": -1.5, "w": 12, "h": 8}}, "points": [{"id": "A", "name": "A", "x": 0, "y": 0, "showLabel": true, "dot": true}, {"id": "B", "name": "B", "x": 4.5105, "y": 1.6417, "showLabel": true, "dot": true}, {"id": "C", "name": "C", "x": 7.5105, "y": 5.22, "showLabel": true, "dot": true}, {"id": "D", "name": "D", "x": 7.5105, "y": 1.6417, "showLabel": true, "dot": true}, {"id": "E", "name": "E", "x": 7.5105, "y": 0, "showLabel": true, "dot": true}, {"id": "F", "name": "F", "x": 4.5105, "y": 0, "showLabel": true, "dot": true}, {"id": "N", "name": "N", "x": 0, "y": 0, "showLabel": false, "hidden": true, "dep": {"kind": "north", "a": "A", "len": 2.0}}, {"id": "S", "name": "S", "x": 0, "y": -0.4, "showLabel": false, "hidden": true}, {"id": "E1", "name": "E1", "x": 0, "y": 0, "showLabel": false, "hidden": true, "dep": {"kind": "offset", "p": "E", "a": "E", "b": "C", "d": -0.75}}, {"id": "C1", "name": "C1", "x": 0, "y": 0, "showLabel": false, "hidden": true, "dep": {"kind": "offset", "p": "C", "a": "E", "b": "C", "d": -0.75}}], "items": [{"id": "ab", "type": "segment", "a": "A", "b": "B", "label": "8\\ \\mathrm{km}"}, {"id": "bc", "type": "segment", "a": "B", "b": "C", "label": ""}, {"id": "bd", "type": "segment", "a": "B", "b": "D", "label": "5\\ \\mathrm{km}", "style": "dashed"}, {"id": "bf", "type": "segment", "a": "B", "b": "F", "label": "", "style": "dashed"}, {"id": "ae", "type": "segment", "a": "A", "b": "E", "label": "", "style": "dashed"}, {"id": "ec", "type": "segment", "a": "E", "b": "C", "label": "", "style": "dashed"}, {"id": "an", "type": "segment", "a": "A", "b": "N", "label": "", "tip": "b", "endMode": "custom", "endText": "\\mathrm{North}"}, {"id": "as", "type": "segment", "a": "A", "b": "S", "label": ""}, {"id": "ang", "type": "angle", "v": "A", "a": "B", "b": "N", "label": "70^\\circ", "radius": 0.8}, {"id": "r1", "type": "right", "v": "D", "a": "B", "b": "C", "size": 0.25}, {"id": "r2", "type": "right", "v": "F", "a": "A", "b": "B", "size": 0.25}, {"id": "r3", "type": "right", "v": "E", "a": "A", "b": "D", "size": 0.25}, {"id": "m87", "type": "segment", "a": "E1", "b": "C1", "label": "8.7\\ \\mathrm{km}", "tip": "both", "gap": true, "bars": true}]}),
     },
   },
+  {
+    id: 'scatter-sketch',
+    type: 'scatter',
+    title: "Scatterplot with a line, no scales",
+    description: "Points and a typed line through the origin on bare axes: no ticks, numbers, letters or titles.",
+    values: {"data": "0.8, 1.12\n2.36, 2.12\n3.6, 3.24\n5.24, 3.72\n6.28, 4.84\n7.4, 4.96\n8.4, 5.4", "line": "typed", "lineEquation": "0.61x", "lineExtent": "axes", "xTitle": "", "yTitle": "", "xAxisLabel": "", "yAxisLabel": "", "scales": false, "windowMode": "manual", "xmin": 0, "xmax": 10, "ymin": 0, "ymax": 7.5, "showGrid": false, "axisBreak": "off", "width": 7, "height": 5.2},
+  },
+  {
+    id: 'network-curved',
+    type: 'network',
+    title: "Network with curved edges",
+    description: "Edges bent to curve round the drawing, each labelled with a weight; vertices named with letters.",
+    values: {
+      scene: JSON.stringify({"settings": {"grid": 0.25, "snap": true, "showGrid": true, "lineWidth": "thin", "fontSize": "", "notToScale": false, "unit": "", "lengthDecimals": 0, "mode": "network", "view": {"x0": -1.5, "y0": -1.8, "w": 10.5, "h": 6.2}}, "points": [{"id": "A", "name": "A", "x": 0.0, "y": 0.0, "showLabel": true, "dot": true}, {"id": "B", "name": "B", "x": 1.543, "y": 3.229, "showLabel": true, "dot": true}, {"id": "D", "name": "D", "x": 1.614, "y": 1.786, "showLabel": true, "dot": true}, {"id": "C", "name": "C", "x": 5.171, "y": 2.929, "showLabel": true, "dot": true}, {"id": "E", "name": "E", "x": 5.729, "y": 1.586, "showLabel": true, "dot": true}, {"id": "F", "name": "F", "x": 3.614, "y": 0.4, "showLabel": true, "dot": true}, {"id": "G", "name": "G", "x": 7.171, "y": -0.371, "showLabel": true, "dot": true}], "items": [{"id": "e0", "type": "segment", "a": "A", "b": "B", "label": "3"}, {"id": "e1", "type": "segment", "a": "A", "b": "D", "label": "2"}, {"id": "e2", "type": "segment", "a": "A", "b": "F", "label": "3", "bend": -25}, {"id": "e3", "type": "segment", "a": "B", "b": "D", "label": "1"}, {"id": "e4", "type": "segment", "a": "B", "b": "C", "label": "3"}, {"id": "e5", "type": "segment", "a": "C", "b": "E", "label": "1"}, {"id": "e6", "type": "segment", "a": "C", "b": "G", "label": "3", "bend": 60}, {"id": "e7", "type": "segment", "a": "D", "b": "F", "label": "2", "bend": -35}, {"id": "e8", "type": "segment", "a": "E", "b": "F", "label": "2", "bend": -15}, {"id": "e9", "type": "segment", "a": "E", "b": "G", "label": "2", "bend": 40}, {"id": "e10", "type": "segment", "a": "F", "b": "G", "label": "3"}]}),
+    },
+  },
+  {
+    id: 'geometry-right-triangle',
+    type: 'geometry',
+    title: "Right-angled triangle with θ",
+    description: "Sides labelled y and z, a right angle, the angle θ labelled without an arc, and NOT TO SCALE.",
+    values: {
+      scene: JSON.stringify({"settings": {"grid": 0.25, "snap": true, "showGrid": true, "lineWidth": "thin", "fontSize": "", "notToScale": true, "unit": "", "lengthDecimals": 0, "view": {"x0": -1.5, "y0": -1, "w": 10, "h": 7}}, "points": [{"id": "P", "name": "P", "x": 0, "y": 0, "showLabel": false}, {"id": "R", "name": "R", "x": 0, "y": 5.04, "showLabel": false}, {"id": "T", "name": "T", "x": 5.06, "y": 5.04, "showLabel": false}], "items": [{"id": "pr", "type": "segment", "a": "P", "b": "R", "label": "y"}, {"id": "rt", "type": "segment", "a": "R", "b": "T", "label": ""}, {"id": "pt", "type": "segment", "a": "P", "b": "T", "label": "z"}, {"id": "ra", "type": "right", "v": "R", "a": "P", "b": "T", "size": 0.3}, {"id": "th", "type": "angle", "v": "P", "a": "T", "b": "R", "label": "\\theta", "radius": 0.9, "arcs": 0}]}),
+    },
+  },
+  {
+    id: 'network-weighted',
+    type: 'network',
+    title: "Weighted network (letters)",
+    description: "Seven lettered vertices and nine weighted edges, three of them in a straight line through D and E.",
+    values: {
+      scene: JSON.stringify({"settings": {"grid": 0.25, "snap": true, "showGrid": true, "lineWidth": "thin", "fontSize": "", "notToScale": false, "unit": "", "lengthDecimals": 0, "mode": "network", "view": {"x0": -1, "y0": -3, "w": 8.5, "h": 6}}, "points": [{"id": "A", "name": "A", "x": 0.0, "y": 0.0, "showLabel": true, "dot": true}, {"id": "B", "name": "B", "x": 1.3, "y": 1.3, "showLabel": true, "dot": true}, {"id": "C", "name": "C", "x": 3.95, "y": 2.533, "showLabel": true, "dot": true}, {"id": "D", "name": "D", "x": 1.3, "y": 0.0, "showLabel": true, "dot": true}, {"id": "E", "name": "E", "x": 4.2, "y": 0.0, "showLabel": true, "dot": true}, {"id": "G", "name": "G", "x": 6.167, "y": 0.0, "showLabel": true, "dot": true}, {"id": "F", "name": "F", "x": 2.167, "y": -2.233, "showLabel": true, "dot": true}], "items": [{"id": "e0", "type": "segment", "a": "A", "b": "B", "label": "2"}, {"id": "e1", "type": "segment", "a": "A", "b": "D", "label": "1"}, {"id": "e2", "type": "segment", "a": "B", "b": "D", "label": "1"}, {"id": "e3", "type": "segment", "a": "B", "b": "C", "label": "3"}, {"id": "e4", "type": "segment", "a": "C", "b": "E", "label": "4"}, {"id": "e5", "type": "segment", "a": "D", "b": "E", "label": "3"}, {"id": "e6", "type": "segment", "a": "E", "b": "G", "label": "2"}, {"id": "e7", "type": "segment", "a": "D", "b": "F", "label": "3"}, {"id": "e8", "type": "segment", "a": "F", "b": "G", "label": "5"}]}),
+    },
+  },
+  {
+    id: 'realgraph-linear',
+    type: 'realgraph',
+    title: "Straight-line graph on a grid",
+    description: "A line from (0, 4000) to (12, 16 000) on a grid every 1 by 1000, numbers every 2000 with a space in 10 000 and over, axis titles and letters.",
+    values: {"curves": "0,4000 -- 12,16000", "xTitle": "Selling price (\\$)", "yTitle": "Quantity of items", "xLetter": "P", "yLetter": "Q", "xmin": 0, "xmax": 12.7, "ymin": 0, "ymax": 23200, "xStep": 1, "yStep": 2000, "xNumbers": "", "yNumbers": "", "origin": "both", "width": 10.5, "height": 9.4, "showGrid": true, "gridX": 1, "gridY": 1000, "gridXmax": 12, "gridYmax": 22000, "gridColour": "black", "curveWidth": "thin", "spaceThousands": true},
+  },
+  {
+    id: 'realgraph-exponential',
+    type: 'realgraph',
+    title: "Exponential growth on a fine grid",
+    description: "Dots at each day joined by a smooth curve, a fine grey grid with darker lines every day and every 20 000, spaced thousands, and axis letters.",
+    values: {"curves": "0,2* 1,20* 2,200* 2.5,632 3,2000* 3.25,3557 3.5,6325 3.75,11247 4,20000*", "xTitle": "Number of days", "yTitle": "Mass (mg)", "xLetter": "t", "yLetter": "A", "xmin": 0, "xmax": 5.6, "ymin": 0, "ymax": 212000, "xStep": 1, "yStep": 20000, "xNumbers": "1, 2, 3, 4, 5", "yNumbers": "", "origin": "corner", "width": 11, "height": 6.6, "showGrid": true, "gridX": 0.25, "gridY": 10000, "gridXmax": 5.5, "gridYmax": 200000, "gridColour": "grey", "majorX": 1, "majorY": 20000, "spaceThousands": true},
+  },
+  {
+    id: 'geometry-semicircle',
+    type: 'geometry',
+    title: "Semicircle on a right-angled triangle",
+    description: "An arc on the hypotenuse (its centre the midpoint), the diameter dashed and labelled d, side lengths and NOT TO SCALE.",
+    values: {
+      scene: JSON.stringify({"settings": {"grid": 0.25, "snap": true, "showGrid": true, "lineWidth": "thin", "fontSize": "", "notToScale": true, "unit": "", "lengthDecimals": 0, "view": {"x0": -2, "y0": -1.5, "w": 10, "h": 6}}, "points": [{"id": "O", "name": "O", "x": 0, "y": 0, "showLabel": false}, {"id": "U", "name": "U", "x": 0, "y": 2.7, "showLabel": false}, {"id": "R", "name": "R", "x": 3.6, "y": 0, "showLabel": false}, {"id": "M", "name": "M", "x": 0, "y": 0, "showLabel": false, "hidden": true, "dep": {"kind": "mid", "a": "U", "b": "R"}}], "items": [{"id": "ou", "type": "segment", "a": "O", "b": "U", "label": "6\\ \\mathrm{cm}"}, {"id": "or", "type": "segment", "a": "O", "b": "R", "label": "8\\ \\mathrm{cm}"}, {"id": "ur", "type": "segment", "a": "U", "b": "R", "label": "d", "style": "dashed"}, {"id": "arc", "type": "arc", "c": "M", "a": "R", "b": "U", "style": "solid"}, {"id": "ra", "type": "right", "v": "O", "a": "U", "b": "R", "size": 0.25}]}),
+    },
+  },
 ];

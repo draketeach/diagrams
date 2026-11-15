@@ -192,13 +192,24 @@ function generate(v) {
     // a hair past the last line so rounding can't drop it
     b.comment('grid');
     b.add(`\\draw[very thin${colour}, xstep=${n(gx)}, ystep=${n(gy)}] ${pt(xmin, ymin)} grid ${pt(gxMax + gx * 1e-3, gyMax + gy * 1e-3)};`);
+    // darker lines every so often over the fine grid (e.g. every 1 day and every 20 000)
+    const mx = Number(v.majorX) > 0 ? Number(v.majorX) : 0;
+    const my = Number(v.majorY) > 0 ? Number(v.majorY) : 0;
+    if (mx || my) {
+      b.comment('darker grid lines');
+      const big = (xmax - xmin + ymax - ymin) * 10; // a step too big to draw: no lines that way
+      b.add(`\\draw[thin, xstep=${n(mx || big)}, ystep=${n(my || big)}] ${pt(xmin, ymin)} grid ${pt(gxMax + gx * 1e-3, gyMax + gy * 1e-3)};`);
+    }
   }
 
   // ---- axes
   const tip = v.axisArrow === 'none' ? '' : '-latex';
   b.comment('axes');
-  b.add(`\\draw[${['thin', tip].filter(Boolean).join(', ')}] ${pt(xmin, y0)} -- ${pt(xmax, y0)};`);
-  b.add(`\\draw[${['thin', tip].filter(Boolean).join(', ')}] ${pt(x0, ymin)} -- ${pt(x0, ymax)};`);
+  // a letter for each axis (P, Q, t, …) beside its arrowhead
+  const xLetter = String(v.xLetter ?? '').trim() ? ` node[anchor=west, inner sep=3pt] {${mathLabel(v.xLetter)}}` : '';
+  const yLetter = String(v.yLetter ?? '').trim() ? ` node[anchor=east, inner sep=3pt] {${mathLabel(v.yLetter)}}` : '';
+  b.add(`\\draw[${['thin', tip].filter(Boolean).join(', ')}] ${pt(xmin, y0)} -- ${pt(xmax, y0)}${xLetter};`);
+  b.add(`\\draw[${['thin', tip].filter(Boolean).join(', ')}] ${pt(x0, ymin)} -- ${pt(x0, ymax)}${yLetter};`);
 
   // ---- scales: ticks and numbers
   const xNums = numberList(v.xNumbers, 'x numbers') ?? multiples(xmin, xmax - xStep * 0.25, xStep);
@@ -207,7 +218,12 @@ function generate(v) {
   const dpFor = (typed, step, list) => (numberList(typed, '') ? Math.max(0, ...list.map(decimalsOf)) : decimalsOf(step));
   const xDp = dpFor(v.xNumbers, xStep, xNums);
   const yDp = dpFor(v.yNumbers, yStep, yNums);
-  const fmtWith = (x, dp) => (v.decimalComma ? tickText(x, dp).replace('.', '{,}') : tickText(x, dp));
+  const fmtWith = (x, dp) => {
+    let t = tickText(x, dp);
+    // 22 000: a thin space in numbers of five or more digits (four-digit ones like 8000 stay together)
+    if (v.spaceThousands && Math.abs(x) >= 10000) t = t.replace(/^(-?)(\d+)/, (m, sign, int) => sign + int.replace(/\B(?=(\d{3})+$)/g, '\\,'));
+    return v.decimalComma ? t.replace('.', '{,}') : t;
+  };
   const fmtX = (x) => fmtWith(x, xDp);
   const fmtNum = (y) => fmtWith(y, yDp);
   const origin = v.origin || 'corner';
@@ -224,7 +240,7 @@ function generate(v) {
   if (origin === 'corner') b.add(`\\node[anchor=east, inner sep=2pt, xshift=-3pt] at ${pt(x0, y0)} {$0$};`);
 
   // ---- titles
-  const widest = Math.max(1, ...yNums.map((y) => fmtNum(y).length), origin === 'none' ? 0 : 1);
+  const widest = Math.max(1, ...yNums.map((y) => fmtNum(y).replace(/\\,/g, ' ').length), origin === 'none' ? 0 : 1);
   if (String(v.xTitle ?? '').trim()) {
     if (v.xTitlePos === 'end') b.add(`\\node[anchor=west, align=left] at ${pt(xmax, y0)} {${titleText(v.xTitle)}};`);
     else b.add(`\\node[anchor=north, align=center] at ([yshift=-${xNums.length ? 0.62 : 0.3}cm]${n((xmin + xmax) / 2)},${n(y0)}) {${titleText(v.xTitle)}};`);
@@ -269,7 +285,9 @@ function generate(v) {
     }
   });
 
-  const opts = [`x=${n(xu)}cm`, `y=${n(yu)}cm`, v.fontSize ? `font=${v.fontSize}` : ''];
+  // units small enough for big data (e.g. 0.0000311cm per mg) keep their significant figures
+  const unit = (u) => (u >= 0.01 ? n(u) : String(Number(u.toPrecision(4))).replace(/e(-?\d+)$/, 'e$1'));
+  const opts = [`x=${unit(xu)}cm`, `y=${unit(yu)}cm`, v.fontSize ? `font=${v.fontSize}` : ''];
   return { code: b.toString(opts), warnings };
 }
 
@@ -338,6 +356,13 @@ const schema = [
               { value: 'top', label: 'Above' },
             ],
           },
+        ],
+      },
+      {
+        type: 'row',
+        fields: [
+          { type: 'text', key: 'xLetter', label: 'Letter at the x arrow', default: '', placeholder: 'e.g. t' },
+          { type: 'text', key: 'yLetter', label: 'Letter at the y arrow', default: '', placeholder: 'e.g. A' },
         ],
       },
     ],
@@ -420,6 +445,14 @@ const schema = [
         ],
         showIf: (v) => v.showGrid,
       },
+      {
+        type: 'row',
+        fields: [
+          { type: 'number', key: 'majorX', label: 'Darker lines every x', default: null, step: 1, min: 0, placeholder: 'none' },
+          { type: 'number', key: 'majorY', label: 'Darker lines every y', default: null, step: 1, min: 0, placeholder: 'none' },
+        ],
+        showIf: (v) => v.showGrid,
+      },
     ],
   },
   {
@@ -451,7 +484,13 @@ const schema = [
           { type: 'select', key: 'fontSize', label: 'Font size', default: '', options: FONT_SIZES },
         ],
       },
-      { type: 'checkbox', key: 'decimalComma', label: 'Decimal comma in numbers', default: false },
+      {
+        type: 'row',
+        fields: [
+          { type: 'checkbox', key: 'decimalComma', label: 'Decimal comma in numbers', default: false },
+          { type: 'checkbox', key: 'spaceThousands', label: 'Space in 10 000 and over', default: false },
+        ],
+      },
     ],
   },
 ];

@@ -867,6 +867,19 @@ test('geometry: NOT TO SCALE goes where it was dragged, scaled with the drawing'
   assert.ok(geometry.generate({ scene: JSON.stringify(sc) }).code.includes('at (2.5,-1) {NOT TO\\\\SCALE}'), 'scaled with the drawing');
 });
 
+test('new options: no scales, angle without an arc, spaced thousands, axis letters, darker grid lines', () => {
+  const g = (id) => GALLERY.find((e) => e.id === id).values;
+  const sc = scatter.generate({ ...defaultValues(scatter.schema), ...g('scatter-sketch') }).code;
+  assert.ok(!sc.includes('scales') && !sc.includes('node[anchor=north east, inner sep=2pt] {}'), 'bare axes');
+  const tri = geometry.generate(g('geometry-right-triangle')).code;
+  assert.ok(!tri.includes('{angle = ') && tri.includes('{$\\theta$}'), 'θ without an arc');
+  const lin = realgraph.generate({ ...defaultValues(realgraph.schema), ...g('realgraph-linear') }).code;
+  assert.ok(lin.includes('{$22\\,000$}') && lin.includes('{$8000$}'), '22 000 spaced, 8000 not');
+  assert.ok(lin.includes('node[anchor=west, inner sep=3pt] {$P$}') && lin.includes('node[anchor=east, inner sep=3pt] {$Q$}'), 'axis letters');
+  const ex = realgraph.generate({ ...defaultValues(realgraph.schema), ...g('realgraph-exponential') }).code;
+  assert.ok(ex.includes('xstep=1, ystep=20000') && /y=0\.0000\d+cm/.test(ex), 'darker lines; a tiny y unit kept');
+});
+
 test('gallery: every entry generates cleanly and has its image', () => {
   const modules = { realgraph, function: fn, sketch, blank, normal, scatter, slopefield, geometry, network, probtree, solids, dotplot, boxplot };
   const ids = new Set();

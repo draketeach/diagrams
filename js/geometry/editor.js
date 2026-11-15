@@ -1270,13 +1270,13 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
       }
       const s = (sp.start * Math.PI) / 180;
       const e = ((sp.start + sp.size) * Math.PI) / 180;
-      for (let k = 0; k < (it.arcs || 1); k++) {
+      for (let k = 0; k < (it.arcs ?? 1); k++) {
         const r = ((it.radius ?? 0.7) + k * 0.08) * PX;
         const large = sp.size > 180 ? 1 : 0;
         const d = `M ${cx + r * Math.cos(s)} ${cy - r * Math.sin(s)} A ${r} ${r} 0 ${large} 0 ${cx + r * Math.cos(e)} ${cy - r * Math.sin(e)}`;
         parts.push(`<path d="${d}" class="${cls}"/>`);
       }
-      if (it.arrow === it.a || it.arrow === it.b) {
+      if ((it.arcs ?? 1) > 0 && (it.arrow === it.a || it.arrow === it.b)) {
         // which end of the arc: the start arm is a when sp.first is 'a'
         const atStart = (it.arrow === it.a) === (sp.first === 'a');
         const r = ((it.radius ?? 0.7) + ((it.arcs || 1) - 1) * 0.08) * PX;
@@ -1635,7 +1635,7 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
           mode === 'custom' ? field('Text', labelBox, 'label') : el('span')
         ),
         row(
-          field('Arcs', selectInput([[1, 'One'], [2, 'Two'], [3, 'Three']], it.arcs, (v) => (it.arcs = Number(v)))),
+          field('Arcs', selectInput([[0, 'None (label only)'], [1, 'One'], [2, 'Two'], [3, 'Three']], it.arcs ?? 1, (v) => (it.arcs = Number(v)))),
           field('Radius (cm)', numberInput(it.radius, 0.1, (v) => (it.radius = Math.max(0.1, v))))
         ),
         row(

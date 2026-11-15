@@ -168,7 +168,9 @@ gives a filled dot, `o` an open dot, and `:P` labels it. Settings follow `;`:
 `dashed`, `dotted`, a line width, `straight` (all joins straight) and a label:
 `label: text` goes right of the end; `label below: text`, `label start: text`,
 `label middle above: text` and the like put it elsewhere (start or middle or
-end, then above, below, left, right or a mix). Smooth sections are written as
+end, then above, below, left, right or a mix). Each axis can have a letter at its arrow (`t`, `A`), the grid can have darker
+lines every so often over a fine one, and numbers of 10 000 and over can have
+a thin space (`22 000`). Smooth sections are written as
 Bézier curves (`.. controls … ..`) so the directions can be set.
 
 The axes meet at the corner, with numbers every so often (or only the ones you
@@ -205,7 +207,7 @@ Delete, zoom and Fit.
 - Angles: click two lines that meet, or three points (arm, vertex, arm). A line
   ending on another line (such as an altitude) counts as meeting it. The label
   is the measured size unless you type your own (e.g. `35^\\circ`, `\\theta`);
-  angles can be reflex, have one to three arcs, and have an arrowhead pointing
+  angles can be reflex, have no arc (just the label) or one to three arcs, and have an arrowhead pointing
   at either arm. Right-angle marks follow the two lines, so they slant in 3D
   drawings (see the 3D solids type for pyramids).
 - New points are named from a chosen letter onwards (A, B, C… by default;

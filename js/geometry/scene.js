@@ -22,7 +22,7 @@
 //   settings.mode: 'geometry' or 'network' (network: dots, no lengths, edges can repeat)
 //     { id, type: 'polygon', pts: [ids], fill },              (shading only: a grey, or a pattern in PATTERNS;
 //        between two corners on a circle, or a curve's or arc's ends, it follows that)
-//     { id, type: 'angle', v, a, b, label, labelPos, arcs, radius, reflex, arrow },
+//     { id, type: 'angle', v, a, b, label, labelPos, arcs, radius, reflex, arrow },   (arcs 0: label only)
 //       arrow: null, or the id of the arm (a or b) the arc's arrowhead points at
 //     { id, type: 'right', v, a, b, size },
 //     { id, type: 'circle', c, p, style },                    (centre, a point on it)
@@ -1151,7 +1151,7 @@ export function sceneToTikz(sceneIn) {
       usedLibs.add('arrows.meta');
       tip = pts.get(it.arrow) === q ? ', -{Stealth[length=4pt]}' : ', {Stealth[length=4pt]}-';
     }
-    const n = it.arcs || 1;
+    const n = it.arcs ?? 1; // 0: just the label, no arc
     for (let k = 0; k < n; k++) {
       b.add(`\\pic[draw${lw ? `, ${lw}` : ''}${k === n - 1 ? tip : ''}, angle radius=${fmt(r + k * 0.08)}cm] {angle = ${p.name}--${v.name}--${q.name}};`);
     }
