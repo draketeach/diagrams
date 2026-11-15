@@ -937,7 +937,7 @@ test('complex plane: conditions are read and the region where they all hold is s
   assert.ok(spiral.code.includes('node[below, inner sep=2pt] {$z_{1}$}') && spiral.code.includes('node[left, inner sep=2pt] {$z_{2}$}'), 'labels away from the lines and axes');
   assert.ok(spiral.code.includes('\\draw[dotted] (2.5313,0) -- (1.01,1.14);') && !spiral.code.includes('\\fill (1.01,1.14)'), 'a dotted line, no dot at its loose end');
   assert.ok(spiral.code.includes('NOT TO\\\\SCALE'), 'NOT TO SCALE');
-  const tri = complex.generate({ ...d, conditions: '', points: 'w = 1 + i @ above\n0 -> w\nw -- 2 -- cycle dashed' }).code;
+  const tri = complex.generate({ ...d, conditions: '', points: 'w = 1 + i @ above\n0 -> w\nw -- 2 -- 2i -- cycle dashed' }).code;
   assert.ok(tri.includes('\\draw[-latex] (0,0) -- (w);') && tri.includes('-- cycle;') && tri.includes('node[above, inner sep=2pt] {$w$}') && !tri.includes('\\fill (0,0)'), 'arrows, cycles and placed labels');
   const strict = complex.generate({ ...d, conditions: '|z - 1| > 2' }).code;
   assert.ok(strict.includes('\\draw[dashed] (1,0) circle[radius=2];'), 'strict boundaries dashed');
