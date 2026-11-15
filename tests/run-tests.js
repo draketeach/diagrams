@@ -926,6 +926,9 @@ test('complex plane: conditions are read and the region where they all hold is s
   assert.ok(flat.warnings.some((w) => /x from \(3\) must be less than x to/.test(w)) && flat.code.includes('(-1,0) -- (4,0)'), 'a range from 3 to 3 warns and falls back to automatic');
   const sector = complex.generate({ ...d, conditions: '0 <= arg(z) <= pi/4\nRe(z) + Im(z) < 3' }).code;
   assert.ok(sector.includes('\\draw[dashed]') && /\(4,0\)|\(4,-?\d/.test(sector), 'the automatic range takes in where lines cross the axes, so the line shows');
+  const atO = complex.generate({ ...d, conditions: '0 <= arg(z) <= pi/4', labelPoints: true }).code;
+  assert.ok(atO.includes('{$O$}') && !atO.includes('{$0$}'), 'a ray from the origin is labelled O');
+  assert.equal(complex.generate({ ...d, conditions: '0 <= arg(z) <= pi/4', labelPoints: true, originLabel: true }).code.split('{$O$}').length, 2, 'just one O');
   const strict = complex.generate({ ...d, conditions: '|z - 1| > 2' }).code;
   assert.ok(strict.includes('\\draw[dashed] (1,0) circle[radius=2];'), 'strict boundaries dashed');
   const locus = complex.generate({ ...d, conditions: '|z| = 2\nIm(z) >= 0' }).code;

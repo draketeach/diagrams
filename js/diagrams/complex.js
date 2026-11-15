@@ -579,9 +579,12 @@ function generate(v) {
   if (v.labelPoints) {
     b.comment('the centres and where rays start, labelled');
     const done = new Set(); // one label for a point that is both a centre and a ray's start
+    if (v.originLabel) done.add(`${n(0)},${n(0)}`); // the origin already has its O
     const once = (p) => !done.has(`${n(p.x)},${n(p.y)}`) && done.add(`${n(p.x)},${n(p.y)}`);
-    for (const c of args) if (once(c.v)) b.add(`\\node[${away(c.v, rayAngles(c))}, inner sep=3pt] at ${P(c.v)} {$${complexTex(c.v)}$};`);
-    for (const c of circles) if (once(c.c)) b.add(`\\node[below, inner sep=3pt] at ${P(c.c)} {$${complexTex(c.c)}$};`);
+    // the origin is O, not 0
+    const name = (p) => (Math.abs(p.x) < 1e-9 && Math.abs(p.y) < 1e-9 ? 'O' : complexTex(p));
+    for (const c of args) if (once(c.v)) b.add(`\\node[${away(c.v, rayAngles(c))}, inner sep=3pt] at ${P(c.v)} {$${name(c.v)}$};`);
+    for (const c of circles) if (once(c.c)) b.add(`\\node[below, inner sep=3pt] at ${P(c.c)} {$${name(c.c)}$};`);
   }
   if (v.labelAngles && args.length) {
     b.comment('angles: from the direction of the positive real axis to each ray');
