@@ -540,15 +540,6 @@ export const GALLERY = [
     },
   },
   {
-    id: 'geometry-right-triangle',
-    type: 'geometry',
-    title: "Right-angled triangle with θ",
-    description: "Sides labelled y and z, a right angle, the angle θ labelled without an arc, and NOT TO SCALE.",
-    values: {
-      scene: JSON.stringify({"settings": {"grid": 0.25, "snap": true, "showGrid": true, "lineWidth": "thin", "fontSize": "", "notToScale": true, "unit": "", "lengthDecimals": 0, "view": {"x0": -1.5, "y0": -1, "w": 10, "h": 7}}, "points": [{"id": "P", "name": "P", "x": 0, "y": 0, "showLabel": false}, {"id": "R", "name": "R", "x": 0, "y": 5.04, "showLabel": false}, {"id": "T", "name": "T", "x": 5.06, "y": 5.04, "showLabel": false}], "items": [{"id": "pr", "type": "segment", "a": "P", "b": "R", "label": "y"}, {"id": "rt", "type": "segment", "a": "R", "b": "T", "label": ""}, {"id": "pt", "type": "segment", "a": "P", "b": "T", "label": "z"}, {"id": "ra", "type": "right", "v": "R", "a": "P", "b": "T", "size": 0.3}, {"id": "th", "type": "angle", "v": "P", "a": "T", "b": "R", "label": "\\theta", "radius": 0.9, "arcs": 0}]}),
-    },
-  },
-  {
     id: 'network-weighted',
     type: 'network',
     title: "Weighted network (letters)",
@@ -636,5 +627,23 @@ export const GALLERY = [
     title: 'Vectors in a sphere\'s equator plane',
     description: 'A sphere with its whole equator, vectors a, b and v(θ) from the centre (tilde under), a right angle between a and b and the angle θ, both drawn in the tilted plane.',
     values: { solid: 'sphere', r: 3, radius: 'none', equator: 'full', notToScale: false, vectors: 'a: -60\nb: 30\nv(θ): 240\nright a b\nangle a v(θ) : θ' },
+  },
+  {
+    id: 'geometry-chord-diameter',
+    type: 'geometry',
+    title: 'Diameter bisecting a chord',
+    description: 'A circle with centre O, the chord AB, and the diameter CD meeting it at right angles at E, its midpoint (equal-length marks on AE and EB).',
+    values: {
+      scene: JSON.stringify({"settings": {"grid": 0.25, "snap": true, "showGrid": true, "lineWidth": "thin", "fontSize": "", "notToScale": false, "unit": "", "lengthDecimals": 0, "view": {"x0": -3.5, "y0": -3.2, "w": 7.5, "h": 6.4}}, "points": [{"id": "O", "name": "O", "x": 0, "y": 0, "showLabel": true, "dot": true}, {"id": "A", "name": "A", "x": -0.434, "y": 2.462, "showLabel": true, "dot": true}, {"id": "B", "name": "B", "x": 2.462, "y": -0.434, "showLabel": true, "dot": true}, {"id": "C", "name": "C", "x": 1.768, "y": 1.768, "showLabel": true, "dot": true}, {"id": "D", "name": "D", "x": -1.768, "y": -1.768, "showLabel": true, "dot": true}, {"id": "E", "name": "E", "x": 0, "y": 0, "showLabel": true, "dot": true, "dep": {"kind": "mid", "a": "A", "b": "B"}}], "items": [{"id": "c", "type": "circle", "c": "O", "p": "A", "style": "solid"}, {"id": "ae", "type": "segment", "a": "A", "b": "E", "label": "", "ticks": 1}, {"id": "eb", "type": "segment", "a": "E", "b": "B", "label": "", "ticks": 1}, {"id": "cd", "type": "segment", "a": "C", "b": "D", "label": ""}, {"id": "oa", "type": "segment", "a": "O", "b": "A", "label": ""}, {"id": "ob", "type": "segment", "a": "O", "b": "B", "label": ""}, {"id": "ra", "type": "right", "v": "E", "a": "A", "b": "O", "size": 0.22}]}),
+    },
+  },
+  {
+    id: 'geometry-rotation-angles',
+    type: 'geometry',
+    title: 'Rotating a point by θ',
+    description: 'Rays from O at 45° (double arc) and a further θ, both arcs with arrowheads, an arrow out from O, and a curved arrow round to P.',
+    values: {
+      scene: JSON.stringify({"settings": {"grid": 0.25, "snap": true, "showGrid": true, "lineWidth": "thin", "fontSize": "", "notToScale": true, "unit": "", "lengthDecimals": 0, "view": {"x0": -1, "y0": -1, "w": 12, "h": 7}}, "points": [{"id": "O", "name": "O", "x": 0, "y": 0, "showLabel": true, "dot": true}, {"id": "X", "name": "X", "x": 8.98, "y": 0.0, "showLabel": false, "dot": false, "hidden": true}, {"id": "L", "name": "L", "x": 5.0, "y": 4.94, "showLabel": false, "dot": false, "hidden": true}, {"id": "P", "name": "P", "x": 3.44, "y": 3.44, "showLabel": true, "dot": true}, {"id": "V", "name": "V", "x": 0.56, "y": 3.94, "showLabel": false, "dot": false, "hidden": true}, {"id": "Q", "name": "Q", "x": 0.345, "y": 2.426, "showLabel": false, "dot": false, "hidden": true}], "items": [{"id": "ox", "type": "segment", "a": "O", "b": "X", "label": ""}, {"id": "ol", "type": "segment", "a": "O", "b": "L", "label": ""}, {"id": "ov", "type": "segment", "a": "O", "b": "V", "label": "", "tip": "b"}, {"id": "qp", "type": "segment", "a": "Q", "b": "P", "label": "", "tip": "b", "bend": 40}, {"id": "a45", "type": "angle", "v": "O", "a": "X", "b": "P", "label": "45^\\circ", "radius": 1.45, "arcs": 2, "arrow": "P"}, {"id": "ath", "type": "angle", "v": "O", "a": "P", "b": "V", "label": "\\theta", "radius": 1.45, "arrow": "V"}]}),
+    },
   },
 ];

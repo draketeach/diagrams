@@ -872,7 +872,13 @@ test('new options: no scales, angle without an arc, spaced thousands, axis lette
   const g = (id) => GALLERY.find((e) => e.id === id).values;
   const sc = scatter.generate({ ...defaultValues(scatter.schema), ...g('scatter-sketch') }).code;
   assert.ok(!sc.includes('scales') && !sc.includes('node[anchor=north east, inner sep=2pt] {}'), 'bare axes');
-  const tri = geometry.generate(g('geometry-right-triangle')).code;
+  const tri = geometry.generate({
+    scene: JSON.stringify({
+      settings: { grid: 0.25, snap: true, showGrid: true, lineWidth: 'thin', fontSize: '', notToScale: false },
+      points: [{ id: 'P', name: 'P', x: 0, y: 0 }, { id: 'R', name: 'R', x: 0, y: 5 }, { id: 'T', name: 'T', x: 5, y: 5 }],
+      items: [{ id: 'th', type: 'angle', v: 'P', a: 'T', b: 'R', label: '\\theta', radius: 0.9, arcs: 0 }],
+    }),
+  }).code;
   assert.ok(!tri.includes('{angle = ') && tri.includes('{$\\theta$}'), 'θ without an arc');
   const lin = realgraph.generate({ ...defaultValues(realgraph.schema), ...g('realgraph-linear') }).code;
   assert.ok(lin.includes('{$22\\,000$}') && lin.includes('{$8000$}'), '22 000 spaced, 8000 not');
