@@ -230,6 +230,34 @@ function planeVectors(b, v, R, ry, warnings) {
 
 // ---------------------------------------------------------------- the solids
 
+/** Shade a box's base (the parallelogram a-b-b2-a2) and/or put equal-length ticks on its edges. */
+function boxBase(b, S, v, [a, c, c2, a2]) {
+  const fill = { dots: 'pattern={Dots[radius=0.33pt, distance=1.5pt, angle=45]}', 'sparse dots': 'pattern={Dots[radius=0.42pt, distance=3pt, angle=45]}', grey: 'gray!25' }[v.baseShade];
+  if (fill) {
+    if (fill.startsWith('pattern')) b.usePreamble('\\usetikzlibrary{patterns.meta}');
+    b.comment('the base, shaded');
+    b.add(`\\fill[${fill}] ${S.path(a, c, c2, a2)} -- cycle;`);
+  }
+  if (v.baseTicks) {
+    b.comment('equal-length marks on the base');
+    const marks = [
+      [a, c],
+      [c, c2],
+      [c2, a2],
+      [a2, a],
+    ].map(([p, q]) => {
+      const P0 = S.p(p);
+      const Q0 = S.p(q);
+      const m = { x: (P0.x + Q0.x) / 2, y: (P0.y + Q0.y) / 2 };
+      const L = Math.hypot(Q0.x - P0.x, Q0.y - P0.y) || 1;
+      const t = 0.14; // half the mark's length, across the edge
+      const u = { x: (-(Q0.y - P0.y) / L) * t, y: ((Q0.x - P0.x) / L) * t };
+      return `${P(m.x - u.x, m.y - u.y)} -- ${P(m.x + u.x, m.y + u.y)}`;
+    });
+    b.add(`\\draw ${marks.join(' ')};`);
+  }
+}
+
 /**
  * "~a" in a label is the vector a in the chosen vector style (tilde under, bold or
  * arrow over); in plain text it becomes maths, inside $…$ it stays there.
@@ -365,6 +393,7 @@ function generate(vIn) {
       S.coord(B2, W + o.x, o.y);
       S.coord(C2, W + o.x, Hh + o.y);
       S.coord(E2, o.x, Hh + o.y);
+      boxBase(b, S, v, [A, B, B2, A2]);
       b.add(`\\draw ${S.path(A, B, C, E)} -- cycle;`);
       b.add(`\\draw ${S.path(E, E2, C2, C)} ${S.path(C2, B2, B)};`);
       if (hid) b.add(`\\draw[dashed] ${S.path(A, A2, B2)} ${S.path(A2, E2)};`);
@@ -385,6 +414,7 @@ function generate(vIn) {
       S.coord(A2, o.x, o.y);
       S.coord(B2, W + o.x, o.y);
       S.coord(T2, ax + o.x, Hh + o.y);
+      boxBase(b, S, v, [A, B, B2, A2]);
       b.add(`\\draw ${S.path(A, B, T)} -- cycle;`);
       b.add(`\\draw ${S.path(T, T2, B2, B)};`);
       if (hid) b.add(`\\draw[dashed] ${S.path(A, A2, B2)} ${S.path(A2, T2)};`);
@@ -627,6 +657,25 @@ const schema = [
         showIf: is('pyramid', 'cuboid', 'prism'),
       },
       { type: 'note', text: 'Front left, front right, back right, back left, the top, the centre of the base, then the middle of the right-hand base edge (for a face angle). - skips one.', showIf: pyramid },
+      {
+        type: 'row',
+        fields: [
+          {
+            type: 'select',
+            key: 'baseShade',
+            label: 'Base',
+            default: 'none',
+            options: [
+              { value: 'none', label: 'Not shaded' },
+              { value: 'dots', label: 'Dots' },
+              { value: 'sparse dots', label: 'Sparse dots' },
+              { value: 'grey', label: 'Grey' },
+            ],
+          },
+          { type: 'checkbox', key: 'baseTicks', label: 'Equal-length marks on the base', default: false },
+        ],
+        showIf: box,
+      },
       { type: 'note', text: 'The front face from the bottom left going round, then the back face the same way. - skips one.', showIf: is('cuboid') },
       { type: 'note', text: 'Front left, front right, the top, then the back the same way. - skips one.', showIf: is('prism') },
       { type: 'checkbox', key: 'notToScale', label: 'NOT TO SCALE', default: true },

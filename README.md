@@ -69,7 +69,10 @@ boundary lines rising past the curve to meet it (`59 < x < 107 : 95%`).
 
 The **Blank axes** type draws labelled axes with tick marks and no curve, for
 "sketch the graph" questions: type the ticks (`2, 5`, `pi/3, 2pi/3`, `3:a`) or
-use a trig preset (π/2 … 2π, or 90° … 360°), with an optional grid.
+use a trig preset (π/2 … 2π, or 90° … 360°), with an optional grid. Under
+Graph paper: true-size 1, 2 or 5 mm squares with darker lines every 1 cm,
+lined up with the origin and filling the window, with or without the axes
+(untick them for plain graph paper, e.g. 12 cm by 10 cm).
 
 ### Scatterplot
 
@@ -207,6 +210,8 @@ pyramid can show the angle between an edge and the base (at a corner) or between
 a face and the base (on the right-hand side face, at the middle of its base edge), with dashed lines to the
 centre of the base, a right angle there, and an arc with an arrowhead pointing at the base.
 A pyramid has its own measurements, a 6 by 6 base and height 6 by default.
+A cuboid's or prism's base can be shaded (dots, sparse dots or grey) and its
+four edges given equal-length marks (a square base).
 The code names each corner with `\coordinate` first, draws from the names, and
 puts every label relative to what it labels (`node[midway, above]` on a line,
 `\node[below left] at (A)` beside a corner), so it is easy to adjust by hand.

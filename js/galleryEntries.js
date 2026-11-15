@@ -215,6 +215,13 @@ export const GALLERY = [
     values: { xPreset: 'radians', xCustomTicks: '', originLabel: true, height: 7 },
   },
   {
+    id: 'blank-graph-paper',
+    type: 'blank',
+    title: 'Graph paper (2 mm)',
+    description: 'True-size 2 mm squares with darker lines every 1 cm, 12 cm by 10 cm, with the axes switched off.',
+    values: { paper: '2', paperAxes: false, xCustomTicks: '', windowMode: 'manual', xmin: 0, xmax: 12, ymin: 0, ymax: 10, width: 12, height: 10 },
+  },
+  {
     id: 'normal-tails',
     type: 'normal',
     title: 'Shaded tails',
@@ -345,6 +352,13 @@ export const GALLERY = [
     values: { solid: 'pyramid', pw: 6, pd: 6, ph: 5, size: 5.2, depthAngle: 24, hLabel: '-', wLabel: '-', dLabel: '-', sLabel: '$\\ell$ cm', angle: 'corner', aLabel: '$\\theta$', names: 'A B C D M O', hidden: 'dashed', notToScale: false },
   },
   {
+    id: 'solids-box-shaded-base',
+    type: 'solids',
+    title: 'Box with a shaded square base',
+    description: 'A tall cuboid with a dotted base and equal-length marks on the four base edges, dashed hidden edges, no measurements and NOT TO SCALE.',
+    values: { solid: 'cuboid', w: 5, d: 5, h: 7, depthAngle: 45, hidden: 'dashed', wLabel: '-', dLabel: '-', hLabel: '-', baseShade: 'dots', baseTicks: true, notToScale: true, size: 4 },
+  },
+  {
     id: 'dotplot-basic',
     type: 'statgraph',
     title: 'Dot plot',
@@ -467,6 +481,13 @@ export const GALLERY = [
     values: {"data": "0.8, 1.12\n2.36, 2.12\n3.6, 3.24\n5.24, 3.72\n6.28, 4.84\n7.4, 4.96\n8.4, 5.4", "line": "typed", "lineEquation": "0.61x", "lineExtent": "axes", "xTitle": "", "yTitle": "", "xAxisLabel": "", "yAxisLabel": "", "scales": false, "windowMode": "manual", "xmin": 0, "xmax": 10, "ymin": 0, "ymax": 7.5, "showGrid": false, "axisBreak": "off", "width": 7, "height": 5.2},
   },
   {
+    id: 'scatter-best-fit-grid',
+    type: 'scatter',
+    title: 'Scatterplot with a line of best fit',
+    description: 'Thirty-four points and a typed line y = 70 − x across the axes, on a grid every 5 with numbers every 10, and axis titles.',
+    values: {"data": "6, 70\n8, 72\n11.5, 70\n10, 61\n10, 48\n12, 42\n15, 64\n18, 60\n18, 57\n18, 55\n21.5, 31\n21.5, 41\n25, 49\n25, 42\n28.5, 45\n28.5, 39\n30, 32\n34, 32\n36.5, 40\n36.5, 15\n39.5, 39\n39.5, 35\n44.5, 30\n46.5, 15\n48.5, 28\n50, 18\n50, 13\n54, 5\n55, 20\n55, 10\n57.5, 18\n60, 15\n61.5, 14\n65, 10", "line": "typed", "lineEquation": "70 - x", "lineExtent": "axes", "xTitle": "Average minutes per day watching television", "yTitle": "Average minutes per day exercising", "windowMode": "manual", "xmin": 0, "xmax": 72, "ymin": 0, "ymax": 82, "xStep": 10, "yStep": 10, "gridX": 5, "gridY": 5, "axisBreak": "off", "width": 10, "height": 6.5},
+  },
+  {
     id: 'scatter-points-grid',
     type: 'scatter',
     title: 'Scatterplot for a line of best fit',
@@ -528,6 +549,15 @@ export const GALLERY = [
     },
   },
   {
+    id: 'network-shortest-path',
+    type: 'network',
+    title: 'Travel-time network with a new town',
+    description: 'Six towns joined by roads labelled with minutes, and a seventh town G not yet joined, for adding new roads.',
+    values: {
+      scene: JSON.stringify({"settings": {"mode": "network", "grid": 0.25, "snap": true, "showGrid": true, "lineWidth": "thin", "fontSize": "", "notToScale": false, "view": {"x0": -1, "y0": -1, "w": 12, "h": 5}}, "points": [{"id": "A", "name": "A", "x": 0.0, "y": 0.82, "dot": true, "showLabel": true}, {"id": "B", "name": "B", "x": 2.37, "y": 2.98, "dot": true, "showLabel": true}, {"id": "C", "name": "C", "x": 4.98, "y": 1.53, "dot": true, "showLabel": true}, {"id": "D", "name": "D", "x": 6.58, "y": 0.65, "dot": true, "showLabel": true}, {"id": "E", "name": "E", "x": 7.73, "y": 1.9, "dot": true, "showLabel": true}, {"id": "F", "name": "F", "x": 9.88, "y": 0.0, "dot": true, "showLabel": true}, {"id": "G", "name": "G", "x": 1.92, "y": 0.6, "dot": true, "showLabel": true}], "items": [{"id": "ab", "type": "segment", "a": "A", "b": "B", "label": "15"}, {"id": "bc", "type": "segment", "a": "B", "b": "C", "label": "20"}, {"id": "cd", "type": "segment", "a": "C", "b": "D", "label": "10"}, {"id": "de", "type": "segment", "a": "D", "b": "E", "label": "5"}, {"id": "ef", "type": "segment", "a": "E", "b": "F", "label": "8"}, {"id": "df", "type": "segment", "a": "D", "b": "F", "label": "14"}]}),
+    },
+  },
+  {
     id: 'realgraph-linear',
     type: 'realgraph',
     title: "Straight-line graph on a grid",
@@ -540,6 +570,20 @@ export const GALLERY = [
     title: "Exponential growth on a fine grid",
     description: "A = 5 × 2^(3t): dots at each day joined by a smooth curve, a fine grey grid with darker lines every day and every 20 000, spaced thousands, and axis letters.",
     values: {"curves": "0,5* 1,40* 1.5,113 2,320* 2.5,905 3,2560* 3.25,4305 3.5,7241 3.75,12177 4,20480*", "xTitle": "Number of days", "yTitle": "Mass (mg)", "xLetter": "t", "yLetter": "A", "xmin": 0, "xmax": 5.6, "ymin": 0, "ymax": 212000, "xStep": 1, "yStep": 20000, "xNumbers": "1, 2, 3, 4, 5", "yNumbers": "", "origin": "corner", "width": 11, "height": 6.6, "showGrid": true, "gridX": 0.25, "gridY": 10000, "gridXmax": 5.5, "gridYmax": 200000, "gridColour": "grey", "majorX": 1, "majorY": 20000, "spaceThousands": true},
+  },
+  {
+    id: 'realgraph-distance-time',
+    type: 'realgraph',
+    title: 'Distance–time graph of a return trip',
+    description: 'Straight lines out, stopped, and back home on a 1-by-1 grid, with only 0 at the corner and axis titles (numbers typed as 0).',
+    values: {"curves": "0,0 -- 2,2 -- 3.5,2 -- 5.5,0; straight", "xTitle": "Time", "yTitle": "Distance from home", "xLetter": "", "yLetter": "", "xmin": 0, "xmax": 6.6, "ymin": 0, "ymax": 4.5, "xStep": 1, "yStep": 1, "xNumbers": "0", "yNumbers": "0", "origin": "corner", "width": 4.6, "height": 3.3, "showGrid": true, "gridX": 1, "gridY": 1, "gridXmax": 6, "gridYmax": 4, "gridColour": "black", "curveWidth": "thin"},
+  },
+  {
+    id: 'realgraph-cost-revenue',
+    type: 'realgraph',
+    title: 'Cost and revenue lines',
+    description: 'R = 10n and C = 20 + 5n as straight lines on a numbered grid, each labelled at its end, crossing at the break-even point.',
+    values: {"curves": "0,0 -- 10,100; label: $R = 10n$\n0,20 -- 10,70; label: $C = 20 + 5n$", "xTitle": "Number of cakes", "yTitle": "Amount (\\$)", "xLetter": "n", "yLetter": "", "xmin": 0, "xmax": 11, "ymin": 0, "ymax": 108, "xStep": 1, "yStep": 10, "xNumbers": "", "yNumbers": "", "origin": "both", "width": 6, "height": 6.2, "showGrid": true, "gridX": 1, "gridY": 10, "gridXmax": 10, "gridYmax": 100, "gridColour": "black", "curveWidth": "thin"},
   },
   {
     id: 'realgraph-salvage-value',

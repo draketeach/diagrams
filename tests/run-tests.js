@@ -1095,6 +1095,23 @@ test('real-world graph: ; arrow puts an arrowhead on the end of a curve', () => 
   assert.ok(!realgraph.generate({ ...d, curves: '0,15 1,11 2,9 3,7' }).code.includes('-to]'));
 });
 
+test('blank axes: true-size graph paper, with or without the axes', () => {
+  const d = { ...defaultValues(blank.schema), paper: '2', windowMode: 'manual', xmin: 0, xmax: 12, ymin: 0, ymax: 10, width: 12, height: 10 };
+  const code = blank.generate(d).code;
+  assert.ok(code.includes('step=0.2cm') && code.includes('step=1cm'), '2 mm squares, darker every 1 cm');
+  assert.ok(code.includes('-latex') || code.includes('% axes'), 'axes by default');
+  const plain = blank.generate({ ...d, paperAxes: false }).code;
+  assert.ok(plain.includes('step=0.2cm') && !plain.includes('% axes'), 'plain graph paper');
+});
+
+test('3D solids: a box can have a shaded base with equal-length marks', () => {
+  const d = { ...defaultValues(solids.schema), solid: 'cuboid', baseShade: 'dots', baseTicks: true };
+  const code = solids.generate(d).code;
+  assert.ok(code.includes('\\fill[pattern={Dots') && code.includes('(A) -- (B) -- (F) -- (E) -- cycle'), 'the base shaded');
+  assert.ok(code.includes('equal-length marks on the base'));
+  assert.ok(!solids.generate({ ...d, baseShade: 'none', baseTicks: false }).code.includes('the base'), 'off by default');
+});
+
 test('gallery.html versions are up to date', () => {
   const html = readFileSync(new URL('../gallery.html', import.meta.url), 'utf8');
   assert.equal(html, buildIndex(html));

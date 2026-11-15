@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: CC0-1.0
 // Blank axes: labelled axes with ticks and no curve, for "sketch the graph
-// of …" questions. Optional trig presets and a background grid.
+// of …" questions. Optional trig presets, a background grid, and graph paper
+// (true-size squares, with or without the axes).
 
 import { TikzBuilder } from '../lib/tikz.js';
 import { niceRound } from '../lib/numeric.js';
@@ -83,7 +84,48 @@ const schema = [
     return { ...g, fields: keep(g.fields) };
   })(),
   gridFields(),
+  {
+    type: 'group',
+    label: 'Graph paper',
+    collapsed: true,
+    fields: [
+      {
+        type: 'row',
+        fields: [
+          {
+            type: 'select',
+            key: 'paper',
+            label: 'Graph paper',
+            default: 'none',
+            options: [
+              { value: 'none', label: 'None' },
+              { value: '2', label: '2 mm squares' },
+              { value: '1', label: '1 mm squares' },
+              { value: '5', label: '5 mm squares' },
+            ],
+          },
+          { type: 'checkbox', key: 'paperAxes', label: 'Draw the axes', default: true, showIf: (v) => v.paper && v.paper !== 'none' },
+        ],
+      },
+      { type: 'note', text: 'True size on the page, with darker lines every 1 cm, lined up with the origin and filling the window (set its size under Window). Untick the axes for plain graph paper.', showIf: (v) => v.paper && v.paper !== 'none' },
+    ],
+  },
 ];
+
+/** Graph paper over the window: true-size squares (mm) with darker lines every 1 cm, lined up with the origin. */
+function drawPaper(b, win, values) {
+  const mm = Number(values.paper);
+  if (!(mm > 0)) return;
+  b.comment(`graph paper: ${mm} mm squares, darker every 1 cm`);
+  // grid steps in cm, so the squares are true size whatever the axes' units
+  // corners nudged a hair so the edge lines aren't lost to rounding
+  const e = (win.xmax - win.xmin + win.ymax - win.ymin) * 1e-4;
+  const [x0, y0, x1, y1] = [win.xmin - e, win.ymin - e, win.xmax + e, win.ymax + e].map((t) => Number(t.toFixed(5)));
+  b.add(`\\draw[gray!55, line width=0.15pt, step=${mm / 10}cm] (${x0},${y0}) grid (${x1},${y1});`);
+  b.add(`\\draw[gray!90, line width=0.35pt, step=1cm] (${x0},${y0}) grid (${x1},${y1});`);
+  // a hair of room so the outside lines aren't cut in half at the picture's edge
+  b.add(`\\path (${x0},${y0}) ++(-1pt,-1pt) (${x1},${y1}) ++(1pt,1pt);`);
+}
 
 function generate(input) {
   const warnings = [];
@@ -110,10 +152,14 @@ function generate(input) {
 
   const { options } = scaleOptions(win, values);
   const b = new TikzBuilder();
+  const paper = Number(values.paper) > 0;
+  if (paper) drawPaper(b, win, values);
   warnings.push(...drawGrid(b, win, values));
-  warnings.push(...drawAxes(b, win, values));
-  warnings.push(...drawScaleTicks(b, win, values));
-  warnings.push(...drawCustomTicks(b, win, values));
+  if (!paper || values.paperAxes !== false) {
+    warnings.push(...drawAxes(b, win, values));
+    warnings.push(...drawScaleTicks(b, win, values));
+    warnings.push(...drawCustomTicks(b, win, values));
+  }
   drawNotToScale(b, win, values);
   return { code: b.toString([...options, fontOption(values)]), warnings };
 }
