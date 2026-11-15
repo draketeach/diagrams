@@ -67,6 +67,7 @@ const schema = [
           { value: 'crosshatch', label: 'Crosshatch' },
           { value: 'gray!20', label: 'Light grey' },
           { value: 'gray!40', label: 'Mid grey' },
+          { value: 'none', label: 'No shading' },
         ],
       },
     ],
@@ -94,6 +95,7 @@ const schema = [
         default: 'boundaries',
         options: [
           { value: 'boundaries', label: 'Region boundaries and the mean' },
+          { value: 'edges', label: 'Region boundaries only' },
           { value: 'sigma', label: 'Every whole σ (−3 to 3)' },
           { value: 'both', label: 'Both' },
           { value: 'none', label: 'None' },
@@ -132,6 +134,17 @@ const schema = [
           { value: 'prob', label: 'Probability, e.g. 0.0668' },
           { value: 'percent', label: 'Percentage, e.g. 6.68%' },
         ],
+      },
+      {
+        type: 'select',
+        key: 'areaPlace',
+        label: 'Area labels placed',
+        default: 'auto',
+        options: [
+          { value: 'auto', label: 'Inside the region, or above a thin one' },
+          { value: 'bracket', label: 'Above a dashed arrow across the region' },
+        ],
+        help: 'With the arrow, the region\'s boundary lines rise past the curve to meet it.',
       },
       { type: 'select', key: 'fontSize', label: 'Label font size', default: '', options: FONT_SIZES },
     ],
@@ -255,7 +268,20 @@ function generate(values) {
     visible.push({ ...r, lo: a, hi: c });
     const region = `${pt(a, 0)} -- plot[domain=${n(a)}:${n(c)}, samples=60, smooth] (\\x,${CURVE}) -- ${pt(c, 0)} -- cycle`;
     b.comment(`shaded region ${fmt(a, 2)} to ${fmt(c, 2)}`);
-    b.add(pattern ? `\\fill[pattern={${pattern}}] ${region};` : `\\fill[${style}] ${region};`);
+    if (style !== 'none') b.add(pattern ? `\\fill[pattern={${pattern}}] ${region};` : `\\fill[${style}] ${region};`);
+    else b.lines.pop(); // nothing to shade: drop the comment too
+  }
+
+  // ---- a dashed arrow across each labelled region (when chosen), a little above the
+  // curve at the region's ends, with the boundary lines rising to meet it
+  const bracket = values.areaPlace === 'bracket';
+  const tops = new Map(); // z -> how high its boundary line goes (else up to the curve)
+  if (bracket) {
+    for (const r of visible) {
+      if (!isFinite(r.a) || !isFinite(r.b)) continue;
+      r.arrowY = Math.max(h(r.lo), h(r.hi)) + 0.22 / yu;
+      for (const z of [r.lo, r.hi]) tops.set(n(z, 6), Math.max(tops.get(n(z, 6)) ?? 0, r.arrowY + 0.25 / yu));
+    }
   }
 
   // ---- lines up to the curve (boundaries dashed or solid; mean and σ lines dashed)
@@ -273,7 +299,7 @@ function generate(values) {
     b.comment('lines up to the curve');
     for (const [zs, style] of lines) {
       const z = Number(zs);
-      b.add(`\\draw[${style === 'solid' ? '' : 'dashed, '}thin] ${pt(z, 0)} -- ${pt(z, h(z))};`);
+      b.add(`\\draw[${style === 'solid' ? '' : 'dashed, '}thin] ${pt(z, 0)} -- ${pt(z, tops.get(zs) ?? h(z))};`);
     }
   }
 
@@ -290,8 +316,8 @@ function generate(values) {
     if (Math.abs(z) <= axisEnd - 0.2) at.set(n(z, 6), z);
   };
   const where = values.labelAt || 'boundaries';
-  if (where === 'boundaries' || where === 'both') {
-    addLabel(0);
+  if (where === 'boundaries' || where === 'both' || where === 'edges') {
+    if (where !== 'edges') addLabel(0);
     for (const r of visible) [r.a, r.b].filter(isFinite).forEach(addLabel);
   }
   if (where === 'sigma' || where === 'both' || emp !== 'none') [-3, -2, -1, 0, 1, 2, 3].forEach(addLabel);
@@ -322,6 +348,12 @@ function generate(values) {
     }
     if (!text) continue;
     const cx = (r.lo + r.hi) / 2;
+    const latexB = text.includes('$') ? text : `$${text.replace(/(^|[^\\])%/g, '$1\\%')}$`;
+    if (r.arrowY !== undefined) {
+      const tip = ARROW_TIPS.some((t) => t.value === values.axisArrow && t.value !== 'none') ? values.axisArrow : 'stealth';
+      areaLines.push(`\\draw[dashed, thin, ${tip}-${tip}] ${pt(r.lo, r.arrowY)} -- ${pt(r.hi, r.arrowY)} node[midway, above, inner sep=2pt] {${latexB}};`);
+      continue;
+    }
     const inside = h(cx) * yu > 1.1 && (r.hi - r.lo) * xu > 1.2;
     // keep clear of the empirical-rule band percentages (drawn at 40% height)
     const insideY = emp === 'bands' || emp === 'both' ? 0.72 : 0.45;

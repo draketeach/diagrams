@@ -57,6 +57,9 @@ inequality (`z < -1.5`, `-1 < z < 2`, `x > 62 : 0.1151`), dotted like exam
 papers (`patterns.meta` dots in three densities), crosshatched or grey;
 labels as z-scores, real values (from μ and σ) or μ ± kσ, or your own text
 (`0.6:z`); dashed or solid boundary lines; calculated or typed area labels; and the 68–95–99.7% empirical rule.
+A region can be left unshaded, the axis can show only the region's boundaries,
+and an area label can sit above a dashed arrow across the region, with the
+boundary lines rising past the curve to meet it (`59 < x < 107 : 95%`).
 
 ### Blank axes
 

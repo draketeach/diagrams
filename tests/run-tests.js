@@ -813,6 +813,16 @@ test('box plot: five-number summaries, names, outliers', () => {
   assert.ok(!bare.includes('number line') && !bare.includes('(1,0.15)'), 'no number line, plain whiskers');
 });
 
+test('normal: an unshaded region labelled above a dashed arrow between rising lines', () => {
+  const v = { ...defaultValues(normal.schema), ...GALLERY.find((e) => e.id === 'normal-95').values };
+  const code = normal.generate(v).code;
+  assert.ok(!code.includes('pattern') && !code.includes('\\fill'), 'no shading');
+  assert.ok(code.includes('{$59$}') && code.includes('{$107$}') && !code.includes('{$83$}'), 'only the boundaries are labelled');
+  assert.ok(/\\draw\[dashed, thin, stealth-stealth\] \(-2,[\d.]+\) -- \(2,[\d.]+\) node\[midway, above, inner sep=2pt\] \{\$95\\%\$\}/.test(code), 'dashed arrow with 95% above it');
+  const top = Number(code.match(/\\draw\[thin\] \(-2,0\) -- \(-2,([\d.]+)\)/)[1]);
+  assert.ok(top > Math.exp(-2) + 0.1, 'the boundary line rises past the curve');
+});
+
 test('gallery: every entry generates cleanly and has its image', () => {
   const modules = { realgraph, function: fn, sketch, blank, normal, scatter, slopefield, geometry, network, probtree, solids, dotplot, boxplot };
   const ids = new Set();
