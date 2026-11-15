@@ -39,8 +39,9 @@ optionally `y = 5 from 0 to 10`, labelled by value, equation, both or neither),
 shading under the graph (grey or dotted), dots/coordinates where graphs cross, the axes (labels,
 `O`, custom ticks such as `3`, `5/2`, `pi` or `3:a`, evenly spaced scale ticks;
 a tick number with the curve through it moves beside its tick, away from the
-origin first (a y-axis number may move to the right of the axis), keeping clear
-of the other numbers, or stays put if there's no room; Sketch graphs too),
+origin first (never across its axis, and on a grid a y-axis number stays put),
+keeping clear of the other numbers, or stays put if there's no room; Sketch
+graphs too),
 a NOT TO SCALE note, size and range, a background grid (own range, spacing and shade), and the plot
 method.
 

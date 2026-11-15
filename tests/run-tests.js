@@ -1050,6 +1050,9 @@ test('graphs: tick numbers move clear of the curve and of each other', () => {
   const code = fn.generate(base).code;
   assert.ok(code.includes('anchor=north west, inner sep=2pt, xshift=2pt, yshift=-2pt] at (5,0) {$5$}'), 'beside the tick where the curve crosses');
   assert.ok(code.includes('anchor=north, inner sep=2pt, yshift=-2pt] at (1,0) {$1$}'), 'clear ones stay put');
+  // a y-axis number moves up or down, never across its axis
+  const hyp = fn.generate({ ...defaultValues(fn.schema), graphs: 'y = 1 + 4/(x+2); from -1.82 to 5', labelX: false, labelY: false, yCustomTicks: '3', windowMode: 'manual', xmin: -3.2, xmax: 5.6, ymin: -1.2, ymax: 7, width: 6, height: 5 }).code;
+  assert.ok(hyp.includes('anchor=north east, inner sep=2pt, xshift=-2pt, yshift=-2pt] at (0,3) {$3$}') && !hyp.includes('anchor=west, inner sep=2pt, xshift=2pt]'));
   // nothing to avoid: blank axes keep the usual place
   assert.ok(!blank.generate({ ...defaultValues(blank.schema), xScaleTicks: true, xScaleNumbers: true }).code.includes('north west'));
 });

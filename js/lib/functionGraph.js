@@ -702,7 +702,7 @@ function tickBox(latex) {
 /**
  * Places a tick number can go, with the TikZ options for each and the box it
  * takes (cm, from the tick's point): the usual place first, then beside the tick
- * (away from the origin first); a y-axis number may also cross to the right of its axis.
+ * (away from the origin first); numbers never cross their axis.
  */
 function tickPlaces(t, onX, box) {
   const g = 0.07;
@@ -725,13 +725,7 @@ function tickPlaces(t, onX, box) {
     x: [-g - w, -g],
     y: k > 0 ? [g, g + h] : [-g - h, -g],
   });
-  // across the axis before up or down, which could read as a different value
-  return [
-    { opts: 'anchor=east, inner sep=2pt, xshift=-2pt', x: [-g - w, -g], y: [-h / 2, h / 2] },
-    { opts: 'anchor=west, inner sep=2pt, xshift=2pt', x: [g, g + w], y: [-h / 2, h / 2] },
-    vert(out),
-    vert(-out),
-  ];
+  return [{ opts: 'anchor=east, inner sep=2pt, xshift=-2pt', x: [-g - w, -g], y: [-h / 2, h / 2] }, vert(out), vert(-out)];
 }
 
 /** True if one of the curves runs through the box (cm, around the point (px, py)). */
@@ -771,7 +765,7 @@ export function tickNodeOptions(t, onX, latex, avoid, axisTicks = []) {
   let places = tickPlaces(t, onX, tickBox(latex));
   if (!avoid?.curves?.length) return places[0].opts;
   // on a grid, a y-axis number moved up or down would sit beside a different line
-  if (!onX && avoid.grid) places = places.slice(0, 2);
+  if (!onX && avoid.grid) places = places.slice(0, 1);
   const { xUnit, yUnit } = avoid;
   const [px, py] = onX ? [t, 0] : [0, t];
   const abs = (pl, x0, y0) => ({ x: [x0 * xUnit + pl.x[0], x0 * xUnit + pl.x[1]], y: [y0 * yUnit + pl.y[0], y0 * yUnit + pl.y[1]] });
