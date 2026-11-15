@@ -702,7 +702,7 @@ function tickBox(latex) {
 /**
  * Places a tick number can go, with the TikZ options for each and the box it
  * takes (cm, from the tick's point): the usual place first, then beside the tick
- * (away from the origin first), then across the axis.
+ * (away from the origin first); a y-axis number may also cross to the right of its axis.
  */
 function tickPlaces(t, onX, box) {
   const g = 0.07;
@@ -718,7 +718,6 @@ function tickPlaces(t, onX, box) {
       { opts: 'anchor=north, inner sep=2pt, yshift=-2pt', x: [-w / 2, w / 2], y: [-g - h, -g] },
       side(out),
       side(-out),
-      { opts: 'anchor=south, inner sep=2pt, yshift=2pt', x: [-w / 2, w / 2], y: [g, g + h] },
     ];
   }
   const vert = (k) => ({
