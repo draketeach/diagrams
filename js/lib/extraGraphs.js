@@ -153,7 +153,7 @@ export function drawExtraGraphs(b, win, values, { graphs = [], main = null, xUni
         warnings.push(`The graph ${name} is outside the axes range.`);
         return;
       }
-      const style = [width, g.dash, arrowSpec(tip, true, true)].filter(Boolean).join(', ');
+      const style = [width, g.dash, arrowSpec(tip, g.arrows !== 'end', g.arrows !== 'start')].filter(Boolean).join(', ');
       b.add(`\\draw[${style}] ${pt(x, lo)} -- ${pt(x, hi)};`);
       if (g.label) labels.push(`\\node[anchor=south, inner sep=2pt] at ${pt(x, hi)} {${mathLabel(g.label)}};`);
       return;
@@ -178,6 +178,9 @@ export function drawExtraGraphs(b, win, values, { graphs = [], main = null, xUni
       warnings.push(`The graph ${name} is not visible in this window.`);
       return;
     }
+    // an arrowhead at one end only ("arrow at end" / "arrow at start")
+    if (g.arrows === 'end') pieces.forEach((p, k) => Object.assign(p, { startArrow: false, endArrow: p.endArrow && k === pieces.length - 1 }));
+    if (g.arrows === 'start') pieces.forEach((p, k) => Object.assign(p, { endArrow: false, startArrow: p.startArrow && k === 0 }));
     if (isLinear(g.f, lo, hi)) {
       for (const p of pieces) {
         const style = [width, g.dash, arrowSpec(tip, p.startArrow, p.endArrow)].filter(Boolean).join(', ');

@@ -192,6 +192,7 @@ export const GRAPH_EXAMPLES = {
     ['y^2 = x(x+2)(x-5)', 'y² = f(x): y = ±√f(x), e.g. an oval and an open branch'],
     ['y = 6 - 3x; dashed; label', 'Settings after ; — dashed or dotted, label shows the equation'],
     ['y = 1/x; thick; no arrows', 'A line width (thin … very thick), no arrows at the ends'],
+    ['y = sin x; from 0 to 2.2; arrow at end', 'An arrowhead at one end only (after the first graph; or arrow at start)'],
     ['y = 2x; from 0 to 4; label: L', 'Only draw it for 0 ≤ x ≤ 4; label it L'],
   ],
   notes: [
@@ -229,5 +230,6 @@ export const TICK_EXAMPLES = {
     ['5/2, pi, 2sqrt(3)', 'Exact values: fractions, π and surds'],
     ['3:a', 'A tick at 3 labelled a'],
     ['2pi:2\\pi', 'Any LaTeX label after the colon'],
+    ['-4 @ above', 'The number above the x-axis (or @ right of the y-axis)'],
   ],
 };

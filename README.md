@@ -25,7 +25,7 @@ Type one graph per line in the **Graphs** box:
 | `y^2 = x(x+2)(x-5)` | y² = f(x), drawn as y = ±√f(x): closed ovals and open branches |
 
 Press **?** next to the box for examples. Settings go after semicolons: `dashed`, `dotted`, a line width (`thick` …),
-`no arrows`, `from 0 to 4`, `label` (shows the equation) or `label: text`, e.g.
+`no arrows`, `arrow at end` or `arrow at start` (graphs after the first), `from 0 to 4`, `label` (shows the equation) or `label: text`, e.g.
 `y = 6 - 3x; dashed; label`.
 
 The first graph gets the labels: x-intercepts, y-intercept and turning points
@@ -36,8 +36,10 @@ and arrowheads, tick marks and dots, the equation on the graph, decimal places
 and exact values (fractions, π, surds), points on the curve at chosen x-values
 (e.g. `2:P` labelled P(2, −6)), dashed or dotted **asymptotes** (`y = 5, x = -2`,
 optionally `y = 5 from 0 to 10`, labelled by value, equation, both or neither),
-shading under the graph (grey or dotted), dots/coordinates where graphs cross, the axes (labels,
-`O`, custom ticks such as `3`, `5/2`, `pi` or `3:a`, evenly spaced scale ticks;
+shading under the graph or between the first two graphs (grey or dotted, with
+an optional label such as R in the middle of it), dots/coordinates where graphs cross, the axes (labels,
+`O`, custom ticks such as `3`, `5/2`, `pi` or `3:a` (`-4 @ above` puts the number
+above the x-axis, `2 @ right` right of the y-axis), evenly spaced scale ticks;
 a tick number with the curve through it moves beside its tick, away from the
 origin first (never across its axis, and on a grid a y-axis number stays put),
 keeping clear of the other numbers, or stays put if there's no room; Sketch

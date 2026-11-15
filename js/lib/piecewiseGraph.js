@@ -166,3 +166,48 @@ export function drawShading(b, parts, shades, win, colour) {
     b.add(`\\fill[${fill}] ${rows.join(' --\n').trim()} -- cycle;`);
   }
 }
+
+/**
+ * Shade between two graphs, fA and fB, over each range: along fA from left to
+ * right, then back along fB. Returns where a label for the first region could
+ * go (its middle, weighted by how tall it is), or null.
+ */
+export function drawShadingBetween(b, fA, fB, shades, win, colour) {
+  if (!shades.length || !fA || !fB) return null;
+  const pattern = SHADE_PATTERNS[colour];
+  if (pattern) b.usePreamble('\\usetikzlibrary{patterns.meta}');
+  const fill = pattern ? `pattern={${pattern}}` : colour || 'gray!25';
+  const clampY = (y) => Math.max(win.ymin, Math.min(win.ymax, y));
+  let middle = null;
+  b.comment('shading between the graphs');
+  for (const [s, t] of shades) {
+    const lo = Math.max(s, win.xmin);
+    const hi = Math.min(t, win.xmax);
+    if (!(hi > lo)) continue;
+    const N = 80;
+    const xs = Array.from({ length: N + 1 }, (_, i) => lo + ((hi - lo) * i) / N);
+    const top = xs.filter((x) => isFinite(fA(x))).map((x) => pt(x, clampY(fA(x))));
+    const back = [...xs].reverse().filter((x) => isFinite(fB(x))).map((x) => pt(x, clampY(fB(x))));
+    const coords = [...top, ...back];
+    const rows = [];
+    for (let i = 0; i < coords.length; i += 6) rows.push('    ' + coords.slice(i, i + 6).join(' -- '));
+    b.add(`\\fill[${fill}] ${rows.join(' --\n').trim()} -- cycle;`);
+    if (!middle) {
+      let w = 0;
+      let mx = 0;
+      let my = 0;
+      for (const x of xs) {
+        const ya = fA(x);
+        const yb = fB(x);
+        if (!isFinite(ya) || !isFinite(yb)) continue;
+        const h = Math.abs(ya - yb);
+        w += h;
+        mx += x * h;
+        my += ((ya + yb) / 2) * h;
+      }
+      if (w > 0) middle = { x: mx / w, y: my / w };
+    }
+  }
+  return middle;
+}
+

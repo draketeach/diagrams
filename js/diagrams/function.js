@@ -22,6 +22,7 @@ import {
   drawDots,
   parseShades,
   drawShading,
+  drawShadingBetween,
 } from '../lib/piecewiseGraph.js';
 import {
   autoWindow,
@@ -109,6 +110,10 @@ const schema = [
           ],
         }
       ),
+      row(
+        { type: 'text', key: 'shadeBetween', label: 'Shade between graphs 1 and 2 from … to …', default: '', placeholder: 'e.g. 0 to pi/2', showIf: manyGraphs },
+        { type: 'text', key: 'shadeLabel', label: 'Label in the shading', default: '', placeholder: 'e.g. R' }
+      ),
     ],
     meet: [
       { type: 'checkbox', key: 'extraDots', label: 'Dots where graphs cross', default: false, showIf: manyGraphs },
@@ -155,10 +160,23 @@ function generate(input) {
 }
 
 /** Things every function graph draws before the curve. Returns { asym, skip-ready lists }. */
-function background(b, win, values, f, shadeParts) {
+function background(b, win, values, f, shadeParts, others = []) {
   const warnings = [];
   warnings.push(...drawGrid(b, win, values));
-  drawShading(b, shadeParts, parseShades(values.shade), win, values.shadeColour);
+  const under = parseShades(values.shade);
+  drawShading(b, shadeParts, under, win, values.shadeColour);
+  // between the first graph and the second (a function of x)
+  const second = others.find((g) => typeof g.f === 'function' && !g.vertical && g.kind !== 'ysq');
+  const between = parseShades(values.shadeBetween);
+  if (between.length && !second) warnings.push('Shading between graphs needs a second graph (a function of x) on the next line.');
+  let middle = second ? drawShadingBetween(b, f, second.f, between, win, values.shadeColour) : null;
+  if (!middle && under.length && shadeParts.length) {
+    // the middle of the first region under the graph
+    const [s0, t0] = under[0];
+    const p = shadeParts.find((q) => q.b > s0 && q.a < t0) || shadeParts[0];
+    middle = drawShadingBetween({ comment() {}, add() {}, usePreamble() {} }, p.f, () => 0, [[Math.max(s0, p.a), Math.min(t0, p.b)]], win, '');
+  }
+  if (String(values.shadeLabel ?? '').trim() && middle) b.add(`\\node at ${pt(middle.x, middle.y)} {${mathLabel(values.shadeLabel)}};`);
   const asym = drawAsymptotes(b, win, values, f);
   warnings.push(...asym.warnings, ...drawAxes(b, win, values));
   return { asym, warnings };
@@ -178,7 +196,7 @@ let windowNotes = []; // notes about a typed window, for the warnings
 function featureWindow(values, f, xs, ys, others, { fallbackF = null } = {}) {
   const extra = extraGraphFeatures(others, f);
   for (const a of parseAsymptotes(values.asymptotes)) (a.axis === 'x' ? extra.xs : extra.ys).push(a.value);
-  for (const [s, t] of parseShades(values.shade)) extra.xs.push(s, t);
+  for (const [s, t] of [...parseShades(values.shade), ...parseShades(values.shadeBetween)]) extra.xs.push(s, t);
   return resolveWindow(values, () => autoWindow({ xs: [...xs, ...extra.xs], ys: [...ys, ...extra.ys].filter(isFinite), f: fallbackF }), windowNotes);
 }
 
@@ -224,7 +242,7 @@ function generateFormula(values, main, others, style) {
   const { options, xUnit, yUnit } = scaleOptions(win, values);
   const b = new TikzBuilder();
   b.comment(`${values.yName ?? 'y'} = ${main.latex}`);
-  const bg = background(b, win, values, f, [{ a: lo, b: hi, f }]);
+  const bg = background(b, win, values, f, [{ a: lo, b: hi, f }], others);
   warnings.push(...bg.warnings);
   warnings.push(
     ...ticks(
@@ -297,7 +315,7 @@ function generateYSquared(values, main, others, style) {
   const { options, xUnit, yUnit } = scaleOptions(win, values);
   const b = new TikzBuilder();
   b.comment(`${main.latex}, i.e. y = ±√(…) where the right-hand side is ≥ 0`);
-  const bg = background(b, win, values, top, []);
+  const bg = background(b, win, values, top, [], others);
   warnings.push(...bg.warnings);
   const xRoots = findRoots(f, win.xmin, win.xmax);
   const y0 = f(0) > 1e-12 ? Math.sqrt(f(0)) : null;
@@ -373,7 +391,7 @@ function generatePiecewise(values, main, others, style) {
   const R = dotRadius(values);
   const { options, xUnit, yUnit } = scaleOptions(win, values);
   const b = new TikzBuilder();
-  const bg = background(b, win, values, f, spans.map((p) => ({ a: p.a, b: p.b, f: p.expr.evaluate })));
+  const bg = background(b, win, values, f, spans.map((p) => ({ a: p.a, b: p.b, f: p.expr.evaluate })), others);
   warnings.push(...bg.warnings);
 
   // ---- endpoint values on the axes

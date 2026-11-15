@@ -401,7 +401,9 @@ export function autoWindow({ xs = [], ys = [], f = null, padX = 0.3, padY = 0.3 
   const xmax = xhi + padX * span;
 
   const Y = [0, ...ys].filter(isFinite);
-  if (f && Y.length < 3) {
+  // too few features, or all at much the same height (e.g. graphs only meeting near 0)
+  const flat = Math.max(...Y) - Math.min(...Y) < 0.05 * span;
+  if (f && (Y.length < 3 || flat)) {
     // not enough features: look at the curve a little inside the window
     for (const x of [xlo - 0.15 * span, xhi + 0.15 * span, (xlo + xhi) / 2]) {
       const y = f(x);
@@ -411,13 +413,17 @@ export function autoWindow({ xs = [], ys = [], f = null, padX = 0.3, padY = 0.3 
   let ylo = Math.min(...Y);
   let yhi = Math.max(...Y);
   let spanY = yhi - ylo;
-  if (spanY < 1e-9) spanY = 2;
-  return {
+  if (spanY < 1e-3 * span) spanY = Math.max(spanY, 2);
+  const w = {
     xmin: niceRound(xmin),
     xmax: niceRound(xmax),
     ymin: niceRound(Math.min(ylo - padY * spanY, -0.1 * spanY)),
     ymax: niceRound(Math.max(yhi + padY * spanY, 0.1 * spanY)),
   };
+  // never a window with no height (or width) after rounding
+  if (!(w.ymax > w.ymin)) [w.ymin, w.ymax] = [ylo - 1, yhi + 1];
+  if (!(w.xmax > w.xmin)) [w.xmin, w.xmax] = [xlo - 1, xhi + 1];
+  return w;
 }
 
 /**
@@ -874,12 +880,16 @@ export function splitList(src) {
   return out;
 }
 
-/** Parse "3, 5/2, pi:a" into [{ value, latex }]. */
+/** Parse "3, 5/2, pi:a, -4 @ above" into [{ value, latex, place }]. */
 export function parseTickList(src, axisName) {
   return splitList(src)
     .map((s) => s.trim())
     .filter(Boolean)
-    .map((item) => {
+    .map((whole) => {
+      // "@ above" (x-axis) or "@ right" (y-axis) puts the number on the other side
+      const at = whole.match(/^(.*?)\s*@\s*(above|below|left|right)\s*$/i);
+      const item = at ? at[1] : whole;
+      const place = at ? at[2].toLowerCase() : null;
       const i = item.indexOf(':');
       const valueText = i >= 0 ? item.slice(0, i).trim() : item;
       const label = i >= 0 ? item.slice(i + 1).trim() : null;
@@ -889,7 +899,7 @@ export function parseTickList(src, axisName) {
       } catch (e) {
         throw new Error(`Could not read custom ${axisName} tick "${item}": ${e.message}`);
       }
-      return { value: c.value, latex: label ?? c.latex };
+      return { value: c.value, latex: label ?? c.latex, place };
     });
 }
 
@@ -910,9 +920,11 @@ export function drawCustomTicks(b, win, values, { skipX = [], skipY = [], avoid 
         warnings.push(`Custom x tick ${t.latex} is outside the axes range.`);
         continue;
       }
-      lines.push(`\\draw[${width}] ${pt(t.value, 0)} -- ++(0,-3pt);`);
+      const up = t.place === 'above';
+      lines.push(`\\draw[${width}] ${pt(t.value, 0)} -- ++(0,${up ? '' : '-'}3pt);`);
       if (values.customTickLabels && Math.abs(t.value) > 1e-12 && !near(t.value, skipX)) {
-        lines.push(`\\node[${tickNodeOptions(t.value, true, t.latex, avoid, xs.map((u) => ({ t: u.value, latex: u.latex })))}] at ${pt(t.value, 0)} {${mathLabel(t.latex)}};`);
+        const opts = up ? 'anchor=south, inner sep=2pt, yshift=2pt' : tickNodeOptions(t.value, true, t.latex, avoid, xs.map((u) => ({ t: u.value, latex: u.latex })));
+        lines.push(`\\node[${opts}] at ${pt(t.value, 0)} {${mathLabel(t.latex)}};`);
       }
     }
   }
@@ -922,9 +934,11 @@ export function drawCustomTicks(b, win, values, { skipX = [], skipY = [], avoid 
         warnings.push(`Custom y tick ${t.latex} is outside the axes range.`);
         continue;
       }
-      lines.push(`\\draw[${width}] ${pt(0, t.value)} -- ++(-3pt,0);`);
+      const right = t.place === 'right';
+      lines.push(`\\draw[${width}] ${pt(0, t.value)} -- ++(${right ? '' : '-'}3pt,0);`);
       if (values.customTickLabels && Math.abs(t.value) > 1e-12 && !near(t.value, skipY)) {
-        lines.push(`\\node[${tickNodeOptions(t.value, false, t.latex, avoid, ys.map((u) => ({ t: u.value, latex: u.latex })))}] at ${pt(0, t.value)} {${mathLabel(t.latex)}};`);
+        const opts = right ? 'anchor=west, inner sep=2pt, xshift=2pt' : tickNodeOptions(t.value, false, t.latex, avoid, ys.map((u) => ({ t: u.value, latex: u.latex })));
+        lines.push(`\\node[${opts}] at ${pt(0, t.value)} {${mathLabel(t.latex)}};`);
       }
     }
   }

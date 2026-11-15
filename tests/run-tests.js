@@ -1117,6 +1117,23 @@ test('graphs: point names and tick labels can have commas inside brackets', () =
   assert.ok(code.includes('{$P(a, b)$}'), 'one point named P(a, b), not split at its comma');
 });
 
+test('function: shading between two graphs, one-ended arrows, ticks above the axis', () => {
+  const d = { ...defaultValues(fn.schema), graphs: 'y = x; from 0 to 1.85\ny = sin x; from 0 to 2.2; arrow at end', shadeBetween: '0 to pi/2', shadeLabel: 'R' };
+  const r = fn.generate(d);
+  assert.deepEqual(r.warnings, []);
+  assert.ok(r.code.includes('% shading between the graphs') && r.code.includes('(1.5708,1.5708) -- (1.5708,1)'), 'along y = x, then back along sin x');
+  assert.ok(/\\node at \([\d.]+,[\d.]+\) \{\$R\$\}/.test(r.code), 'a label in the shading');
+  assert.ok(/-to\] plot\[domain=0:2\.2/.test(r.code), 'sin x has an arrowhead at its end only');
+  assert.ok(fn.generate({ ...d, graphs: 'y = x' }).warnings.some((w) => /second graph/.test(w)), 'needs a second graph');
+  const up = fn.generate({ ...defaultValues(fn.schema), graphs: 'y = x', xCustomTicks: '-4 @ above, 2', windowMode: 'manual', xmin: -5, xmax: 5, ymin: -5, ymax: 5 }).code;
+  assert.ok(up.includes('(-4,0) -- ++(0,3pt)') && up.includes('anchor=south, inner sep=2pt, yshift=2pt] at (-4,0)'), 'number and tick above the axis');
+});
+
+test('function: the automatic window copes with graphs that only meet near the origin', () => {
+  const r = fn.generate({ ...defaultValues(fn.schema), graphs: 'y = x; from 0 to 1.85\ny = sin x; from 0 to 2.2' });
+  assert.ok(/x=[\d.]+cm, y=[\d.]+cm/.test(r.code));
+});
+
 test('gallery.html versions are up to date', () => {
   const html = readFileSync(new URL('../gallery.html', import.meta.url), 'utf8');
   assert.equal(html, buildIndex(html));

@@ -15,7 +15,7 @@
 //   }; thick
 //
 // Settings: solid | dashed | dotted, a line width (very thin … very thick),
-// arrows | no arrows, from <a> to <b> (x-range; y-range for x = c),
+// arrows | no arrows | arrow at end | arrow at start, from <a> to <b> (x-range; y-range for x = c),
 // label (shows the equation) or label: <text>.
 
 import { parseExpression, parseConstant } from './mathParser.js';
@@ -72,6 +72,8 @@ function parseOptions(text, g, where) {
     if (DASHES.includes(low)) g.dash = low === 'solid' ? '' : low;
     else if (WIDTHS.includes(low)) g.width = low;
     else if (/^no arrows?$/.test(low)) g.arrows = false;
+    else if (/^(arrow (at )?(the )?end|end arrow)$/.test(low)) g.arrows = 'end';
+    else if (/^(arrow (at )?(the )?start|start arrow)$/.test(low)) g.arrows = 'start';
     else if (/^arrows?$/.test(low)) g.arrows = true;
     else if (range) {
       g.from = constant(range[1], where).value;
