@@ -135,14 +135,20 @@ export function moreOptions(extra = {}) {
         field('yCustomTicks', { label: 'Ticks on y' }),
         field('customTickLabels'),
         row(field('xScaleTicks', { label: 'Scale ticks on x' }), field('yScaleTicks', { label: 'Scale ticks on y' })),
-        row(
-          field('xStep', { label: 'x spacing', help: undefined, showIf: (v) => v.xScaleTicks }),
-          field('yStep', { label: 'y spacing', help: undefined, showIf: (v) => v.yScaleTicks })
-        ),
-        row(
-          field('xScaleNumbers', { label: 'Numbers', showIf: (v) => v.xScaleTicks }),
-          field('yScaleNumbers', { label: 'Numbers', showIf: (v) => v.yScaleTicks })
-        ),
+        {
+          ...row(
+            field('xStep', { label: 'x spacing', help: undefined, showIf: (v) => v.xScaleTicks }),
+            field('yStep', { label: 'y spacing', help: undefined, showIf: (v) => v.yScaleTicks })
+          ),
+          fixed: true,
+        },
+        {
+          ...row(
+            field('xScaleNumbers', { label: 'Numbers', showIf: (v) => v.xScaleTicks }),
+            field('yScaleNumbers', { label: 'Numbers', showIf: (v) => v.yScaleTicks })
+          ),
+          fixed: true,
+        },
         row(field('originLabel', { label: 'Label the origin' }), field('originText', { label: 'as' })),
         NOT_TO_SCALE_FIELD,
         row(field('axisArrow', { label: 'Arrowheads' }), field('axisWidth', { label: 'Line width' })),

@@ -129,6 +129,13 @@ body {
 }
 .form-group-body { display: grid; gap: 8px; }
 .form-row { display: grid; gap: 8px; align-items: end; }
+.form-row.is-empty { display: none; }
+/* a checkbox beside inputs sits level with their middle */
+.form-row > .form-field-checkbox { padding-bottom: 7px; }
+.form-row-checks { align-items: start; }
+.form-row-checks > .form-field-checkbox { padding-bottom: 0; }
+/* narrower padding so option text in half-width selects isn't cut off */
+.form-row select { padding-left: 5px; padding-right: 2px; }
 /* groups inside "More options" */
 .form-group .form-group { margin: 2px 0 0; }
 .form-group .form-group summary { font-weight: 500; font-size: 0.95em; border-bottom: 0; margin-bottom: 2px; padding: 4px 0; }
@@ -136,7 +143,8 @@ body {
 .form-group .form-group-body > .form-group:first-child { margin-top: 0; }
 .form-field { display: grid; gap: 3px; }
 .form-field label { font-weight: 500; }
-.form-field-checkbox label { font-weight: 400; display: flex; gap: 6px; align-items: center; }
+.form-field-checkbox label { font-weight: 400; display: flex; gap: 6px; align-items: flex-start; }
+.form-field-checkbox input[type='checkbox'] { margin-top: 3px; flex: none; }
 .form-help { color: var(--muted); font-size: 12px; line-height: 1.35; }
 .form-label-row { display: flex; align-items: center; gap: 6px; }
 .help-toggle {

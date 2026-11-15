@@ -291,7 +291,7 @@ const schema = [
     label: 'Enter the tree as',
     default: 'stages',
     options: [
-      { value: 'stages', label: 'Stages (the same outcomes under every branch)' },
+      { value: 'stages', label: 'Stages (same outcomes each time)' },
       { value: 'outline', label: 'Outline (any tree, one branch per line)' },
     ],
   },

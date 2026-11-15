@@ -29,7 +29,9 @@ const PRESETS = {
 
 const withDefaults = (group, defaults) => ({
   ...group,
-  fields: group.fields.map((f) => (f.key in defaults ? { ...f, default: defaults[f.key] } : f)),
+  fields: group.fields.map((f) =>
+    f.fields ? withDefaults(f, defaults) : f.key in defaults ? { ...f, default: defaults[f.key] } : f
+  ),
 });
 
 const schema = [
@@ -58,8 +60,13 @@ const schema = [
         examples: TICK_EXAMPLES,
       },
       { type: 'text', key: 'yCustomTicks', label: 'y ticks', default: '', placeholder: 'e.g. 1, -1' },
-      { type: 'checkbox', key: 'customTickLabels', label: 'Label the ticks', default: true },
-      { type: 'select', key: 'fontSize', label: 'Label font size', default: '', options: FONT_SIZES },
+      {
+        type: 'row',
+        fields: [
+          { type: 'checkbox', key: 'customTickLabels', label: 'Label the ticks', default: true },
+          { type: 'select', key: 'fontSize', label: 'Label font size', default: '', options: FONT_SIZES },
+        ],
+      },
       NOT_TO_SCALE_FIELD,
     ],
   },
@@ -67,7 +74,13 @@ const schema = [
   (() => {
     // the shared axes group, minus the tick boxes that are in "Ticks" above
     const g = withDefaults(axesFields(), { originLabel: false });
-    return { ...g, fields: g.fields.filter((f) => !['xCustomTicks', 'yCustomTicks', 'customTickLabels'].includes(f.key)) };
+    const drop = ['xCustomTicks', 'yCustomTicks', 'customTickLabels'];
+    const keep = (fields) =>
+      fields
+        .filter((f) => !drop.includes(f.key))
+        .map((f) => (f.fields ? { ...f, fields: keep(f.fields) } : f))
+        .filter((f) => !f.fields || f.fields.length);
+    return { ...g, fields: keep(g.fields) };
   })(),
   gridFields(),
 ];

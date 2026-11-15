@@ -312,8 +312,8 @@ const schema = [
             label: 'Placed',
             default: 'under',
             options: [
-              { value: 'under', label: 'Centred under the axis' },
-              { value: 'end', label: 'At the end of the axis' },
+              { value: 'under', label: 'Under, centred' },
+              { value: 'end', label: 'At the end' },
             ],
           },
         ],
@@ -328,8 +328,8 @@ const schema = [
             label: 'Placed',
             default: 'side',
             options: [
-              { value: 'side', label: 'Turned, beside the axis' },
-              { value: 'top', label: 'Above the axis' },
+              { value: 'side', label: 'Beside, turned' },
+              { value: 'top', label: 'Above' },
             ],
           },
         ],

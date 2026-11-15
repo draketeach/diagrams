@@ -134,14 +134,20 @@ const schema = [
       group('Axes', [
         row(field('xAxisLabel', { label: 'x label' }), field('yAxisLabel', { label: 'y label' })),
         row(field('xScaleTicks', { label: 'Scale ticks on x' }), field('yScaleTicks', { label: 'Scale ticks on y' })),
-        row(
-          field('xStep', { label: 'x spacing', help: undefined, showIf: (v) => v.xScaleTicks }),
-          field('yStep', { label: 'y spacing', help: undefined, showIf: (v) => v.yScaleTicks })
-        ),
-        row(
-          field('xScaleNumbers', { label: 'Numbers', showIf: (v) => v.xScaleTicks }),
-          field('yScaleNumbers', { label: 'Numbers', showIf: (v) => v.yScaleTicks })
-        ),
+        {
+          ...row(
+            field('xStep', { label: 'x spacing', help: undefined, showIf: (v) => v.xScaleTicks }),
+            field('yStep', { label: 'y spacing', help: undefined, showIf: (v) => v.yScaleTicks })
+          ),
+          fixed: true, // x stays on the left, y on the right
+        },
+        {
+          ...row(
+            field('xScaleNumbers', { label: 'Numbers', showIf: (v) => v.xScaleTicks }),
+            field('yScaleNumbers', { label: 'Numbers', showIf: (v) => v.yScaleTicks })
+          ),
+          fixed: true,
+        },
         row(field('xCustomTicks', { label: 'Ticks on x', help: undefined }), field('yCustomTicks', { label: 'Ticks on y' })),
         row(field('originLabel', { label: 'Label the origin', default: false }), field('originText', { label: 'as' })),
         NOT_TO_SCALE_FIELD,

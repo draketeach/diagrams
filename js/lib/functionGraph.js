@@ -33,12 +33,24 @@ export function windowFields() {
           { value: 'manual', label: 'Manual' },
         ],
       },
-      { type: 'number', key: 'xmin', label: 'x min', default: -6, step: 0.5, showIf: (v) => v.windowMode === 'manual' },
-      { type: 'number', key: 'xmax', label: 'x max', default: 6, step: 0.5, showIf: (v) => v.windowMode === 'manual' },
-      { type: 'number', key: 'ymin', label: 'y min', default: -10, step: 0.5, showIf: (v) => v.windowMode === 'manual' },
-      { type: 'number', key: 'ymax', label: 'y max', default: 10, step: 0.5, showIf: (v) => v.windowMode === 'manual' },
-      { type: 'number', key: 'width', label: 'Width (cm)', default: 8, step: 0.5, min: 1 },
-      { type: 'number', key: 'height', label: 'Height (cm)', default: 6, step: 0.5, min: 1, showIf: (v) => !v.equalScale },
+      {
+        type: 'row',
+        fields: [
+          { type: 'number', key: 'xmin', label: 'x min', default: -6, step: 0.5 },
+          { type: 'number', key: 'xmax', label: 'x max', default: 6, step: 0.5 },
+          { type: 'number', key: 'ymin', label: 'y min', default: -10, step: 0.5 },
+          { type: 'number', key: 'ymax', label: 'y max', default: 10, step: 0.5 },
+        ],
+        showIf: (v) => v.windowMode === 'manual',
+      },
+      {
+        type: 'row',
+        fields: [
+          { type: 'number', key: 'width', label: 'Width (cm)', default: 8, step: 0.5, min: 1 },
+          { type: 'number', key: 'height', label: 'Height (cm)', default: 6, step: 0.5, min: 1, showIf: (v) => !v.equalScale },
+        ],
+        fixed: true,
+      },
       { type: 'checkbox', key: 'equalScale', label: 'Same scale on both axes', default: false },
     ],
   };
@@ -50,70 +62,103 @@ export function axesFields() {
     label: 'Axes',
     collapsed: true,
     fields: [
-      { type: 'select', key: 'axisArrow', label: 'Axis arrowheads', default: 'latex', options: ARROW_TIPS },
-      { type: 'select', key: 'axisWidth', label: 'Axis line width', default: 'thin', options: LINE_WIDTHS },
-      { type: 'text', key: 'xAxisLabel', label: 'x-axis label', default: 'x' },
       {
-        type: 'select',
-        key: 'xAxisLabelPos',
-        label: 'x-axis label position',
-        default: 'below',
-        options: [
-          { value: 'below', label: 'Below the arrow' },
-          { value: 'right', label: 'Right of the arrow' },
+        type: 'row',
+        fields: [
+          { type: 'select', key: 'axisArrow', label: 'Arrowheads', default: 'latex', options: ARROW_TIPS },
+          { type: 'select', key: 'axisWidth', label: 'Line width', default: 'thin', options: LINE_WIDTHS },
         ],
       },
-      { type: 'text', key: 'yAxisLabel', label: 'y-axis label', default: 'y' },
       {
-        type: 'select',
-        key: 'yAxisLabelPos',
-        label: 'y-axis label position',
-        default: 'left',
-        options: [
-          { value: 'left', label: 'Left of the arrow' },
-          { value: 'above', label: 'Above the arrow' },
+        type: 'row',
+        fields: [
+          { type: 'text', key: 'xAxisLabel', label: 'x-axis label', default: 'x' },
+          { type: 'text', key: 'yAxisLabel', label: 'y-axis label', default: 'y' },
         ],
       },
-      { type: 'checkbox', key: 'originLabel', label: 'Label origin "O"', default: true },
-      { type: 'text', key: 'originText', label: 'Origin label', default: 'O', showIf: (v) => v.originLabel },
-      { type: 'checkbox', key: 'xScaleTicks', label: 'Scale ticks on x-axis', default: false },
       {
-        type: 'number',
-        key: 'xStep',
-        label: 'x tick spacing',
-        default: null,
-        step: 0.5,
-        min: 0,
-        help: 'Leave blank for automatic spacing.',
-        showIf: (v) => v.xScaleTicks,
-      },
-      { type: 'checkbox', key: 'xScaleNumbers', label: 'Number the x ticks', default: true, showIf: (v) => v.xScaleTicks },
-      { type: 'checkbox', key: 'yScaleTicks', label: 'Scale ticks on y-axis', default: false },
-      {
-        type: 'number',
-        key: 'yStep',
-        label: 'y tick spacing',
-        default: null,
-        step: 0.5,
-        min: 0,
-        help: 'Leave blank for automatic spacing.',
-        showIf: (v) => v.yScaleTicks,
-      },
-      { type: 'checkbox', key: 'yScaleNumbers', label: 'Number the y ticks', default: true, showIf: (v) => v.yScaleTicks },
-      {
-        type: 'text',
-        key: 'xCustomTicks',
-        label: 'Custom x ticks',
-        default: '',
-        placeholder: 'e.g. 3, 5/2, pi',
-        help: 'Comma separated. Add a label after a colon, e.g. 3:a or 2pi:2\\pi.',
+        type: 'row',
+        fields: [
+          {
+            type: 'select',
+            key: 'xAxisLabelPos',
+            label: 'x label position',
+            default: 'below',
+            options: [
+              { value: 'below', label: 'Below' },
+              { value: 'right', label: 'Right' },
+            ],
+          },
+          {
+            type: 'select',
+            key: 'yAxisLabelPos',
+            label: 'y label position',
+            default: 'left',
+            options: [
+              { value: 'left', label: 'Left' },
+              { value: 'above', label: 'Above' },
+            ],
+          },
+        ],
       },
       {
-        type: 'text',
-        key: 'yCustomTicks',
-        label: 'Custom y ticks',
-        default: '',
-        placeholder: 'e.g. 12, -4',
+        type: 'row',
+        fields: [
+          { type: 'checkbox', key: 'originLabel', label: 'Label origin "O"', default: true },
+          { type: 'text', key: 'originText', label: 'Origin label', default: 'O', showIf: (v) => v.originLabel },
+        ],
+      },
+      {
+        type: 'row',
+        fields: [
+          { type: 'checkbox', key: 'xScaleTicks', label: 'Scale ticks on x', default: false },
+          { type: 'checkbox', key: 'yScaleTicks', label: 'Scale ticks on y', default: false },
+        ],
+      },
+      {
+        type: 'row',
+        fixed: true, // x on the left, y on the right
+        fields: [
+          {
+            type: 'number',
+            key: 'xStep',
+            label: 'x tick spacing',
+            default: null,
+            step: 0.5,
+            min: 0,
+            help: 'Leave the tick spacing blank for automatic spacing.',
+            showIf: (v) => v.xScaleTicks,
+          },
+          { type: 'number', key: 'yStep', label: 'y tick spacing', default: null, step: 0.5, min: 0, showIf: (v) => v.yScaleTicks },
+        ],
+      },
+      {
+        type: 'row',
+        fixed: true,
+        fields: [
+          { type: 'checkbox', key: 'xScaleNumbers', label: 'Number the x ticks', default: true, showIf: (v) => v.xScaleTicks },
+          { type: 'checkbox', key: 'yScaleNumbers', label: 'Number the y ticks', default: true, showIf: (v) => v.yScaleTicks },
+        ],
+      },
+      {
+        type: 'row',
+        fields: [
+          {
+            type: 'text',
+            key: 'xCustomTicks',
+            label: 'Custom x ticks',
+            default: '',
+            placeholder: 'e.g. 3, 5/2, pi',
+            help: 'Comma separated. Add a label after a colon, e.g. 3:a or 2pi:2\\pi.',
+          },
+          {
+            type: 'text',
+            key: 'yCustomTicks',
+            label: 'Custom y ticks',
+            default: '',
+            placeholder: 'e.g. 12, -4',
+          },
+        ],
       },
       {
         type: 'checkbox',
@@ -134,12 +179,24 @@ export function gridFields() {
     collapsed: true,
     fields: [
       { type: 'checkbox', key: 'showGrid', label: 'Background grid', default: false },
-      { type: 'number', key: 'gridXStep', label: 'x spacing', default: null, step: 0.25, min: 0, help: 'Blank = automatic.', showIf: on },
-      { type: 'number', key: 'gridYStep', label: 'y spacing', default: null, step: 0.25, min: 0, help: 'Blank = automatic.', showIf: on },
-      { type: 'number', key: 'gridXmin', label: 'Grid from x', default: null, step: 0.25, help: 'Leave the range blank to fill the axes.', showIf: on },
-      { type: 'number', key: 'gridXmax', label: 'Grid to x', default: null, step: 0.25, showIf: on },
-      { type: 'number', key: 'gridYmin', label: 'Grid from y', default: null, step: 0.25, showIf: on },
-      { type: 'number', key: 'gridYmax', label: 'Grid to y', default: null, step: 0.25, showIf: on },
+      {
+        type: 'row',
+        fields: [
+          { type: 'number', key: 'gridXStep', label: 'x spacing', default: null, step: 0.25, min: 0, help: 'Blank spacing = automatic; leave the range blank to fill the axes.' },
+          { type: 'number', key: 'gridYStep', label: 'y spacing', default: null, step: 0.25, min: 0 },
+        ],
+        showIf: on,
+      },
+      {
+        type: 'row',
+        fields: [
+          { type: 'number', key: 'gridXmin', label: 'From x', default: null, step: 0.25 },
+          { type: 'number', key: 'gridXmax', label: 'To x', default: null, step: 0.25 },
+          { type: 'number', key: 'gridYmin', label: 'From y', default: null, step: 0.25 },
+          { type: 'number', key: 'gridYmax', label: 'To y', default: null, step: 0.25 },
+        ],
+        showIf: on,
+      },
       {
         type: 'select',
         key: 'gridShade',

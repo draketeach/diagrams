@@ -3,8 +3,10 @@
 //
 // Field types:
 //   { type: 'group',    label, fields: [...], showIf?, collapsed? }  (groups can nest)
-//   { type: 'row',      fields: [...], showIf? }   -- fields side by side, as many
-//                                                    columns as there are fields showing
+//   { type: 'row',      fields: [...], showIf?, fixed? }   -- fields side by side, as many
+//        columns as there are fields showing (fixed: one column per field, so a
+//        field keeps its place, e.g. x on the left and y on the right); a row
+//        with nothing showing is hidden, and help text goes under the whole row
 //   { type: 'select',   key, label, options: [{ value, label }], default }
 //   { type: 'number',   key, label, default, step?, min?, max? }
 //   { type: 'text',     key, label, default, placeholder? }
@@ -40,13 +42,17 @@ export function buildForm(container, schema, { onChange } = {}) {
   const conditional = []; // { field, wrapper }
   const rows = []; // row elements, re-columned as their fields show and hide
 
-  function makeField(f, parent) {
+  function makeField(f, parent, helpAfter = null) {
     if (f.type === 'row') {
       const row = document.createElement('div');
-      row.className = 'form-row';
-      f.fields.forEach((child) => makeField(child, row));
-      parent.append(row);
-      rows.push(row);
+      // a row of only checkboxes lines up along the top (long labels wrap down)
+      row.className = f.fields.every((c) => c.type === 'checkbox') ? 'form-row form-row-checks' : 'form-row';
+      const helps = [];
+      f.fields.forEach((child) => makeField(child, row, helps));
+      parent.append(row, ...helps);
+      // help under a row hides with the row
+      if (f.showIf) helps.forEach((h) => conditional.push({ field: f, wrapper: h }));
+      rows.push({ row, fixed: !!f.fixed, count: f.fields.length });
       if (f.showIf) conditional.push({ field: f, wrapper: row });
       return;
     }
@@ -132,7 +138,11 @@ export function buildForm(container, schema, { onChange } = {}) {
       const help = document.createElement('small');
       help.className = 'form-help';
       help.textContent = f.help;
-      wrapper.append(help);
+      // in a row, the help goes under the whole row so the fields stay in line
+      if (helpAfter) {
+        helpAfter.push(help);
+        if (f.showIf) conditional.push({ field: f, wrapper: help });
+      } else wrapper.append(help);
     }
 
     el.addEventListener(f.type === 'checkbox' || f.type === 'select' ? 'change' : 'input', () => {
@@ -211,13 +221,14 @@ export function buildForm(container, schema, { onChange } = {}) {
 
   function updateVisibility() {
     const values = getValues();
-    for (const { field, wrapper } of conditional) {
-      wrapper.hidden = !field.showIf(values);
-    }
+    const shown = new Map(); // an element is hidden if any of its conditions says so
+    for (const { field, wrapper } of conditional) shown.set(wrapper, (shown.get(wrapper) ?? true) && !!field.showIf(values));
+    for (const [wrapper, ok] of shown) wrapper.hidden = !ok;
     // a row is as many columns wide as it has fields showing
-    for (const row of rows) {
+    for (const { row, fixed, count } of rows) {
       const shown = [...row.children].filter((c) => !c.hidden).length;
-      row.style.gridTemplateColumns = `repeat(${Math.max(1, shown)}, minmax(0, 1fr))`;
+      row.classList.toggle('is-empty', shown === 0);
+      row.style.gridTemplateColumns = `repeat(${fixed ? count : Math.max(1, shown)}, minmax(0, 1fr))`;
     }
   }
 
