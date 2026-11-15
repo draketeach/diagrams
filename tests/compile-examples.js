@@ -17,6 +17,8 @@ import probtree from '../js/diagrams/probtree.js';
 import realgraph from '../js/diagrams/realgraph.js';
 import network, { DEFAULT_NETWORK } from '../js/diagrams/network.js';
 import solids from '../js/diagrams/solids.js';
+import dotplot from '../js/diagrams/dotplot.js';
+import boxplot from '../js/diagrams/boxplot.js';
 import { parseScene as parseNet } from '../js/geometry/scene.js';
 import { applyEdgeList } from '../js/geometry/edgeList.js';
 import { GALLERY } from '../js/galleryEntries.js';
@@ -99,6 +101,12 @@ const jobs = [
   ['solids-cuboid-names', solids.generate({ ...defaultValues(solids.schema), solid: 'cuboid', names: 'A B C D E F G H', hidden: 'dashed' })],
   ['solids-prism-names', solids.generate({ ...defaultValues(solids.schema), solid: 'prism', names: 'A B C D E F', hidden: 'dashed' })],
   ['solids-bowl', solids.generate({ ...defaultValues(solids.schema), solid: 'hemisphere' })],
+  ['dotplot-default', dotplot.generate(defaultValues(dotplot.schema))],
+  ['dotplot-styles', dotplot.generate({ ...defaultValues(dotplot.schema), data: '2.5:3 3 3.5:2 5', dotStyle: 'open', axisTitle: 'Time (h)', step: '0.5', numbers: 'second', axisArrow: 'latex' })],
+  ['dotplot-crosses', dotplot.generate({ ...defaultValues(dotplot.schema), dotStyle: 'cross', numbers: 'none' })],
+  ['boxplot-default', boxplot.generate(defaultValues(boxplot.schema))],
+  ['boxplot-parallel', boxplot.generate({ ...defaultValues(boxplot.schema), ...GALLERY.find((e) => e.id === 'boxplot-parallel').values })],
+  ['boxplot-bare', boxplot.generate({ ...defaultValues(boxplot.schema), data: 'Group A: 1, 2, 3, 4, 8; 0.2', line: 'none', caps: 'none', outlierStyle: 'cross' })],
   ['realgraph-loan', realgraph.generate(defaultValues(realgraph.schema))],
   ['realgraph-travel', realgraph.generate({ ...defaultValues(realgraph.schema), curves: '0,0 -- 2,40 -- 3,40 -- 5,0; label above right: Car\n0,10 1,15 2,30* | 2,35o 4,38; dashed; label: Bus\n1,5:P', xTitle: 'Time (hours)', yTitle: 'Distance from home (km)', yTitlePos: 'top', xmax: 6, ymax: 45, xStep: 1, yStep: 10, yNumbers: '', gridX: 0.5, gridY: 5, gridColour: 'grey', origin: 'both' })],
   ['blank-trig', blank.generate({ ...defaultValues(blank.schema), xPreset: 'radians', xCustomTicks: '', originLabel: true })],

@@ -11,6 +11,8 @@ export const GALLERY_GROUPS = [
   { type: 'blank', heading: 'Blank axes' },
   { type: 'normal', heading: 'Normal distribution' },
   { type: 'scatter', heading: 'Scatterplots' },
+  { type: 'dotplot', heading: 'Dot plots' },
+  { type: 'boxplot', heading: 'Box plots' },
   { type: 'slopefield', heading: 'Slope fields' },
   { type: 'geometry', heading: 'Geometry' },
   { type: 'solids', heading: '3D solids' },
@@ -432,5 +434,19 @@ export const GALLERY = [
     title: 'Square-based pyramid',
     description: 'Corners named, hidden edges dashed, a slant edge labelled, O the centre of the base with a right angle under the top, and the angle θ between an edge and the base.',
     values: { solid: 'pyramid', pw: 6, pd: 6, ph: 5, size: 5.2, depthAngle: 24, hLabel: '-', wLabel: '-', dLabel: '-', sLabel: '$\\ell$ cm', angle: 'corner', aLabel: '$\\theta$', names: 'A B C D M O', hidden: 'dashed', notToScale: false },
+  },
+  {
+    id: 'dotplot-basic',
+    type: 'dotplot',
+    title: 'Dot plot',
+    description: 'Fifteen values stacked as dots above a number line from 0 to 9.',
+    values: {},
+  },
+  {
+    id: 'boxplot-parallel',
+    type: 'boxplot',
+    title: 'Parallel box plots',
+    description: 'Two named five-number summaries on one number line, one with two outliers typed after a semicolon.',
+    values: { data: 'Boys: 12, 15, 18, 22, 30\nGirls: 10, 14, 17, 19, 24; 31, 35', axisTitle: 'Score' },
   },
 ];

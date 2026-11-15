@@ -24,6 +24,8 @@ import geometry from '../js/diagrams/geometry.js';
 import realgraph, { parseCurve, curveRuns, titleText } from '../js/diagrams/realgraph.js';
 import network, { DEFAULT_NETWORK } from '../js/diagrams/network.js';
 import solids from '../js/diagrams/solids.js';
+import dotplot, { parseDots } from '../js/diagrams/dotplot.js';
+import boxplot, { parseSummaries } from '../js/diagrams/boxplot.js';
 import { parseEdgeList, sceneToEdgeList, applyEdgeList } from '../js/geometry/edgeList.js';
 import probtree, { treeFromStages, treeFromOutline, pathProduct } from '../js/diagrams/probtree.js';
 import { parseScene, sceneToTikz, coordinatesFromCode, angleSpan, labelPositions, pointMap } from '../js/geometry/scene.js';
@@ -782,8 +784,37 @@ test('solids: each solid draws; hidden edges only when asked', () => {
   assert.ok(solids.generate({ ...d, solid: 'cylinder', ends: 'both' }).code.includes('usetikzlibrary{arrows.meta}'), 'arrowheads load arrows.meta');
 });
 
+test('dot plot: values and value:count stack dots above a number line', () => {
+  assert.deepEqual(parseDots('1, 2 2\n4:3, x').dots, [[1, 1], [2, 2], [4, 3]]);
+  assert.deepEqual(parseDots('x').bad, ['x']);
+  const d = defaultValues(dotplot.schema);
+  const code = dotplot.generate({ ...d, data: '1 2 2 4:3' }).code;
+  assert.ok(code.includes('\\foreach \\k in {1,...,3} \\fill (4,{0.3*\\k})'), 'a column of three dots');
+  assert.ok(code.includes('\\fill (1,0.3) circle'), 'a single dot written plainly');
+  assert.ok(code.includes('stealth-stealth') && code.includes('\\node[below] at (\\x,-0.1) {$\\x$}'), 'number line with arrows and numbers');
+  const none = dotplot.generate({ ...d, numbers: 'none', axisArrow: 'none', from: '0', to: '10', step: '2' }).code;
+  assert.ok(!none.includes('$\\x$') && !none.includes('stealth') && none.includes('{0,2,4,6,8,10}'), 'own range, no numbers, no arrows');
+  assert.ok(dotplot.generate({ ...d, data: '3, 50', to: '10' }).warnings.some((w) => /outside/.test(w)), 'warns when values are off the line');
+});
+
+test('box plot: five-number summaries, names, outliers', () => {
+  const { plots, problems } = parseSummaries('Boys: 12, 15, 18, 22, 30\n10 14 17 19 24; 31 35\n1, 2, 3');
+  assert.equal(plots.length, 2);
+  assert.equal(plots[0].name, 'Boys');
+  assert.deepEqual(plots[1].outliers, [31, 35]);
+  assert.equal(problems.length, 1, 'a line without five numbers is reported');
+  assert.ok(parseSummaries('5, 4, 3, 2, 1').problems.length, 'out of order is reported');
+  const d = defaultValues(boxplot.schema);
+  const code = boxplot.generate({ ...d, data: 'A: 1, 2, 3, 4, 8; 12' }).code;
+  assert.ok(code.includes('\\draw (2,0.5) rectangle (4,1.1);') && code.includes('\\draw (3,0.5) -- (3,1.1);'), 'box and median');
+  assert.ok(code.includes('(1,0.65) -- (1,0.95)'), 'whisker end bars');
+  assert.ok(code.includes('\\fill (12,0.8) circle') && code.includes('{A}'), 'outlier dot and name');
+  const bare = boxplot.generate({ ...d, line: 'none', caps: 'none' }).code;
+  assert.ok(!bare.includes('number line') && !bare.includes('(1,0.15)'), 'no number line, plain whiskers');
+});
+
 test('gallery: every entry generates cleanly and has its image', () => {
-  const modules = { realgraph, function: fn, sketch, blank, normal, scatter, slopefield, geometry, network, probtree, solids };
+  const modules = { realgraph, function: fn, sketch, blank, normal, scatter, slopefield, geometry, network, probtree, solids, dotplot, boxplot };
   const ids = new Set();
   for (const e of GALLERY) {
     assert.ok(!ids.has(e.id), `duplicate gallery id ${e.id}`);

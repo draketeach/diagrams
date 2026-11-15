@@ -110,6 +110,27 @@ edit, one edge per line: `A-B`, `A->B` (directed), `A-B 5` or `A->B A, 8`
 (a loop), `A-B` on two lines (two edges), `D` (a vertex on its own). Vertices and edges still listed
 keep their places; new vertices go on a circle to be dragged into place.
 
+### Dot plot
+
+Type the values (commas, spaces or new lines between them); each gets a dot,
+stacked above its place on a number line. `4:3` means three dots above 4.
+Dots can be filled, open or crosses, in three sizes, with the spacing between
+them set in cm.
+
+### Box plot
+
+Box-and-whisker plots from five-number summaries, one per line: `min, Q1,
+median, Q3, max`. Several lines give parallel box plots on one number line (the
+first line on top); `Boys: …` names a plot, and values after a semicolon
+(`10, 14, 17, 19, 24; 31, 35`) are outliers, drawn as dots, open dots or
+crosses. Whiskers end in bars or plain. The number line can be left out, so a
+box plot can be put together with a dot plot by hand.
+
+Both use the same number line: from, to and the tick spacing (blank fits the
+data), numbers at every tick, every second tick or none, its length in cm, a
+title under it, and arrowheads at its ends. The picture's x unit is the data's
+unit (`x=0.89cm`), so the code reads in the data's own numbers.
+
 ### 3D solids
 
 Cylinders, cones, spheres, hemispheres, cuboids, triangular prisms and pyramids

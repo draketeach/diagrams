@@ -15,5 +15,7 @@ import geometry from './geometry.js';
 import probtree from './probtree.js';
 import network from './network.js';
 import solids from './solids.js';
+import dotplot from './dotplot.js';
+import boxplot from './boxplot.js';
 
-[fn, sketch, blank, realgraph, normal, scatter, slopefield, geometry, solids, network, probtree].forEach(registerDiagram);
+[fn, sketch, blank, realgraph, normal, scatter, dotplot, boxplot, slopefield, geometry, solids, network, probtree].forEach(registerDiagram);
