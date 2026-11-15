@@ -1037,6 +1037,14 @@ test('3D solids: ~a in a label is a vector in the chosen style', () => {
   assert.ok(bold.includes('{$\\mathbf{h}$}'), 'any solid can use bold vectors');
 });
 
+test('complex: tick numbers move clear of a circle through them', () => {
+  const d = { ...defaultValues(complex.schema), conditions: '|z| = 1', scales: true, xmin: '-3.95', xmax: '3.95', ymin: '-3.7', ymax: '3.7', size: 7 };
+  const code = complex.generate(d).code;
+  assert.ok(code.includes('node[below right] {$1$}') && code.includes('node[below left] {$-1$}'), 'x: beside the tick, away from the origin');
+  assert.ok(code.includes('node[above left] {$1$}') && code.includes('node[below left] {$-1$}'), 'y: above or below');
+  assert.ok(code.includes('\\foreach \\x in {-3,-2,2,3}'), 'the rest stay in their usual place');
+});
+
 test('gallery.html versions are up to date', () => {
   const html = readFileSync(new URL('../gallery.html', import.meta.url), 'utf8');
   assert.equal(html, buildIndex(html));

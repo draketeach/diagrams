@@ -664,8 +664,16 @@ function generate(v) {
     const yt = [];
     for (let t = Math.ceil(x0 / st) * st; t < x1 - st * 0.4; t += st) if (Math.abs(t) > 1e-9) xt.push(n(t));
     for (let t = Math.ceil(y0 / st) * st; t < y1 - st * 0.4; t += st) if (Math.abs(t) > 1e-9) yt.push(n(t));
-    if (xt.length) b.add(`\\foreach \\x in {${xt.join(',')}} \\draw (\\x,0.08) -- (\\x,-0.08) node[below] {$\\x$};`);
-    if (yt.length) b.add(`\\foreach \\y in {${yt.join(',')}} \\draw (0.08,\\y) -- (-0.08,\\y) node[left] {$\\y$};`);
+    // a number with a circle or line through its usual place moves clear of it
+    const dist = tickObstacles(conds, pl, box);
+    const placeX = (t) => tickPlace(Number(t), true, dist, unit);
+    const placeY = (t) => tickPlace(Number(t), false, dist, unit);
+    const plainX = xt.filter((t) => placeX(t) === 'below');
+    const plainY = yt.filter((t) => placeY(t) === 'left');
+    if (plainX.length) b.add(`\\foreach \\x in {${plainX.join(',')}} \\draw (\\x,0.08) -- (\\x,-0.08) node[below] {$\\x$};`);
+    for (const t of xt.filter((t) => !plainX.includes(t))) b.add(`\\draw (${t},0.08) -- (${t},-0.08) node[${placeX(t)}] {$${t}$};`);
+    if (plainY.length) b.add(`\\foreach \\y in {${plainY.join(',')}} \\draw (0.08,\\y) -- (-0.08,\\y) node[left] {$\\y$};`);
+    for (const t of yt.filter((t) => !plainY.includes(t))) b.add(`\\draw (0.08,${t}) -- (-0.08,${t}) node[${placeY(t)}] {$${t}$};`);
   }
   if (v.originLabel) b.add('\\node[below left, inner sep=2pt] at (0,0) {$O$};');
 
@@ -828,3 +836,62 @@ export default {
   schema,
   generate,
 };
+
+/** Distance (in units) from a point to the nearest drawn circle, boundary line or joined line. */
+function tickObstacles(conds, pl, box) {
+  const segDist = (q, a, b) => {
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const L = dx * dx + dy * dy || 1;
+    const k = Math.max(0, Math.min(1, ((q.x - a.x) * dx + (q.y - a.y) * dy) / L));
+    return Math.hypot(q.x - a.x - k * dx, q.y - a.y - k * dy);
+  };
+  const far = 2 * (box.x1 - box.x0 + box.y1 - box.y0);
+  const fns = [];
+  for (const c of conds) {
+    if (c.kind === 'circle') fns.push((q) => Math.abs(Math.hypot(q.x - c.c.x, q.y - c.c.y) - c.r));
+    if (c.kind === 'half') {
+      const L = Math.hypot(c.a, c.b) || 1;
+      fns.push((q) => Math.abs(c.a * q.x + c.b * q.y + c.c) / L);
+    }
+    if (c.kind === 'arg') {
+      for (const t of c.eq !== undefined ? [c.eq] : [c.lo, c.hi]) {
+        const end = { x: c.v.x + far * Math.cos(t), y: c.v.y + far * Math.sin(t) };
+        fns.push((q) => segDist(q, c.v, end));
+      }
+    }
+  }
+  for (const sg of pl.segs || []) fns.push((q) => segDist(q, sg.a.p, sg.b.p));
+  return (q) => fns.reduce((m, f) => Math.min(m, f(q)), Infinity);
+}
+
+/**
+ * Where a tick's number goes: its usual place (below, or left), unless something
+ * drawn runs through it; then beside the tick on the side away from the origin, then the other.
+ */
+function tickPlace(t, onX, dist, unit) {
+  const h = 0.32 / unit;
+  const w = (0.12 + 0.17 * String(Math.abs(t)).length + (t < 0 ? 0.2 : 0)) / unit;
+  const tick = 0.08;
+  const gap = 0.06 / unit;
+  const clear = (cx, cy) => {
+    for (let i = 0; i <= 4; i++) for (let j = 0; j <= 2; j++) if (dist({ x: cx - w / 2 + (w * i) / 4, y: cy - h / 2 + (h * j) / 2 }) < 0.05 / unit) return false;
+    return true;
+  };
+  const out = t > 0 ? 1 : -1;
+  const cands = onX
+    ? [
+        ['below', t, -tick - gap - h / 2],
+        [out > 0 ? 'below right' : 'below left', t + out * (w / 2 + gap), -tick - gap - h / 2],
+        [out > 0 ? 'below left' : 'below right', t - out * (w / 2 + gap), -tick - gap - h / 2],
+        ['above', t, tick + gap + h / 2],
+      ]
+    : [
+        ['left', -tick - gap - w / 2, t],
+        [out > 0 ? 'above left' : 'below left', -tick - gap - w / 2, t + out * (h / 2 + gap)],
+        [out > 0 ? 'below left' : 'above left', -tick - gap - w / 2, t - out * (h / 2 + gap)],
+        ['right', tick + gap + w / 2, t],
+      ];
+  const hit = cands.find(([, cx, cy]) => clear(cx, cy));
+  return hit ? hit[0] : cands[0][0];
+}

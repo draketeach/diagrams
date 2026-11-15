@@ -140,7 +140,8 @@ or numbers such as `-27/8i`), `..` makes a dotted line, `->` an arrow, and
 angle at z2 between the lines to w and to 0. Unnamed ends of solid lines get a
 dot (this can be switched off). Circles get a dot at their centre and rays an open dot where they
 start. Axes are x and y by default (or Re and Im), with optional ticks and
-numbers; the window fits the conditions unless you set it.
+numbers (a number with a circle or line through its place moves beside its
+tick, away from the origin); the window fits the conditions unless you set it.
 
 ### Dot plot
 
