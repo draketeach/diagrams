@@ -39,6 +39,7 @@
 
 import { smoothSections, reverseSections, sectionAt } from '../lib/smooth.js';
 import { TikzBuilder, mathLabel } from '../lib/tikz.js';
+import { titleText } from '../diagrams/realgraph.js';
 
 export const DEFAULT_SETTINGS = {
   grid: 0.5,
@@ -683,6 +684,16 @@ export const PATTERNS = {
 const TIP = '{Stealth[length=5pt]}';
 
 /** A point's name: a word (3+ letters, like Start) as upright text; letters like A or B_1 as maths. */
+/**
+ * A network's edge label is plain text (e.g. "600 m", "A, 8"); $…$ inside it is
+ * maths, and a minus sign before a number is set as a real minus ("-0.09").
+ */
+export function plainLabel(text) {
+  const t = String(text ?? '');
+  const parts = t.split(/(\$[^$]*\$)/);
+  return titleText(parts.map((p, i) => (i % 2 ? p : p.replace(/(^|[\s(])-(?=\d|\.\d)(\d*\.?\d+)/g, '$1$$-$2$$'))).join(''));
+}
+
 export const isWordName = (name) => /^[A-Za-z]{3,}$/.test(String(name));
 const nameLabel = (name) => (isWordName(name) ? name : mathLabel(name));
 /** A white patch behind a label, so it reads over shading. */
@@ -1098,7 +1109,7 @@ export function sceneToTikz(sceneIn) {
     const off = placed.get(`s:${s.id}`) ?? segmentLabelOffset(scene, s, pts);
     const tan = shapeTangent(edgeShape(s, pts, scene));
     const turn = s.sloped ? `, rotate=${fmt(slopeDeg({ x: 0, y: 0 }, tan))}` : '';
-    labels.push(`\\path ${segPath(s, pts, name, scene, `node[midway, xshift=${fmt(off.dx)}cm, yshift=${fmt(off.dy)}cm${turn}${s.bg ? `, ${BG}` : ''}] {${mathLabel(text)}}`)};`);
+    labels.push(`\\path ${segPath(s, pts, name, scene, `node[midway, xshift=${fmt(off.dx)}cm, yshift=${fmt(off.dy)}cm${turn}${s.bg ? `, ${BG}` : ''}] {${scene.settings?.mode === 'network' ? plainLabel(text) : mathLabel(text)}}`)};`);
   }
   for (const p of scene.points) {
     if (p.hidden || !p.showLabel || !p.name) continue;

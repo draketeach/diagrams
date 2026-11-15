@@ -24,6 +24,7 @@ import geometry from '../js/diagrams/geometry.js';
 import realgraph, { parseCurve, curveRuns, titleText } from '../js/diagrams/realgraph.js';
 import network, { DEFAULT_NETWORK } from '../js/diagrams/network.js';
 import solids from '../js/diagrams/solids.js';
+import { plainLabel } from '../js/geometry/scene.js';
 import dotplot, { parseDots } from '../js/diagrams/dotplot.js';
 import boxplot, { parseSummaries } from '../js/diagrams/boxplot.js';
 import { parseEdgeList, sceneToEdgeList, applyEdgeList } from '../js/geometry/edgeList.js';
@@ -641,7 +642,7 @@ test('networks: edge lists, repeated edges, loops, directions', () => {
   assert.ok(code.includes('(A) to[bend left=25] (B)'), 'curved edge');
   assert.ok(/\(C\) \.\. controls \+\([\d.-]+:1\.28\) and \+\([\d.-]+:1\.28\) \.\. \(C\)/.test(code), 'loop');
   assert.ok(/mark=at position 0\.5 with \{\\arrow\[xshift=2pt\]\{Straight Barb\[length=4pt, width=4pt\]\}\}\}\] \(A\) -- \(C\)/.test(code), 'directed: arrow in the middle');
-  assert.ok(code.includes('{$4$}'), 'edge label');
+  assert.ok(code.includes('{4}'), 'edge label, as plain text');
   assert.deepEqual(network.generate({ scene: JSON.stringify(DEFAULT_NETWORK) }).warnings, []);
   // word names (Start, Finish) are upright text; letters stay maths
   const words = sceneToTikz(parseScene({ points: [{ id: 's', name: 'Start', x: 0, y: 0 }, { id: 'a', name: 'A', x: 3, y: 0 }], items: [{ id: 'e', type: 'segment', a: 's', b: 'a', label: '' }] })).code;
@@ -837,6 +838,14 @@ test('function, blank and real-world axes: numbers have as many decimals as the 
   assert.ok(/at \(0,1\) \{\$1\$\}/.test(b), 'y ticks every 1: whole numbers');
   const r = realgraph.generate({ ...defaultValues(realgraph.schema), curves: '0,0 2,1', xmax: 2, ymax: 1, xStep: 0.25, yStep: 0.2, xNumbers: '', yNumbers: '' }).code;
   assert.ok(r.includes('{$0.50$}') && r.includes('{$0.4$}') && !r.includes('{$0.5$}'), 'real-world: 0.25 → two decimals, 0.2 → one');
+});
+
+test('network: edge labels are plain text, with $…$ for maths and real minus signs', () => {
+  assert.equal(plainLabel('600 m'), '600 m');
+  assert.equal(plainLabel('-0.09'), '$-0.09$');
+  assert.equal(plainLabel('$x^2$'), '$x^2$');
+  const code = network.generate({ scene: GALLERY.find((e) => e.id === 'network-zoo').values.scene }).code;
+  assert.ok(code.includes('{600 m}') && !code.includes('{$600'), 'zoo distances as text');
 });
 
 test('gallery: every entry generates cleanly and has its image', () => {
