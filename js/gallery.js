@@ -39,6 +39,8 @@ for (const group of GALLERY_GROUPS) {
     title.textContent = e.title;
     const desc = document.createElement('p');
     desc.textContent = e.description;
+    // one line on the card; the whole description shows on hover
+    card.title = `${e.title}: ${e.description}`;
     const open = document.createElement('a');
     open.className = 'button';
     open.href = href;
