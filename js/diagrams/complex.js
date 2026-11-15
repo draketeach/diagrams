@@ -397,6 +397,46 @@ function generate(v) {
     if (c.kind === 'arg') {
       xs.push(c.v.x);
       ys.push(c.v.y);
+      // a little way along each ray, so a lone sector isn't squeezed into a corner
+      for (const t of c.eq !== undefined ? [c.eq] : [c.lo, c.hi]) {
+        xs.push(c.v.x + 2 * Math.cos(t));
+        ys.push(c.v.y + 2 * Math.sin(t));
+      }
+    }
+    if (c.kind === 'half') {
+      // where the line crosses the axes (or, if it doesn't, its nearest point to the origin)
+      const near = (q) => Math.abs(q.x) <= 50 && Math.abs(q.y) <= 50;
+      const marks = [];
+      if (Math.abs(c.a) > 1e-12) marks.push({ x: -c.c / c.a, y: 0 });
+      if (Math.abs(c.b) > 1e-12) marks.push({ x: 0, y: -c.c / c.b });
+      const L2 = c.a * c.a + c.b * c.b;
+      if (marks.length < 2) marks.push({ x: (-c.a * c.c) / L2, y: (-c.b * c.c) / L2 });
+      for (const q of marks.filter(near)) {
+        xs.push(q.x);
+        ys.push(q.y);
+      }
+    }
+  }
+  // where straight boundaries (lines and rays) cross each other
+  const straight = [];
+  for (const c of conds) {
+    if (c.kind === 'half') straight.push({ p: { x: c.b === 0 ? -c.c / c.a : 0, y: c.b === 0 ? 0 : -c.c / c.b }, d: { x: -c.b, y: c.a }, ray: false });
+    if (c.kind === 'arg') for (const t of c.eq !== undefined ? [c.eq] : [c.lo, c.hi]) straight.push({ p: c.v, d: { x: Math.cos(t), y: Math.sin(t) }, ray: true });
+  }
+  for (let i = 0; i < straight.length; i++) {
+    for (let j = i + 1; j < straight.length; j++) {
+      const A = straight[i];
+      const B = straight[j];
+      const den = A.d.x * B.d.y - A.d.y * B.d.x;
+      if (Math.abs(den) < 1e-9) continue;
+      const s1 = ((B.p.x - A.p.x) * B.d.y - (B.p.y - A.p.y) * B.d.x) / den;
+      const s2 = ((B.p.x - A.p.x) * A.d.y - (B.p.y - A.p.y) * A.d.x) / den;
+      if ((A.ray && s1 < 0) || (B.ray && s2 < 0)) continue;
+      const q = { x: A.p.x + A.d.x * s1, y: A.p.y + A.d.y * s1 };
+      if (Math.abs(q.x) <= 50 && Math.abs(q.y) <= 50) {
+        xs.push(q.x);
+        ys.push(q.y);
+      }
     }
   }
   const pad = 1;
