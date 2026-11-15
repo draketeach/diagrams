@@ -57,7 +57,7 @@ export const GALLERY = [
     type: 'function',
     title: 'Regions between a curve and a line',
     description: 'f and g crossing at −3, −1 and 1, shaded between them from −4 to 4, with solid and dashed lines at the ends of the regions and labels at the curves’ ends.',
-    values: {"graphs": "y = 0.48(x-1) + 0.2333(x+3)(x+1)(x-1)/(1+0.4(x+2)^2); from -4.4 to 4; label: $y = f(x)$\ny = 0.48(x-1); from -4.6 to 4.6; no arrows; label: $y = g(x)$\nx = -4; from -4.5 to 0; no arrows\nx = 4; from 0 to 3.031; no arrows\nx = -3; from -1.92 to 0; dashed; no arrows\nx = -1; from -0.96 to 0; dashed; no arrows", "labelX": false, "labelY": false, "tpLabel": "none", "shadeBetween": "-4 to 4", "shadeColour": "dots", "xCustomTicks": "-4 @ above, -3 @ above, -2 @ above, -1 @ above, 1, 2, 3, 4", "windowMode": "manual", "xmin": -5, "xmax": 5.3, "ymin": -4.7, "ymax": 3.6, "equalScale": true, "width": 8},
+    values: {"graphs": "y = 0.48(x-1) + 0.2333(x+3)(x+1)(x-1)/(1+0.4(x+2)^2); from -4.6 to 4.6; label: $y = f(x)$\ny = 0.48(x-1); from -4.6 to 4.6; no arrows; label: $y = g(x)$\nx = -4; from -4.5 to 0; no arrows\nx = 4; from 0 to 3.031; no arrows\nx = -3; from -1.92 to 0; dashed; no arrows\nx = -1; from -0.96 to 0; dashed; no arrows", "labelX": false, "shadeColour": "dots", "shadeBetween": "-4 to 4", "xCustomTicks": "-4 @ above, -3 @ above, -2 @ above, -1 @ above, 1, 2, 3, 4", "equalScale": true, "windowMode": "manual", "xmin": -5, "xmax": 5.3, "ymin": -4.7, "ymax": 3.6},
   },
   {
     id: 'piecewise-pdf',
