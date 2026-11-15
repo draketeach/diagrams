@@ -23,7 +23,7 @@ import normal, { normalProbability } from '../js/diagrams/normal.js';
 import geometry from '../js/diagrams/geometry.js';
 import realgraph, { parseCurve, curveRuns, titleText } from '../js/diagrams/realgraph.js';
 import network, { DEFAULT_NETWORK } from '../js/diagrams/network.js';
-import solids from '../js/diagrams/solids.js';
+import solids, { vectorTex } from '../js/diagrams/solids.js';
 import complex, { parseCondition, parseComplex, parseAngle } from '../js/diagrams/complex.js';
 import { plainLabel, bendThrough, loopThrough, edgeShape, shapeAt } from '../js/geometry/scene.js';
 import dotplot, { parseDots } from '../js/diagrams/dotplot.js';
@@ -963,6 +963,17 @@ test('graphs: a range typed the wrong way round warns and is worked out instead'
   assert.ok(realgraph.generate({ ...defaultValues(realgraph.schema), xmin: 3, xmax: 3 }).warnings.some((w) => back.test(w)), 'real-world graph');
   assert.ok(scatter.generate({ ...defaultValues(scatter.schema), windowMode: 'manual', xmin: 3, xmax: 3, ymin: 0, ymax: 10 }).warnings.some((w) => back.test(w)), 'scatterplot');
   assert.ok(slopefield.generate({ ...defaultValues(slopefield.schema), fxmin: 3, fxmax: 3 }).warnings.some((w) => /Field from x \(3\) must be less/.test(w)), 'slope field');
+});
+
+test('3D solids: vectors, right angles and angles in a sphere\'s equator plane', () => {
+  assert.equal(vectorTex('a'), '$\\mathop{a\\kern0pt}\\limits_{\\sim}$');
+  assert.equal(vectorTex('v(θ)', 'bold'), '$\\mathbf{v}(\\theta)$');
+  const r = solids.generate({ ...defaultValues(solids.schema), ...GALLERY.find((e) => e.id === 'solids-sphere-vectors').values });
+  assert.deepEqual(r.warnings, []);
+  assert.ok(r.code.includes('\\draw (O) ellipse [x radius=2.5, y radius=0.75];'), 'the whole equator');
+  assert.ok(r.code.includes('\\coordinate (v1) at (1.25,-0.6495); % a, -60° round the equator'), 'a on the equator');
+  assert.ok(r.code.includes('arc[start angle=-60, end angle=240, x radius=0.625, y radius=0.1875]'), 'angle arc as an ellipse in the plane');
+  assert.ok(/right angle between a and b[^\n]*\n\s*\\draw \(0\.175,-0\.0909\)/.test(r.code), 'right angle drawn in the plane');
 });
 
 test('gallery: every entry generates cleanly and has its image', () => {

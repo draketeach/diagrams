@@ -134,6 +134,100 @@ function cornerIds(names, defaults) {
   });
 }
 
+// ---------------------------------------------------------------- vectors in a sphere's equator plane
+
+/** Greek letters typed as themselves (θ) or as words (theta) in a label. */
+const GREEK = { θ: 'theta', φ: 'phi', α: 'alpha', β: 'beta', γ: 'gamma', λ: 'lambda', μ: 'mu', ω: 'omega', π: 'pi' };
+
+/** A vector's name for its label: v(θ) with a tilde under the v (or bold, or an arrow over). */
+export function vectorTex(name, style = 'tilde') {
+  // θ → \\theta (with a space only when a letter follows)
+  const t = String(name).replace(/[θφαβγλμωπ]/g, (c, i, str) => `\\${GREEK[c]}${/[A-Za-z]/.test(str[i + 1] ?? '') ? ' ' : ''}`).trim();
+  const m = t.match(/^([A-Za-z])(.*)$/);
+  if (!m) return `$${t}$`;
+  const [, letter, rest] = m;
+  // a tilde under: \mathop{…}\limits_{\sim}, with \kern0pt so the letter isn't lifted (no extra packages)
+  const head = style === 'bold' ? `\\mathbf{${letter}}` : style === 'arrow' ? `\\vec{${letter}}` : `\\mathop{${letter}\\kern0pt}\\limits_{\\sim}`;
+  return `$${head}${rest}$`;
+}
+
+/**
+ * Vectors from the centre to the equator, one per line:
+ *   a: 0              a vector to the point at 0° round the equator (b: 90, v(θ): 230 …)
+ *   right a b         a right-angle mark between two of them, lying in the plane
+ *   angle a v(θ) : θ  an angle arc from the first round (anticlockwise) to the second, labelled
+ * Points in the plane at angle t are (R cos t, ry sin t) on the page, so marks and arcs follow its tilt.
+ */
+function planeVectors(b, v, R, ry, warnings) {
+  const lines = String(v.vectors ?? '')
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
+  if (!lines.length) return;
+  const k = ry / R; // how flat the plane looks
+  const vecs = new Map();
+  const at = (t, len) => ({ x: len * Math.cos((t * Math.PI) / 180), y: len * k * Math.sin((t * Math.PI) / 180) });
+  const ids = new Map();
+  for (const line of lines) {
+    const m = line.match(/^([^:]+?)\s*:\s*(-?[\d.]+)\s*$/);
+    if (m && !/^(right|angle)\b/.test(m[1])) {
+      vecs.set(m[1].trim(), Number(m[2]));
+      ids.set(m[1].trim(), `v${ids.size + 1}`);
+    }
+  }
+  if (vecs.size) {
+    b.comment('vectors from the centre to the equator');
+    for (const [name, t] of vecs) {
+      const e = at(t, R);
+      b.add(`\\coordinate (${ids.get(name)}) at (${n(e.x)},${n(e.y)}); % ${name}, ${n(t)}° round the equator`);
+    }
+    for (const [name, t] of vecs) {
+      const e = at(t, R);
+      // labels sit above the back of the equator and below the front, inside the ball's outline
+      b.add(`\\draw[->] (O) -- (${ids.get(name)}) node[${e.y > 1e-9 ? 'above' : 'below'}, inner sep=2pt] {${vectorTex(name, v.vecStyle)}};`);
+    }
+    b.add('\\fill (O) circle[radius=1.5pt];');
+  }
+  const find = (name) => (vecs.has(name.trim()) ? vecs.get(name.trim()) : null);
+  for (const line of lines) {
+    const ra = line.match(/^right\s+(.+?)\s+(\S+)$/);
+    if (ra) {
+      const [t1, t2] = [find(ra[1]), find(ra[2])];
+      if (t1 === null || t2 === null) warnings.push(`${line}: name two of the vectors above.`);
+      else {
+        const s = 0.35; // cm, in the plane
+        const p = at(t1, s);
+        const q = at(t2, s);
+        b.comment(`right angle between ${ra[1]} and ${ra[2]}, lying in the plane`);
+        b.add(`\\draw (${n(p.x)},${n(p.y)}) -- (${n(p.x + q.x)},${n(p.y + q.y)}) -- (${n(q.x)},${n(q.y)});`);
+      }
+      continue;
+    }
+    const an = line.match(/^angle\s+(\S+)\s+([^:]+?)\s*(?::\s*(.*))?$/);
+    if (an) {
+      const [t1, t2] = [find(an[1]), find(an[2])];
+      if (t1 === null || t2 === null) {
+        warnings.push(`${line}: name two of the vectors above.`);
+        continue;
+      }
+      let e2 = t2;
+      while (e2 <= t1) e2 += 360; // anticlockwise from the first to the second
+      const r = Math.min(0.65, R * 0.25);
+      const s0 = at(t1, r);
+      b.comment(`angle from ${an[1]} to ${an[2]}, an ellipse in the plane`);
+      const label = an[3] ? an[3].replace(/[θφαβγλμωπ]/g, (c) => `\\${GREEK[c]}`) : '';
+      // the label just outside the middle of the arc, measured on the page
+      const pm = at((t1 + e2) / 2, r);
+      const L = Math.hypot(pm.x, pm.y) || 1;
+      const mid = { x: pm.x + (pm.x / L) * 0.28, y: pm.y + (pm.y / L) * 0.28 };
+      b.add(`\\draw (${n(s0.x)},${n(s0.y)}) arc[start angle=${n(t1)}, end angle=${n(e2)}, x radius=${n(r)}, y radius=${n(r * k)}];`);
+      if (label) b.add(`\\node at (${n(mid.x)},${n(mid.y)}) {${label.includes('$') ? label : `$${label}$`}};`);
+      continue;
+    }
+    if (!/^[^:]+:\s*-?[\d.]+\s*$/.test(line)) warnings.push(`${line}: write a vector as name: angle (e.g. a: 0), or right a b, or angle a b : θ.`);
+  }
+}
+
 // ---------------------------------------------------------------- the solids
 
 function generate(v) {
@@ -223,10 +317,14 @@ function generate(v) {
       if (half) b.add(`\\draw ([xshift=-${n(R)}cm]O) arc[start angle=180, end angle=0, radius=${n(R)}];`);
       else b.add(`\\draw (O) circle[radius=${n(R)}];`);
       // the flat face (hemisphere) or the equator (sphere)
-      b.add(arc('O', R, ry, 180, 360));
-      // the back half is behind the dome or the ball
-      if (hid) b.add(arc('O', R, ry, 0, 180, 'dashed'));
+      if (!half && v.equator === 'full') b.add(`\\draw (O) ellipse [x radius=${n(R)}, y radius=${n(ry)}];`); // a plane through the ball
+      else {
+        b.add(arc('O', R, ry, 180, 360));
+        // the back half is behind the dome or the ball
+        if (hid) b.add(arc('O', R, ry, 0, 180, 'dashed'));
+      }
     }
+    if (!half) planeVectors(b, v, R, ry, warnings);
     if (v.radius !== 'none') {
       b.comment('radius');
       S.dot('O');
@@ -404,6 +502,51 @@ const schema = [
           { value: 'down', label: 'Down (a dome)' },
         ],
         showIf: is('hemisphere'),
+      },
+      {
+        type: 'select',
+        key: 'equator',
+        label: 'Equator',
+        default: 'front',
+        options: [
+          { value: 'front', label: 'Front half (as on a ball)' },
+          { value: 'full', label: 'Whole ellipse (a plane through the centre)' },
+        ],
+        showIf: is('sphere'),
+      },
+    ],
+  },
+  {
+    type: 'group',
+    label: 'Vectors in the equator plane',
+    showIf: is('sphere'),
+    fields: [
+      {
+        type: 'textarea',
+        key: 'vectors',
+        label: 'One per line',
+        rows: 4,
+        default: '',
+        placeholder: 'a: -60\nb: 30\nright a b',
+        examples: {
+          rows: [
+            ['a: -60', 'A vector from the centre to the equator, at −60° round it (0° is to the right, 90° at the back)'],
+            ['v(θ): 240', 'Names can have more after the letter; θ can be typed as θ'],
+            ['right a b', 'A right-angle mark between a and b, lying in the plane'],
+            ['angle a v(θ) : θ', 'An angle arc from a round (anticlockwise) to v(θ), labelled θ'],
+          ],
+        },
+      },
+      {
+        type: 'select',
+        key: 'vecStyle',
+        label: 'Vector labels',
+        default: 'tilde',
+        options: [
+          { value: 'tilde', label: 'Tilde under (a with ~)' },
+          { value: 'bold', label: 'Bold' },
+          { value: 'arrow', label: 'Arrow over' },
+        ],
       },
     ],
   },

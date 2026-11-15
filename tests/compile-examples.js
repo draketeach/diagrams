@@ -98,6 +98,8 @@ const jobs = [
   ['solids-pyramid-none', solids.generate({ ...defaultValues(solids.schema), solid: 'pyramid', hidden: 'none', ends: 'both', sLabel: 'l' })],
   ['solids-pyramid-dashed', solids.generate({ ...defaultValues(solids.schema), solid: 'pyramid', hidden: 'dashed', ends: 'both', sLabel: 'l' })],
   ['solids-pyramid', solids.generate({ ...defaultValues(solids.schema), ...GALLERY.find((e) => e.id === 'solids-pyramid').values })],
+  ['solids-sphere-vectors', solids.generate({ ...defaultValues(solids.schema), ...GALLERY.find((e) => e.id === 'solids-sphere-vectors').values })],
+  ['solids-sphere-vectors-bold', solids.generate({ ...defaultValues(solids.schema), solid: 'sphere', equator: 'full', vecStyle: 'bold', vectors: 'u: 10\nw: 100\nright u w\nangle u w : \\alpha' })],
   ['solids-face-angle', solids.generate({ ...defaultValues(solids.schema), solid: 'pyramid', angle: 'face', names: 'A B C D M O N', hidden: 'dashed' })],
   ['solids-cuboid-names', solids.generate({ ...defaultValues(solids.schema), solid: 'cuboid', names: 'A B C D E F G H', hidden: 'dashed' })],
   ['solids-prism-names', solids.generate({ ...defaultValues(solids.schema), solid: 'prism', names: 'A B C D E F', hidden: 'dashed' })],

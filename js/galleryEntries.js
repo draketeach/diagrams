@@ -630,4 +630,11 @@ export const GALLERY = [
       size: 8,
     },
   },
+  {
+    id: 'solids-sphere-vectors',
+    type: 'solids',
+    title: 'Vectors in a sphere\'s equator plane',
+    description: 'A sphere with its whole equator, vectors a, b and v(θ) from the centre (tilde under), a right angle between a and b and the angle θ, both drawn in the tilted plane.',
+    values: { solid: 'sphere', r: 3, radius: 'none', equator: 'full', notToScale: false, vectors: 'a: -60\nb: 30\nv(θ): 240\nright a b\nangle a v(θ) : θ' },
+  },
 ];

@@ -172,7 +172,11 @@ measurements and a unit; each length is labelled with its value and unit
 have a dashed radius from a dot at the centre; a cylinder's height goes on a
 measurement line beside it (bars, arrows, or both at its ends), and a cone's
 or pyramid's height is dashed inside it, with an optional slant height label on a cone.
-A hemisphere sits flat side up (a bowl) or down (a dome). Cuboids, prisms and
+A hemisphere sits flat side up (a bowl) or down (a dome). A sphere can show
+its whole equator as a plane through the centre, with vectors from the centre
+to the equator by angle (`a: -60`, `v(θ): 240`), right-angle marks
+(`right a b`) and angle arcs (`angle a v(θ) : θ`) drawn in the tilted plane,
+and vector labels with a tilde under (no extra packages), bold or an arrow over. Cuboids, prisms and
 pyramids can have their corners named (`A B C D E F G H`; `-` skips one). A
 pyramid can show the angle between an edge and the base (at a corner) or between
 a face and the base (on the right-hand side face, at the middle of its base edge), with dashed lines to the
