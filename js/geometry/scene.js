@@ -39,7 +39,16 @@
 // everything else refers to the names, so editing a coordinate moves all of it.
 
 import { smoothSections, reverseSections, sectionAt } from '../lib/smooth.js';
-import { TikzBuilder, mathLabel } from '../lib/tikz.js';
+import { TikzBuilder, mathLabel as baseMathLabel } from '../lib/tikz.js';
+
+/** "~a" is a vector a with a tilde under it, as exams write it (inside maths only). */
+export function tildeVectors(text) {
+  const t = String(text ?? '');
+  const sub = (m) => m.replace(/~([A-Za-z])(?![A-Za-z])/g, '\\mathop{$1\\kern0pt}\\limits_{\\sim}');
+  if (!t.includes('$')) return sub(t);
+  return t.split(/(\$[^$]*\$)/).map((part, i) => (i % 2 ? sub(part) : part)).join('');
+}
+const mathLabel = (text) => baseMathLabel(tildeVectors(text));
 import { titleText } from '../diagrams/realgraph.js';
 
 export const DEFAULT_SETTINGS = {

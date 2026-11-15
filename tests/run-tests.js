@@ -25,7 +25,7 @@ import realgraph, { parseCurve, curveRuns, titleText } from '../js/diagrams/real
 import network, { DEFAULT_NETWORK } from '../js/diagrams/network.js';
 import solids, { vectorTex } from '../js/diagrams/solids.js';
 import complex, { parseCondition, parseComplex, parseAngle } from '../js/diagrams/complex.js';
-import { plainLabel, bendThrough, loopThrough, edgeShape, shapeAt } from '../js/geometry/scene.js';
+import { tildeVectors, plainLabel, bendThrough, loopThrough, edgeShape, shapeAt } from '../js/geometry/scene.js';
 import dotplot, { parseDots } from '../js/diagrams/dotplot.js';
 import boxplot, { parseSummaries } from '../js/diagrams/boxplot.js';
 import { parseEdgeList, sceneToEdgeList, applyEdgeList } from '../js/geometry/edgeList.js';
@@ -1016,6 +1016,14 @@ test('geometry: an angle label can run along the angle', () => {
   scene.points[1].x = -4;
   scene.points[2].x = -4;
   assert.ok(sceneToTikz(scene).code.includes('rotate=-22.5'));
+});
+
+test('geometry: ~a is a vector with a tilde under it', () => {
+  assert.equal(tildeVectors('~a'), '\\mathop{a\\kern0pt}\\limits_{\\sim}');
+  assert.equal(tildeVectors('4~\\mathrm{km}'), '4~\\mathrm{km}', 'a ~ space is left alone');
+  assert.equal(tildeVectors('force $~F$ and ~b'), 'force $\\mathop{F\\kern0pt}\\limits_{\\sim}$ and ~b', 'only inside maths');
+  const scene = { settings: { grid: 0.25 }, points: [{ id: 'A', name: 'A', x: 0, y: 0 }, { id: 'B', name: 'B', x: 3, y: 0 }], items: [{ id: 's', type: 'segment', a: 'A', b: 'B', label: '~a', tip: 'b' }] };
+  assert.ok(sceneToTikz(scene).code.includes('{$\\mathop{a\\kern0pt}\\limits_{\\sim}$}'));
 });
 
 test('gallery.html versions are up to date', () => {

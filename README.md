@@ -240,13 +240,14 @@ Delete, zoom and Fit.
   ending on another line (such as an altitude) counts as meeting it. The label
   is the measured size unless you type your own (e.g. `35^\\circ`, `\\theta`);
   angles can be reflex, have no arc (just the label) or one to three arcs, and have an arrowhead pointing
-  at either arm. Right-angle marks follow the two lines, so they slant in 3D
+  at either arm. An angle's label can be turned to run along the angle (it then
+  sits straight out from the arc rather than placing itself). Right-angle marks follow the two lines, so they slant in 3D
   drawings (see the 3D solids type for pyramids).
 - New points are named from a chosen letter onwards (A, B, C… by default;
   lower case gives a, b, c…).
 - Lines show their measured length (to 0, 1 or 2 decimal places) unless you
   type your own label or choose none; the label can be turned to run along the
-  line. Lines can be dashed or dotted, with arrowheads at either or both ends
+  line; type `~a` for a vector a with a tilde under it. Lines can be dashed, dotted or thick, with arrowheads at either or both ends
   (bearings, a North line), equal-length ticks or parallel arrows. Polygons can
   be shaded grey, dotted (the exam-paper stipple) or hatched; between two
   corners on a circle (with no line joining them), or at the ends of a curve or

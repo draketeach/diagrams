@@ -1599,7 +1599,7 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
       const measured = segmentText({ ...it, label: null }, pts, scene.settings);
       // a ray goes on for ever, so it has no length to show
       const mode = it.label === null || it.label === undefined ? (ray ? 'none' : 'measured') : it.label === '' ? 'none' : 'custom';
-      const labelBox = textInput(mode === 'custom' ? it.label : '', (v) => (it.label = v), { placeholder: 'e.g. 81 or x' });
+      const labelBox = textInput(mode === 'custom' ? it.label : '', (v) => (it.label = v), { placeholder: 'e.g. 81, x, or ~a (a vector)' });
       const labelModes = ray ? [['custom', 'My own'], ['none', 'None']] : [['measured', `Its length (${measured})`], ['custom', 'My own'], ['none', 'None']];
       props.append(
         row(
