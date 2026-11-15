@@ -253,12 +253,12 @@ function generateFormula(values, main, others, style) {
   return { code: b.toString([...options, fontOption(values)]), warnings };
 }
 
-/** "label: text" on the first graph: at the right-hand end of the curve. */
+/** "label: text" on the first graph: just right of the curve's right-hand end, as on exam papers. */
 function drawMainLabel(b, f, pieces, text) {
   if (!pieces.length) return;
   const x = pieces[pieces.length - 1].b;
   b.comment('label');
-  b.add(`\\node[anchor=south east, inner sep=3pt] at ${pt(x, f(x))} {${mathLabel(text)}};`);
+  b.add(`\\node[anchor=west, inner sep=3pt] at ${pt(x, f(x))} {${mathLabel(text)}};`);
 }
 
 // ---- y^2 = f(x): y = ±√f(x) wherever f(x) ≥ 0

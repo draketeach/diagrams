@@ -1112,6 +1112,11 @@ test('3D solids: a box can have a shaded base with equal-length marks', () => {
   assert.ok(!solids.generate({ ...d, baseShade: 'none', baseTicks: false }).code.includes('the base'), 'off by default');
 });
 
+test('graphs: point names and tick labels can have commas inside brackets', () => {
+  const code = fn.generate({ ...defaultValues(fn.schema), graphs: 'y = cos(2x)', curvePoints: '0.6186:P(a, b), 1', curvePointLabel: 'name' }).code;
+  assert.ok(code.includes('{$P(a, b)$}'), 'one point named P(a, b), not split at its comma');
+});
+
 test('gallery.html versions are up to date', () => {
   const html = readFileSync(new URL('../gallery.html', import.meta.url), 'utf8');
   assert.equal(html, buildIndex(html));

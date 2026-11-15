@@ -857,10 +857,26 @@ export function drawScaleTicks(b, win, values, { skipX = [], skipY = [], avoid =
 
 // ---------------------------------------------------------------- custom ticks
 
+/** Split a list at commas, but not at commas inside brackets: "1:P(a, b), 2" -> ["1:P(a, b)", "2"]. */
+export function splitList(src) {
+  const out = [];
+  let depth = 0;
+  let cur = '';
+  for (const ch of String(src ?? '')) {
+    if ('([{'.includes(ch)) depth++;
+    else if (')]}'.includes(ch)) depth = Math.max(0, depth - 1);
+    if (ch === ',' && depth === 0) {
+      out.push(cur);
+      cur = '';
+    } else cur += ch;
+  }
+  out.push(cur);
+  return out;
+}
+
 /** Parse "3, 5/2, pi:a" into [{ value, latex }]. */
 export function parseTickList(src, axisName) {
-  return String(src ?? '')
-    .split(',')
+  return splitList(src)
     .map((s) => s.trim())
     .filter(Boolean)
     .map((item) => {
@@ -923,8 +939,7 @@ export function drawCustomTicks(b, win, values, { skipX = [], skipY = [], avoid 
 
 /** Parse "3, -1:P" into [{ x, xLatex, name }]. */
 export function parseCurvePoints(src) {
-  return String(src ?? '')
-    .split(',')
+  return splitList(src)
     .map((s) => s.trim())
     .filter(Boolean)
     .map((item) => {

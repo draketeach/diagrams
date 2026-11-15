@@ -22,11 +22,28 @@ export const GALLERY_GROUPS = [
 
 export const GALLERY = [
   {
-    id: 'cubic-roots',
+    id: 'cosine-touching-circle',
     type: 'function',
-    title: 'Cubic with labelled roots',
-    description: 'y = (x + 4)(x − 1)(x − 3) with its x-intercepts labelled.',
-    values: { graphs: 'y = (x+4)(x-1)(x-3)', height: 6 },
+    title: 'Circle touching a cosine curve',
+    description: 'y = cos(2x) labelled y = cos(kx) at its end, and the circle x² + y² = r² (typed as y^2 = 0.4899 - x^2) touching it at P(a, b), named with a comma.',
+    values: {
+      graphs: 'y = cos(2x); from -1.75 to 1.75; label: $y = \\cos(kx)$\ny^2 = 0.4899 - x^2',
+      leftEnd: 'plain',
+      rightEnd: 'plain',
+      labelX: false,
+      labelY: false,
+      tpLabel: 'none',
+      curvePoints: '0.6186:P(a, b)',
+      curvePointLabel: 'name',
+      curvePointDots: true,
+      windowMode: 'manual',
+      xmin: -2,
+      xmax: 2,
+      ymin: -1.25,
+      ymax: 1.3,
+      equalScale: true,
+      width: 8,
+    },
   },
   {
     id: 'piecewise-pdf',
