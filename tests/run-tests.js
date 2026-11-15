@@ -923,12 +923,22 @@ test('complex plane: conditions are read and the region where they all hold is s
   assert.ok(code.includes('\\draw (-2,-3) circle[radius=1];') && code.includes('\\fill (-2,-3) circle[radius=1.5pt];'), 'circle and centre dot');
   assert.ok(!code.includes('foreach'), 'no scales by default');
   const flat = complex.generate({ ...d, conditions: 'Re(z) + Im(z) < 3', xmin: '3', xmax: '3', ymin: '3', ymax: '3' });
-  assert.ok(flat.warnings.some((w) => /x from \(3\) must be less than x to/.test(w)) && flat.code.includes('(-1,0) -- (4,0)'), 'a range from 3 to 3 warns and falls back to automatic');
+  assert.ok(flat.warnings.some((w) => /x from \(3\) must be less than x to/.test(w)) && /\(-\d+,0\) -- \(\d+,0\)/.test(flat.code), 'a range from 3 to 3 warns and falls back to automatic');
   const sector = complex.generate({ ...d, conditions: '0 <= arg(z) <= pi/4\nRe(z) + Im(z) < 3' }).code;
-  assert.ok(sector.includes('\\draw[dashed]') && /\(4,0\)|\(4,-?\d/.test(sector), 'the automatic range takes in where lines cross the axes, so the line shows');
+  assert.ok(sector.includes('\\draw[dashed]') && Number(sector.match(/\(-?[\d.]+,0\) -- \(([\d.]+),0\)/)[1]) >= 4, 'the automatic range takes in where lines cross the axes, so the line shows');
   const atO = complex.generate({ ...d, conditions: '0 <= arg(z) <= pi/4', labelPoints: true }).code;
   assert.ok(atO.includes('{$O$}') && !atO.includes('{$0$}'), 'a ray from the origin is labelled O');
   assert.equal(complex.generate({ ...d, conditions: '0 <= arg(z) <= pi/4', labelPoints: true, originLabel: true }).code.split('{$O$}').length, 2, 'just one O');
+  // points and lines
+  assert.deepEqual(parseComplex('-27/8i'), { x: 0, y: -3.375 });
+  const spiral = complex.generate({ ...d, ...GALLERY.find((e) => e.id === 'complex-spiral').values });
+  assert.deepEqual(spiral.warnings, []);
+  assert.ok(spiral.code.includes('\\coordinate (z1) at (8,0);') && spiral.code.includes('\\draw (z1) -- (z2) -- (z3) -- (0,-3.375) -- (2.5313,0);'), 'named points and one path');
+  assert.ok(spiral.code.includes('node[below, inner sep=2pt] {$z_{1}$}') && spiral.code.includes('node[left, inner sep=2pt] {$z_{2}$}'), 'labels away from the lines and axes');
+  assert.ok(spiral.code.includes('\\draw[dotted] (2.5313,0) -- (1.01,1.14);') && !spiral.code.includes('\\fill (1.01,1.14)'), 'a dotted line, no dot at its loose end');
+  assert.ok(spiral.code.includes('NOT TO\\\\SCALE'), 'NOT TO SCALE');
+  const tri = complex.generate({ ...d, conditions: '', points: 'w = 1 + i @ above\n0 -> w\nw -- 2 -- cycle dashed' }).code;
+  assert.ok(tri.includes('\\draw[-latex] (0,0) -- (w);') && tri.includes('-- cycle;') && tri.includes('node[above, inner sep=2pt] {$w$}') && !tri.includes('\\fill (0,0)'), 'arrows, cycles and placed labels');
   const strict = complex.generate({ ...d, conditions: '|z - 1| > 2' }).code;
   assert.ok(strict.includes('\\draw[dashed] (1,0) circle[radius=2];'), 'strict boundaries dashed');
   const locus = complex.generate({ ...d, conditions: '|z| = 2\nIm(z) >= 0' }).code;

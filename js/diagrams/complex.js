@@ -33,11 +33,15 @@ export function parseComplex(text) {
   const terms = t.match(/[+-]?[^+-]+/g);
   if (!terms || terms.join('') !== t) return null;
   for (const term of terms) {
-    const m = term.match(/^([+-]?)(\d*\.?\d*)(\*?i)?$/);
-    if (!m || (!m[2] && !m[3])) return null;
+    // a number, a fraction (9/2), and i before or after a fraction's line: -27/8i, -27i/8
+    const m = term.match(/^([+-]?)(\d*\.?\d*)(?:\/(\d*\.?\d+))?(\*?i)?(?:\/(\d*\.?\d+))?$/);
+    if (!m || (!m[2] && !m[4])) return null;
     const sign = m[1] === '-' ? -1 : 1;
-    if (m[3]) y += sign * (m[2] ? Number(m[2]) : 1);
-    else x += sign * Number(m[2]);
+    let k = m[2] ? Number(m[2]) : 1;
+    if (m[3]) k /= Number(m[3]);
+    if (m[5]) k /= Number(m[5]);
+    if (m[4]) y += sign * k;
+    else x += sign * k;
   }
   return isFinite(x) && isFinite(y) ? { x, y } : null;
 }
@@ -195,6 +199,117 @@ export function angleTex(text) {
   return `${m[1] === '-' ? '-' : ''}${m[4] ? `\\frac{${top}}{${m[4]}}` : top}`;
 }
 
+/** A point's name for its label: z1 → z_{1}, w → w, Top → \mathrm{Top}. */
+function nameTex(name) {
+  const m = name.match(/^([A-Za-z])(\d+)$/);
+  if (m) return `${m[1]}_{${m[2]}}`;
+  return /^[A-Za-z]{3,}$/.test(name) ? `\\mathrm{${name}}` : name;
+}
+
+const PLACES = ['right', 'above right', 'above', 'above left', 'left', 'below left', 'below', 'below right'];
+
+/**
+ * Points and lines, one per line:
+ *   z1 = 4                 a named point (dot, labelled z₁); "@ above" places its label, "@ none" hides it
+ *   1 + i  or  2i : P      a point marked with a dot, labelled with its number or what follows the colon
+ *   z1 -- z2 -- z3         lines (-- solid, .. dotted, -> an arrow); add "cycle" to close, "dashed" or "dotted" after
+ * Returns { named: Map(name → {p, place}), marks: [{p, label, place}], segs: [{a, b, style, arrow}], problems }.
+ */
+export function parsePointsAndLines(text) {
+  const named = new Map();
+  const marks = [];
+  const segs = [];
+  const problems = [];
+  const lines = String(text ?? '')
+    .split('\n')
+    .map((l) => l.trim().replace(/\$/g, ''))
+    .filter(Boolean);
+  // names first, so lines can use names defined below them
+  for (const line of lines) {
+    const m = line.match(/^([A-Za-z][A-Za-z0-9]*)\s*=\s*([^@]+?)\s*(?:@\s*(.+))?$/);
+    if (!m || /--|\.\.|->/.test(line)) continue;
+    const p = parseComplex(m[2]);
+    if (!p || m[1] === 'i') problems.push(`${line}: can't read ${m[2]} as a complex number.`);
+    else named.set(m[1], { p, place: m[3]?.trim() || null });
+  }
+  const point = (t) => {
+    const k = t.trim();
+    if (named.has(k)) return { name: k, p: named.get(k).p };
+    const p = parseComplex(k);
+    return p ? { p } : null;
+  };
+  for (const line of lines) {
+    if (/--|\.\.|->/.test(line)) {
+      const sm = line.match(/\s+(dashed|dotted|thick)\s*$/);
+      const style = sm ? sm[1] : '';
+      const body = sm ? line.slice(0, sm.index) : line;
+      const parts = body.split(/(--|\.\.|->)/).map((x) => x.trim());
+      const nodes = [];
+      for (let k = 0; k < parts.length; k += 2) {
+        if (parts[k] === 'cycle') nodes.push(nodes[0]);
+        else {
+          const q = point(parts[k]);
+          if (!q) {
+            problems.push(`${line}: can't read ${parts[k]} (a name like z1, or a number like 1 + i).`);
+            nodes.length = 0;
+            break;
+          }
+          nodes.push(q);
+        }
+      }
+      const run = segs.length ? Math.max(...segs.map((x) => x.run)) + 1 : 0; // the line it was typed on
+      for (let k = 1; k < nodes.length; k++) {
+        const sep = parts[2 * k - 1];
+        segs.push({ a: nodes[k - 1], b: nodes[k], style: sep === '..' ? 'dotted' : style, arrow: sep === '->', run });
+      }
+      continue;
+    }
+    if (/^[A-Za-z][A-Za-z0-9]*\s*=/.test(line)) continue; // a name, read above
+    const [head, ...rest] = line.split(':');
+    const [num, place] = head.split('@').map((x) => x.trim());
+    const p = parseComplex(num);
+    if (!p) {
+      problems.push(`${line}: can't read ${num} as a complex number.`);
+      continue;
+    }
+    const after = rest.join(':');
+    const [label, place2] = after.split('@').map((x) => x.trim());
+    marks.push({ p, label: rest.length ? label : null, place: (place2 || place || '').trim() || null });
+  }
+  return { named, marks, segs, problems };
+}
+
+/**
+ * Where a point's label goes: the one of eight directions furthest from the
+ * lines that meet there and from the axes the point sits on (below, then left, first).
+ */
+function labelPlace(p, segs) {
+  const away = [];
+  const same = (q) => Math.abs(q.x - p.x) < 1e-9 && Math.abs(q.y - p.y) < 1e-9;
+  for (const s of segs) {
+    if (same(s.a.p) && !same(s.b.p)) away.push(Math.atan2(s.b.p.y - p.y, s.b.p.x - p.x));
+    if (same(s.b.p) && !same(s.a.p)) away.push(Math.atan2(s.a.p.y - p.y, s.a.p.x - p.x));
+  }
+  if (Math.abs(p.y) < 1e-9) away.push(0, Math.PI); // on the real axis
+  if (Math.abs(p.x) < 1e-9) away.push(Math.PI / 2, -Math.PI / 2); // on the imaginary axis
+  const gap = (a, b) => {
+    const d = Math.abs((((a - b) % (2 * Math.PI)) + 3 * Math.PI) % (2 * Math.PI) - Math.PI);
+    return d;
+  };
+  const prefer = [6, 4, 5, 7, 2, 0, 3, 1]; // below, left, below left, below right, above, right, …
+  let best = prefer[0];
+  let bestGap = -1;
+  for (const k of prefer) {
+    const a = (k * Math.PI) / 4;
+    const g = away.length ? Math.min(...away.map((t) => gap(a, t))) : Math.PI;
+    if (g > bestGap + 1e-6) {
+      best = k;
+      bestGap = g;
+    }
+  }
+  return PLACES[best];
+}
+
 // ---------------------------------------------------------------- geometry
 
 /** Keeps the part of a polygon where a·x + b·y + c ≤ 0. */
@@ -258,7 +373,7 @@ const schema = [
         type: 'textarea',
         key: 'conditions',
         label: 'One per line; the region where they all hold is shaded',
-        rows: 4,
+        rows: 3,
         default: '|z+2+3i| <= 1\nIm(z) <= Re(z)',
         examples: EXAMPLES,
       },
@@ -300,7 +415,7 @@ const schema = [
   },
   {
     type: 'group',
-    label: 'Labels',
+    label: 'Points, lines and labels',
     fields: [
       {
         type: 'row',
@@ -312,11 +427,27 @@ const schema = [
       {
         type: 'textarea',
         key: 'points',
-        label: 'Points to mark, one per line',
-        rows: 2,
+        label: 'Points and lines, one per line',
+        rows: 4,
         default: '',
-        placeholder: 'e.g. 1 + i  or  2i : P',
-        help: 'A dot at each point, labelled with its number, or with what you type after a colon.',
+        placeholder: 'z1 = 4\nz2 = 2i\nz1 -- z2',
+        examples: {
+          rows: [
+            ['z1 = 4', 'A named point: a dot labelled z₁ (z1 = 4 @ above to place the label, @ none for no label)'],
+            ['1 + i  or  2i : P', 'A dot labelled with its number, or with what follows the colon'],
+            ['z1 -- z2 -- z3 -- cycle', 'Lines between points (names or numbers); cycle closes the shape'],
+            ['1 .. 0.5 + 0.5i', 'A dotted line (or add dashed or dotted after any line)'],
+            ['0 -> z1', 'An arrow, e.g. for a vector'],
+          ],
+          notes: ['Line ends that aren\'t named get a dot with no label. Labels go away from the lines and axes on their own.'],
+        },
+      },
+      {
+        type: 'row',
+        fields: [
+          { type: 'checkbox', key: 'lineDots', label: 'Dots at the ends of lines', default: true },
+          { type: 'checkbox', key: 'notToScale', label: 'NOT TO SCALE', default: false },
+        ],
       },
     ],
   },
@@ -417,6 +548,13 @@ function generate(v) {
       }
     }
   }
+  // every point and line end
+  const pl = parsePointsAndLines(v.points);
+  for (const q of [...[...pl.named.values()].map((x) => x.p), ...pl.marks.map((m) => m.p), ...pl.segs.flatMap((s) => [s.a.p, s.b.p])]) {
+    xs.push(q.x);
+    ys.push(q.y);
+  }
+  pl.problems.forEach((t) => warnings.push(t));
   // where straight boundaries (lines and rays) cross each other
   const straight = [];
   for (const c of conds) {
@@ -439,7 +577,7 @@ function generate(v) {
       }
     }
   }
-  const pad = 1;
+  const pad = 1.5; // room beyond the furthest point for its label and the axis letter
   const auto = (t) => String(t ?? '').trim() === '' || !isFinite(Number(t));
   let x0 = auto(v.xmin) ? niceDown(Math.min(...xs) - pad) : Number(v.xmin);
   let x1 = auto(v.xmax) ? niceUp(Math.max(...xs) + pad) : Number(v.xmax);
@@ -602,23 +740,51 @@ function generate(v) {
       }
     }
   }
-  const marks = String(v.points ?? '')
-    .split('\n')
-    .map((l) => l.trim())
-    .filter(Boolean);
-  if (marks.length) {
-    b.comment('points you marked');
-    marks.forEach((line, i) => {
-      const [num, ...rest] = line.split(':');
-      const p = parseComplex(num.replace(/\$/g, ''));
-      if (!p) return warnings.push(`Point ${i + 1} (${line}): can't read ${num.trim()} as a complex number.`);
-      const label = rest.join(':').trim();
-      b.add(`\\fill ${P(p)} circle[radius=1.5pt] node[above right, inner sep=2pt] {${label ? mathLabel(label) : `$${complexTex(p)}$`}};`);
-    });
+  // ---- points and lines you typed
+  if (pl.named.size) {
+    b.comment('points');
+    for (const [name, q] of pl.named) b.add(`\\coordinate (${name}) at ${P(q.p)};`);
+  }
+  if (pl.segs.length) {
+    b.comment('lines');
+    const at = (q) => (q.name ? `(${q.name})` : P(q.p));
+    // a typed line is one path, split only where its style changes (or at an arrow)
+    const groups = [];
+    for (const sg of pl.segs) {
+      const last = groups[groups.length - 1];
+      const st = [sg.arrow ? '-latex' : '', sg.style].filter(Boolean).join(', ');
+      if (last && last.run === sg.run && last.st === st && !sg.arrow && last.nodes[last.nodes.length - 1] === sg.a) last.nodes.push(sg.b);
+      else groups.push({ run: sg.run, st, nodes: [sg.a, sg.b] });
+    }
+    for (const g of groups) {
+      const closed = g.nodes.length > 3 && g.nodes[0] === g.nodes[g.nodes.length - 1];
+      const ns = closed ? g.nodes.slice(0, -1) : g.nodes;
+      b.add(`\\draw${g.st ? `[${g.st}]` : ''} ${ns.map(at).join(' -- ')}${closed ? ' -- cycle' : ''};`);
+    }
+  }
+  const dotted = new Set();
+  const dot = (q, label, place) => {
+    const key = `${n(q.x)},${n(q.y)}`;
+    if (dotted.has(key) && !label) return;
+    dotted.add(key);
+    const where = place && place !== 'none' ? place : labelPlace(q, pl.segs);
+    b.add(`\\fill ${q.name ? `(${q.name})` : P(q)} circle[radius=1.5pt]${label && place !== 'none' ? ` node[${where}, inner sep=2pt] {${label}}` : ''};`);
+  };
+  if (pl.named.size || pl.marks.length || pl.segs.length) {
+    b.comment('dots and labels');
+    for (const [name, q] of pl.named) dot({ ...q.p, name }, `$${nameTex(name)}$`, q.place);
+    for (const m of pl.marks) dot(m.p, m.label === null ? `$${complexTex(m.p)}$` : m.label ? mathLabel(m.label) : '', m.place);
+    // the other ends of lines: a dot, no label
+    // (only on solid lines: a dotted or dashed line's loose end, and an arrow's, is left plain)
+    if (v.lineDots !== false) for (const sg of pl.segs) if (!sg.arrow && (!sg.style || sg.style === 'thick')) for (const e of [sg.a, sg.b]) if (!e.name) dot(e.p, '', null);
+  }
+  if (v.notToScale) {
+    b.comment('note');
+    b.add(`\\node[anchor=north west, align=center] at (${n(x1 + 0.4 / unit)},${n(y1)}) {NOT TO\\\\SCALE};`);
   }
 
   const opts = [`x=${n(unit)}cm`, `y=${n(unit)}cm`, v.lineWidth && v.lineWidth !== 'thin' ? v.lineWidth : '', v.fontSize ? `font=${v.fontSize}` : ''];
-  if (!conds.length && !warnings.length) warnings.push('Type a condition, e.g. |z - 1| <= 2.');
+  if (!conds.length && !pl.named.size && !pl.marks.length && !pl.segs.length && !warnings.length) warnings.push('Type a condition, e.g. |z - 1| <= 2, or some points.');
   return { code: b.toString(opts), warnings };
 }
 

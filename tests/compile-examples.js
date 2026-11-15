@@ -117,6 +117,8 @@ const jobs = [
   ['complex-locus', complex.generate({ ...defaultValues(complex.schema), conditions: 'arg(z+1) = pi/3\n|z - 2i| = 1\nRe(z) >= 0' , scales: false })],
   ['complex-labels', complex.generate({ ...defaultValues(complex.schema), conditions: '\\pi/4 \\le \\operatorname{Arg}(z - i) \\le 3\\pi/4\n|z - i| \\le 2', labelPoints: true, labelAngles: true, points: '2i : P\n1 + i' })],
   ['complex-locus-dashed', complex.generate({ ...defaultValues(complex.schema), conditions: '|z - 1| = 2\narg(z) >= 0', labelPoints: true })],
+  ['complex-spiral', complex.generate({ ...defaultValues(complex.schema), ...GALLERY.find((e) => e.id === 'complex-spiral').values })],
+  ['complex-vectors', complex.generate({ ...defaultValues(complex.schema), conditions: '|z| <= 2', points: 'w = 1 + i @ above\n0 -> w\nw -- 2 -- cycle dashed\n-1 + 1/2i : P' })],
   ['realgraph-loan', realgraph.generate(defaultValues(realgraph.schema))],
   ['realgraph-travel', realgraph.generate({ ...defaultValues(realgraph.schema), curves: '0,0 -- 2,40 -- 3,40 -- 5,0; label above right: Car\n0,10 1,15 2,30* | 2,35o 4,38; dashed; label: Bus\n1,5:P', xTitle: 'Time (hours)', yTitle: 'Distance from home (km)', yTitlePos: 'top', xmax: 6, ymax: 45, xStep: 1, yStep: 10, yNumbers: '', gridX: 0.5, gridY: 5, gridColour: 'grey', origin: 'both' })],
   ['blank-trig', blank.generate({ ...defaultValues(blank.schema), xPreset: 'radians', xCustomTicks: '', originLabel: true })],

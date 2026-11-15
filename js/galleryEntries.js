@@ -605,4 +605,11 @@ export const GALLERY = [
       scene: JSON.stringify({"settings": {"grid": 0.25, "snap": true, "showGrid": true, "lineWidth": "thin", "fontSize": "", "notToScale": false, "unit": "", "lengthDecimals": 0, "view": {"x0": -1, "y0": -1, "w": 13, "h": 7}}, "points": [{"id": "E1", "name": "E1", "x": 0.0, "y": 4.68, "showLabel": false, "dot": false, "hidden": true}, {"id": "E2", "name": "E2", "x": 11.0, "y": 0.68, "showLabel": false, "dot": false, "hidden": true}, {"id": "A", "name": "A", "x": 1.208, "y": 4.241, "showLabel": true, "dot": true, "text": "A\\,(1, -1, 2)", "label": {"dx": 0.95, "dy": 0.38}}, {"id": "B", "name": "B", "x": 3.348, "y": 3.462, "showLabel": true, "dot": true, "text": "B\\,(2, 0, 3)", "label": {"dx": 0.85, "dy": 0.38}}, {"id": "M", "name": "M", "x": 5.482, "y": 2.686, "showLabel": true, "dot": true, "label": {"dx": 0.38, "dy": 0.12}}, {"id": "P", "name": "P", "x": 6.44, "y": 5.32, "showLabel": true, "dot": true, "text": "P\\,(4, -1, 5)", "label": {"dx": 1.1, "dy": 0}}, {"id": "Q", "name": "Q", "x": 4.525, "y": 0.053, "showLabel": true, "dot": true, "label": {"dx": -0.3, "dy": 0}}], "items": [{"id": "line", "type": "segment", "a": "E1", "b": "E2", "label": ""}, {"id": "pm", "type": "segment", "a": "P", "b": "M", "label": "", "ticks": 2}, {"id": "mq", "type": "segment", "a": "M", "b": "Q", "label": "", "ticks": 2}, {"id": "ra", "type": "right", "v": "M", "a": "P", "b": "E1", "size": 0.22}]}),
     },
   },
+  {
+    id: 'complex-spiral',
+    type: 'complex',
+    title: 'Points joined in the complex plane',
+    description: 'z₁ = 8, z₂ = 6i, z₃ = −9/2, then −27i/8 and 81/32 (each 3i/4 times the last), joined by lines, a dotted line onward, and NOT TO SCALE.',
+    values: { conditions: '', points: 'z1 = 8\nz2 = 6i\nz3 = -9/2\nz1 -- z2 -- z3 -- -27/8i -- 81/32\n81/32 .. 1.01 + 1.14i', notToScale: true, size: 8 },
+  },
 ];
