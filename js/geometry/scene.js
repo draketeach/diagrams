@@ -726,7 +726,10 @@ export function labelPositions(scene, pts = pointMap(scene)) {
 
 // ---------------------------------------------------------------- TikZ
 
-const STYLE = { solid: '', dashed: 'dashed', dotted: 'dotted' };
+const STYLE = { solid: '', dashed: 'dashed', dotted: 'dotted', thick: 'thick' };
+/** A line style's option; "thick" is one step heavier than the picture's lines. */
+const styleOf = (style, lw) =>
+  style === 'thick' ? (/very|ultra/.test(lw) ? 'ultra thick' : 'very thick') : STYLE[style];
 
 /** Pattern fills (patterns.meta), the same stipples as the normal distribution's shading. */
 export const PATTERNS = {
@@ -1072,7 +1075,7 @@ export function sceneToTikz(sceneIn) {
   for (const ch of chainSegments(plain)) {
     const closed = ch.pts.length > 3 && ch.pts[0] === ch.pts[ch.pts.length - 1];
     const ids = closed ? ch.pts.slice(0, -1) : ch.pts;
-    const opts = [lw, STYLE[ch.style]].filter(Boolean).join(', ');
+    const opts = [lw, styleOf(ch.style, lw)].filter(Boolean).join(', ');
     b.add(`\\draw${opts ? `[${opts}]` : ''} ${ids.map((id) => `(${name(id)})`).join(' -- ')}${closed ? ' -- cycle' : ''};`);
   }
   for (const s of marked) {
@@ -1086,12 +1089,12 @@ export function sceneToTikz(sceneIn) {
       const at = (t) => `(${fmt(A.x + ((B.x - A.x) * t) / gap.L)},${fmt(A.y + ((B.y - A.y) * t) / gap.L)})`;
       const tipA = s.tip === 'a' || s.tip === 'both' ? `${TIP}-` : '';
       const tipB = s.tip === 'b' || s.tip === 'both' ? `-${TIP}` : '';
-      const o1 = [tipA, lw, STYLE[s.style]].filter(Boolean).join(', ');
-      const o2 = [tipB, lw, STYLE[s.style]].filter(Boolean).join(', ');
+      const o1 = [tipA, lw, styleOf(s.style, lw)].filter(Boolean).join(', ');
+      const o2 = [tipB, lw, styleOf(s.style, lw)].filter(Boolean).join(', ');
       b.add(`\\draw${o1 ? `[${o1}]` : ''} (${name(s.a)}) -- ${at(gap.from)};`);
       b.add(`\\draw${o2 ? `[${o2}]` : ''} ${at(gap.to)} -- (${name(s.b)});`);
     } else {
-      const opts = [tipOption(s), lw, STYLE[s.style], markings(s)].filter(Boolean).join(', ');
+      const opts = [tipOption(s), lw, styleOf(s.style, lw), markings(s)].filter(Boolean).join(', ');
       b.add(`\\draw${opts ? `[${opts}]` : ''} ${segPath(s, pts, name, scene)};`);
     }
     if (s.bars && s.a !== s.b) {
@@ -1114,7 +1117,7 @@ export function sceneToTikz(sceneIn) {
     cs.sections.forEach((sec, i) => {
       path += ` .. controls (${fmt(sec.c1.x)},${fmt(sec.c1.y)}) and (${fmt(sec.c2.x)},${fmt(sec.c2.y)}) .. (${name(c.pts[i + 1])})`;
     });
-    const opts = [lw, STYLE[c.style]].filter(Boolean).join(', ');
+    const opts = [lw, styleOf(c.style, lw)].filter(Boolean).join(', ');
     b.add(`\\draw${opts ? `[${opts}]` : ''} ${path};`);
   }
 
@@ -1132,7 +1135,7 @@ export function sceneToTikz(sceneIn) {
   if (curves.length) b.comment('circles and arcs');
   for (const it of curves) {
     const c = pts.get(it.c);
-    const opts = [lw, STYLE[it.style]].filter(Boolean).join(', ');
+    const opts = [lw, styleOf(it.style, lw)].filter(Boolean).join(', ');
     if (it.type === 'circle') {
       const r = Math.hypot(pts.get(it.p).x - c.x, pts.get(it.p).y - c.y);
       b.add(`\\draw${opts ? `[${opts}]` : ''} (${c.name}) circle[radius=${fmt(r)}];`);

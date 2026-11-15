@@ -104,6 +104,8 @@ const schema = [
             { value: 'gray!15', label: 'Light grey' },
             { value: 'gray!25', label: 'Grey' },
             { value: 'gray!45', label: 'Dark grey' },
+            { value: 'dots', label: 'Dots' },
+            { value: 'dots-sparse', label: 'Sparse dots' },
           ],
         }
       ),

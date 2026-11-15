@@ -108,6 +108,7 @@ const LINE_STYLES = [
   ['solid', 'Solid'],
   ['dashed', 'Dashed'],
   ['dotted', 'Dotted'],
+  ['thick', 'Thick'],
 ];
 const FILLS = [
   ['none', 'None'],

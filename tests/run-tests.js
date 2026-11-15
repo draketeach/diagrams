@@ -996,6 +996,17 @@ test('gallery: every entry generates cleanly and has its image', () => {
   }
 });
 
+test('dotted asymptotes, dotted shading and thick geometry lines', () => {
+  const base = { ...defaultValues(fn.schema), graphs: 'y = 1 + 4/(x+2)', asymptotes: 'x = -2, y = 1' };
+  assert.match(fn.generate(base).code, /\\draw\[dashed, thin\] \(-2,/);
+  assert.match(fn.generate({ ...base, asymptoteStyle: 'dotted' }).code, /\\draw\[dotted, thin\] \(-2,/);
+  const shaded = fn.generate({ ...defaultValues(fn.schema), graphs: 'y = x^2', shade: '0 to 1', shadeColour: 'dots' });
+  assert.match(shaded.code, /\\fill\[pattern=\{Dots\[/);
+  assert.ok(shaded.preamble?.some?.((l) => l.includes('patterns.meta')) ?? /patterns\.meta/.test(JSON.stringify(shaded)));
+  const scene = { settings: { grid: 0.25, lineWidth: 'thin' }, points: [{ id: 'A', name: 'A', x: 0, y: 0 }, { id: 'B', name: 'B', x: 2, y: 0 }], items: [{ id: 's', type: 'segment', a: 'A', b: 'B', style: 'thick' }] };
+  assert.match(sceneToTikz(scene).code, /very thick/);
+});
+
 test('gallery.html versions are up to date', () => {
   const html = readFileSync(new URL('../gallery.html', import.meta.url), 'utf8');
   assert.equal(html, buildIndex(html));

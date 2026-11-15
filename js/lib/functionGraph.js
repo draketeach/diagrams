@@ -922,10 +922,20 @@ export function asymptoteFields() {
       {
         type: 'text',
         key: 'asymptotes',
-        label: 'Dashed asymptotes',
+        label: 'Asymptotes',
         default: '',
         placeholder: 'e.g. y = 5, x = -2',
         help: 'Separate with commas. Add a range to shorten one, e.g. "y = 5 from 0 to 10".',
+      },
+      {
+        type: 'select',
+        key: 'asymptoteStyle',
+        label: 'Line',
+        default: 'dashed',
+        options: [
+          { value: 'dashed', label: 'Dashed' },
+          { value: 'dotted', label: 'Dotted' },
+        ],
       },
       {
         type: 'select',
@@ -979,6 +989,7 @@ export function drawAsymptotes(b, win, values, f = null) {
   const out = { warnings: [], skipX: [], skipY: [] };
   if (!list.length) return out;
   const width = values.axisWidth || 'thin';
+  const dash = values.asymptoteStyle === 'dotted' ? 'dotted' : 'dashed';
   const mode = values.asymptoteLabel ?? 'axis';
   const onAxis = mode === 'axis' || mode === 'both';
   const equation = mode === 'equation' || mode === 'both';
@@ -997,7 +1008,7 @@ export function drawAsymptotes(b, win, values, f = null) {
     if (vertical) {
       // equation at the bottom, clear of the y label at the top
       const label = equation ? ` node[pos=0, anchor=south west, inner sep=2pt] {$x = ${a.latex}$}` : '';
-      lines.push(`\\draw[dashed, ${width}] ${pt(a.value, lo)} -- ${pt(a.value, hi)}${label};`);
+      lines.push(`\\draw[${dash}, ${width}] ${pt(a.value, lo)} -- ${pt(a.value, hi)}${label};`);
       if (onAxis && Math.abs(a.value) > 1e-9 && win.ymin <= 0 && win.ymax >= 0) {
         lines.push(`\\draw[${width}] ${pt(a.value, 0)} -- ++(0,-3pt);`);
         lines.push(`\\node[anchor=north, inner sep=2pt, yshift=-2pt] at ${pt(a.value, 0)} {${mathLabel(a.latex)}};`);
@@ -1012,7 +1023,7 @@ export function drawAsymptotes(b, win, values, f = null) {
         if (ys.length && ys.every((y) => y > a.value)) side = 'north';
       }
       const label = equation ? ` node[pos=1, anchor=${side} east, inner sep=2pt] {$y = ${a.latex}$}` : '';
-      lines.push(`\\draw[dashed, ${width}] ${pt(lo, a.value)} -- ${pt(hi, a.value)}${label};`);
+      lines.push(`\\draw[${dash}, ${width}] ${pt(lo, a.value)} -- ${pt(hi, a.value)}${label};`);
       if (onAxis && Math.abs(a.value) > 1e-9 && win.xmin <= 0 && win.xmax >= 0) {
         lines.push(`\\draw[${width}] ${pt(0, a.value)} -- ++(-3pt,0);`);
         lines.push(`\\node[anchor=east, inner sep=2pt, xshift=-2pt] at ${pt(0, a.value)} {${mathLabel(a.latex)}};`);

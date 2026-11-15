@@ -135,8 +135,17 @@ export function parseShades(src) {
  * Shade between a graph and the x-axis. parts: [{ a, b, f }] (the pieces of
  * a piecewise function, or one part for an ordinary function).
  */
+/** Dotted (stipple) shades from patterns.meta, as on exam papers. */
+const SHADE_PATTERNS = {
+  dots: 'Dots[radius=0.33pt, distance=1.5pt, angle=45]',
+  'dots-sparse': 'Dots[radius=0.42pt, distance=3pt, angle=45]',
+};
+
 export function drawShading(b, parts, shades, win, colour) {
   if (!shades.length) return;
+  const pattern = SHADE_PATTERNS[colour];
+  if (pattern) b.usePreamble('\\usetikzlibrary{patterns.meta}');
+  const fill = pattern ? `pattern={${pattern}}` : colour || 'gray!25';
   b.comment('shading');
   for (const [s, t] of shades) {
     const coords = [pt(s, 0)];
@@ -154,6 +163,6 @@ export function drawShading(b, parts, shades, win, colour) {
     coords.push(pt(t, 0));
     const rows = [];
     for (let i = 0; i < coords.length; i += 6) rows.push('    ' + coords.slice(i, i + 6).join(' -- '));
-    b.add(`\\fill[${colour || 'gray!25'}] ${rows.join(' --\n').trim()} -- cycle;`);
+    b.add(`\\fill[${fill}] ${rows.join(' --\n').trim()} -- cycle;`);
   }
 }

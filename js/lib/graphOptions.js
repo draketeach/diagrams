@@ -124,7 +124,7 @@ export function moreOptions(extra = {}) {
       ]),
       group('Asymptotes & shading', [
         field('asymptotes', { label: 'Asymptotes', help: undefined, examples: ASYMPTOTE_EXAMPLES }),
-        field('asymptoteLabel'),
+        row(field('asymptoteStyle'), field('asymptoteLabel')),
         ...(extra.lines || []),
       ]),
       ...(extra.meet ? [group('Where graphs meet', extra.meet)] : []),
