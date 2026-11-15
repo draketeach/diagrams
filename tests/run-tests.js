@@ -26,8 +26,11 @@ import network, { DEFAULT_NETWORK } from '../js/diagrams/network.js';
 import solids, { vectorTex, vectorShortcuts } from '../js/diagrams/solids.js';
 import complex, { parseCondition, parseComplex, parseAngle } from '../js/diagrams/complex.js';
 import { tildeVectors, plainLabel, bendThrough, loopThrough, edgeShape, shapeAt } from '../js/geometry/scene.js';
-import dotplot, { parseDots } from '../js/diagrams/dotplot.js';
-import boxplot, { parseSummaries } from '../js/diagrams/boxplot.js';
+import statgraph from '../js/diagrams/statgraph.js';
+import { parseDots } from '../js/diagrams/dotplot.js';
+import { parseSummaries } from '../js/diagrams/boxplot.js';
+import { parseBars } from '../js/diagrams/histogram.js';
+import { parseSectors } from '../js/diagrams/piechart.js';
 import { parseEdgeList, sceneToEdgeList, applyEdgeList } from '../js/geometry/edgeList.js';
 import probtree, { treeFromStages, treeFromOutline, pathProduct } from '../js/diagrams/probtree.js';
 import { parseScene, sceneToTikz, coordinatesFromCode, angleSpan, labelPositions, pointMap } from '../js/geometry/scene.js';
@@ -789,14 +792,15 @@ test('solids: each solid draws; hidden edges only when asked', () => {
 test('dot plot: values and value:count stack dots above a number line', () => {
   assert.deepEqual(parseDots('1, 2 2\n4:3, x').dots, [[1, 1], [2, 2], [4, 3]]);
   assert.deepEqual(parseDots('x').bad, ['x']);
-  const d = defaultValues(dotplot.schema);
-  const code = dotplot.generate({ ...d, data: '1 2 2 4:3' }).code;
+  const d = { ...defaultValues(statgraph.schema), graph: 'dot' };
+  const dotplot = statgraph;
+  const code = dotplot.generate({ ...d, dotData: '1 2 2 4:3' }).code;
   assert.ok(code.includes('\\foreach \\k in {1,...,3} \\fill (4,{0.3*\\k})'), 'a column of three dots');
   assert.ok(code.includes('\\fill (1,0.3) circle'), 'a single dot written plainly');
   assert.ok(code.includes('stealth-stealth') && code.includes('\\node[below] at (\\x,-0.1) {$\\x$}'), 'number line with arrows and numbers');
   const none = dotplot.generate({ ...d, numbers: 'none', axisArrow: 'none', from: '0', to: '10', step: '2' }).code;
   assert.ok(!none.includes('$\\x$') && !none.includes('stealth') && none.includes('{0,2,4,6,8,10}'), 'own range, no numbers, no arrows');
-  assert.ok(dotplot.generate({ ...d, data: '3, 50', to: '10' }).warnings.some((w) => /outside/.test(w)), 'warns when values are off the line');
+  assert.ok(dotplot.generate({ ...d, dotData: '3, 50', to: '10' }).warnings.some((w) => /outside/.test(w)), 'warns when values are off the line');
 });
 
 test('box plot: five-number summaries, names, outliers', () => {
@@ -806,13 +810,40 @@ test('box plot: five-number summaries, names, outliers', () => {
   assert.deepEqual(plots[1].outliers, [31, 35]);
   assert.equal(problems.length, 1, 'a line without five numbers is reported');
   assert.ok(parseSummaries('5, 4, 3, 2, 1').problems.length, 'out of order is reported');
-  const d = defaultValues(boxplot.schema);
-  const code = boxplot.generate({ ...d, data: 'A: 1, 2, 3, 4, 8; 12' }).code;
+  const d = { ...defaultValues(statgraph.schema), graph: 'box' };
+  const boxplot = statgraph;
+  const code = boxplot.generate({ ...d, boxData: 'A: 1, 2, 3, 4, 8; 12' }).code;
   assert.ok(code.includes('\\draw (2,0.5) rectangle (4,1.1);') && code.includes('\\draw (3,0.5) -- (3,1.1);'), 'box and median');
   assert.ok(code.includes('(1,0.65) -- (1,0.95)'), 'whisker end bars');
   assert.ok(code.includes('\\fill (12,0.8) circle') && code.includes('{A}'), 'outlier dot and name');
   const bare = boxplot.generate({ ...d, line: 'none', caps: 'none' }).code;
   assert.ok(!bare.includes('number line') && !bare.includes('(1,0.15)'), 'no number line, plain whiskers');
+  const line = boxplot.generate({ ...d, boxData: '', from: '130', to: '180', step: '5' });
+  assert.ok(line.code.includes('number line') && !line.code.includes('rectangle') && !line.warnings.length, 'blank: just the number line');
+});
+
+test('histogram: bars, labels, ogive and frequency polygon', () => {
+  assert.deepEqual(parseBars('Red: 25, White: 50\n135: 15').bars, [{ label: 'Red', f: 25 }, { label: 'White', f: 50 }, { label: '135', f: 15 }]);
+  assert.equal(parseBars('Red: lots').problems.length, 1);
+  const d = { ...defaultValues(statgraph.schema), graph: 'histogram', histData: '135: 15\n145: 17.5\n155: 22.5', histTop: '25', histStep: '5' };
+  const code = statgraph.generate(d).code;
+  assert.ok(code.includes('\\filldraw[fill=white] (0.5,0) rectangle (1.5,15);') && code.includes('node[below, inner sep=2pt] {$145$}'), 'bars and centre labels');
+  assert.ok(code.includes('{0,5,10,15,20,25}'), 'numbered frequency axis');
+  assert.ok(statgraph.generate({ ...d, histLine: 'ogive' }).code.includes('(0.5,0) -- (1.5,15) -- (2.5,17.5) -- (3.5,22.5)'), 'ogive through top right corners');
+  assert.ok(statgraph.generate({ ...d, histLine: 'polygon' }).code.includes('(0,0) -- (1,15) -- (2,17.5) -- (3,22.5) -- (4,0)'), 'polygon through the middles');
+  assert.ok(statgraph.generate({ ...d, histLine: 'ogive', histData: '1: 5, 2: 3' }).warnings.some((w) => /never go down/.test(w)));
+});
+
+test('pie chart: sectors clockwise from the top, shades, labels and right angles', () => {
+  const { sectors, problems } = parseSectors('White: 50\nRed: 25, dots\nGreen: 10, purple');
+  assert.equal(sectors.length, 2);
+  assert.equal(sectors[1].shade, 'dots');
+  assert.equal(problems.length, 1, 'an unknown shade is reported');
+  const v = { ...defaultValues(statgraph.schema), graph: 'pie', pieData: 'A: 25, dots\nB: 75', pieRight: true, pieRadius: 2 };
+  const code = statgraph.generate(v).code;
+  assert.ok(code.includes('arc[start angle=90, end angle=0, radius=2]'), 'a quarter going clockwise from the top');
+  assert.ok(code.includes('pattern={Dots') && code.includes('patterns.meta'), 'dotted sector');
+  assert.ok(code.includes('(0:0.25) -- (45:0.3536) -- (90:0.25)'), 'right angle marked');
 });
 
 test('normal: an unshaded region labelled above a dashed arrow between rising lines', () => {
@@ -983,7 +1014,7 @@ test('3D solids: vectors, right angles and angles in a sphere\'s equator plane',
 });
 
 test('gallery: every entry generates cleanly and has its image', () => {
-  const modules = { realgraph, function: fn, sketch, blank, normal, scatter, slopefield, geometry, network, probtree, solids, dotplot, boxplot, complex };
+  const modules = { realgraph, function: fn, sketch, blank, normal, scatter, slopefield, geometry, network, probtree, solids, statgraph, complex };
   const ids = new Set();
   for (const e of GALLERY) {
     assert.ok(!ids.has(e.id), `duplicate gallery id ${e.id}`);

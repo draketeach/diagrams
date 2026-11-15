@@ -18,8 +18,7 @@ import realgraph from '../js/diagrams/realgraph.js';
 import network, { DEFAULT_NETWORK } from '../js/diagrams/network.js';
 import solids from '../js/diagrams/solids.js';
 import complex from '../js/diagrams/complex.js';
-import dotplot from '../js/diagrams/dotplot.js';
-import boxplot from '../js/diagrams/boxplot.js';
+import statgraph from '../js/diagrams/statgraph.js';
 import { parseScene as parseNet } from '../js/geometry/scene.js';
 import { applyEdgeList } from '../js/geometry/edgeList.js';
 import { GALLERY } from '../js/galleryEntries.js';
@@ -104,12 +103,24 @@ const jobs = [
   ['solids-cuboid-names', solids.generate({ ...defaultValues(solids.schema), solid: 'cuboid', names: 'A B C D E F G H', hidden: 'dashed' })],
   ['solids-prism-names', solids.generate({ ...defaultValues(solids.schema), solid: 'prism', names: 'A B C D E F', hidden: 'dashed' })],
   ['solids-bowl', solids.generate({ ...defaultValues(solids.schema), solid: 'hemisphere' })],
-  ['dotplot-default', dotplot.generate(defaultValues(dotplot.schema))],
-  ['dotplot-styles', dotplot.generate({ ...defaultValues(dotplot.schema), data: '2.5:3 3 3.5:2 5', dotStyle: 'open', axisTitle: 'Time (h)', step: '0.5', numbers: 'second', axisArrow: 'latex' })],
-  ['dotplot-crosses', dotplot.generate({ ...defaultValues(dotplot.schema), dotStyle: 'cross', numbers: 'none' })],
-  ['boxplot-default', boxplot.generate(defaultValues(boxplot.schema))],
-  ['boxplot-parallel', boxplot.generate({ ...defaultValues(boxplot.schema), ...GALLERY.find((e) => e.id === 'boxplot-parallel').values })],
-  ['boxplot-bare', boxplot.generate({ ...defaultValues(boxplot.schema), data: 'Group A: 1, 2, 3, 4, 8; 0.2', line: 'none', caps: 'none', outlierStyle: 'cross' })],
+  ...(() => {
+    const d = defaultValues(statgraph.schema);
+    const g = (id) => ({ ...d, ...GALLERY.find((e) => e.id === id).values });
+    return [
+      ['dotplot-default', statgraph.generate({ ...d, graph: 'dot' })],
+      ['dotplot-styles', statgraph.generate({ ...d, graph: 'dot', dotData: '2.5:3 3 3.5:2 5', dotStyle: 'open', axisTitle: 'Time (h)', step: '0.5', numbers: 'second', axisArrow: 'latex' })],
+      ['dotplot-crosses', statgraph.generate({ ...d, graph: 'dot', dotStyle: 'cross', numbers: 'none' })],
+      ['boxplot-default', statgraph.generate({ ...d, graph: 'box' })],
+      ['boxplot-parallel', statgraph.generate(g('boxplot-parallel'))],
+      ['boxplot-bare', statgraph.generate({ ...d, graph: 'box', boxData: 'Group A: 1, 2, 3, 4, 8; 0.2', line: 'none', caps: 'none', outlierStyle: 'cross' })],
+      ['number-line-blank', statgraph.generate(g('number-line-blank'))],
+      ['histogram-categories', statgraph.generate(g('histogram-categories'))],
+      ['histogram-ogive', statgraph.generate(g('histogram-ogive'))],
+      ['histogram-polygon', statgraph.generate({ ...d, graph: 'histogram', histLine: 'polygon', histArrows: true, histFill: 'gray!20' })],
+      ['pie-spinner', statgraph.generate(g('pie-spinner'))],
+      ['pie-default', statgraph.generate({ ...d, graph: 'pie', pieTurn: 'anticlockwise' })],
+    ];
+  })(),
   ...['realgraph-linear', 'realgraph-exponential'].map((id) => [id, realgraph.generate({ ...defaultValues(realgraph.schema), ...GALLERY.find((e) => e.id === id).values })]),
   ['scatter-sketch', scatter.generate({ ...defaultValues(scatter.schema), ...GALLERY.find((e) => e.id === 'scatter-sketch').values })],
   ['complex-disc', complex.generate({ ...defaultValues(complex.schema), conditions: '|z+2+3i| <= 1\nIm(z) <= Re(z)' , scales: false })],

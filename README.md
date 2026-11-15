@@ -148,26 +148,44 @@ start. Axes are x and y by default (or Re and Im), with optional ticks and
 numbers (a number with a circle or line through its place moves beside its
 tick, away from the origin); the window fits the conditions unless you set it.
 
-### Dot plot
+### Statistical graphs
 
-Type the values (commas, spaces or new lines between them); each gets a dot,
-stacked above its place on a number line. `4:3` means three dots above 4.
-Dots can be filled, open or crosses, in three sizes, with the spacing between
-them set in cm.
+One type for dot plots, box plots, histograms and pie charts: pick from the
+**Graph** menu at the top. Each graph keeps its own data, so switching between
+them doesn't lose what you typed.
 
-### Box plot
+- **Dot plot**: type the values (commas, spaces or new lines between them); each
+  gets a dot, stacked above its place on a number line. `4:3` means three dots
+  above 4. Dots can be filled, open or crosses, in three sizes, with the
+  spacing between them set in cm.
+- **Box plot**: five-number summaries, one per line: `min, Q1, median, Q3, max`.
+  Several lines give parallel box plots on one number line (the first line on
+  top); `Boys: …` names a plot, and values after a semicolon
+  (`10, 14, 17, 19, 24; 31, 35`) are outliers, drawn as dots, open dots or
+  crosses. Whiskers end in bars or plain. Leave the summaries blank for just
+  the number line (to draw a box plot on), or leave the number line out to put
+  a box plot together with a dot plot by hand.
+- **Histogram**: one bar per line, `label: frequency` (`Red: 25`, or a class
+  by its centre, `135: 15`). The bars touch, each with a tick and its label
+  under its centre, half a bar in from each end of the axis; the frequency axis
+  is numbered (up to and every: blank fits the data). Lines can run across at
+  each number behind the bars, and a frequency polygon (through the middles of
+  the tops, down to the axis half a bar beyond) or a cumulative frequency line
+  (an ogive, from the start of the first bar through each top right-hand
+  corner) can go over them. Bars are white or grey; titles go under the bars
+  and beside the numbers.
+- **Pie chart** (or a spinner): one sector per line, `name: value, shade`
+  (`Red: 25, dots`). Only the values' sizes matter (counts, percentages or
+  angles). Sectors go round from the top, clockwise or anticlockwise; shades
+  are white, light grey, grey, dark grey, dots, sparse dots or hatch (the
+  stipples need patterns.meta). Names go inside, and 90° sectors can have a
+  right-angle mark.
 
-Box-and-whisker plots from five-number summaries, one per line: `min, Q1,
-median, Q3, max`. Several lines give parallel box plots on one number line (the
-first line on top); `Boys: …` names a plot, and values after a semicolon
-(`10, 14, 17, 19, 24; 31, 35`) are outliers, drawn as dots, open dots or
-crosses. Whiskers end in bars or plain. The number line can be left out, so a
-box plot can be put together with a dot plot by hand.
-
-Both use the same number line: from, to and the tick spacing (blank fits the
-data), numbers at every tick, every second tick or none, its length in cm, a
-title under it, and arrowheads at its ends. The picture's x unit is the data's
-unit (`x=0.89cm`), so the code reads in the data's own numbers.
+Dot plots and box plots use the same number line: from, to and the tick
+spacing (blank fits the data), numbers at every tick, every second tick or
+none, its length in cm, a title under it, and arrowheads at its ends. The
+picture's x unit is the data's unit (`x=0.89cm`), so the code reads in the
+data's own numbers.
 
 ### 3D solids
 
@@ -398,6 +416,8 @@ js/diagrams/
   realgraph.js           real-world graphs drawn through points
   network.js             networks, drawn in the geometry editor
   probtree.js            probability trees
+  statgraph.js           statistical graphs: picks one of the four below
+  dotplot.js, boxplot.js, histogram.js, piechart.js   their options and drawing
 js/geometry/
   scene.js               the drawing's data, label placement, and TikZ output
   editor.js              the editor: canvas, toolbar, snapping, properties, undo

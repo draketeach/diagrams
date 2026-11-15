@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: CC0-1.0
-// Box-and-whisker plots from five-number summaries, one per line (several
-// lines make parallel box plots), above a number line.
+// Box-and-whisker plots, for the Statistical graphs type: from five-number
+// summaries, one per line (several lines make parallel box plots), above a
+// number line. With no summaries it is just the number line, for students to
+// draw on.
 
 import { TikzBuilder, n } from '../lib/tikz.js';
-import { NUMBER_LINE_FIELDS, STYLE_FIELDS, numberLineRange, drawNumberLine, pictureOptions } from '../lib/numberLine.js';
+import { numberLineRange, drawNumberLine, pictureOptions } from '../lib/numberLine.js';
 import { titleText } from './realgraph.js';
 
 const EXAMPLES = {
@@ -44,74 +46,77 @@ export function parseSummaries(text) {
   return { plots, problems };
 }
 
-const schema = [
-  {
-    type: 'group',
-    label: 'Data',
-    fields: [
-      {
-        type: 'textarea',
-        key: 'data',
-        label: 'Five-number summaries, one per line',
-        rows: 3,
-        default: '1, 2, 3, 4, 8',
-        help: 'min, Q1, median, Q3, max. Name: before them labels the plot; ; then values adds outliers.',
-        examples: EXAMPLES,
-      },
-      {
-        type: 'row',
-        fields: [
-          { type: 'number', key: 'boxHeight', label: 'Box height (cm)', default: 0.6, step: 0.1, min: 0.2 },
-          {
-            type: 'select',
-            key: 'caps',
-            label: 'Whisker ends',
-            default: 'bars',
-            options: [
-              { value: 'bars', label: 'Bars' },
-              { value: 'none', label: 'Plain' },
-            ],
-          },
-        ],
-      },
-      {
-        type: 'row',
-        fields: [
-          {
-            type: 'select',
-            key: 'outlierStyle',
-            label: 'Outliers drawn as',
-            default: 'dot',
-            options: [
-              { value: 'dot', label: 'Dots' },
-              { value: 'open', label: 'Open dots' },
-              { value: 'cross', label: 'Crosses' },
-            ],
-          },
-          {
-            type: 'select',
-            key: 'line',
-            label: 'Number line',
-            default: 'below',
-            options: [
-              { value: 'below', label: 'Below the plots' },
-              { value: 'none', label: 'None' },
-            ],
-          },
-        ],
-      },
-    ],
-  },
-  { type: 'group', label: 'Number line', fields: NUMBER_LINE_FIELDS, showIf: (v) => v.line !== 'none' },
-  { type: 'group', label: 'Drawing', collapsed: true, fields: STYLE_FIELDS },
-];
+/** The box plot's own options (shown when the graph is a box plot). */
+export function boxFields(showIf) {
+  return [
+    {
+      type: 'group',
+      label: 'Data',
+      showIf,
+      fields: [
+        {
+          type: 'textarea',
+          key: 'boxData',
+          label: 'Five-number summaries, one per line',
+          rows: 3,
+          default: '1, 2, 3, 4, 8',
+          help: 'min, Q1, median, Q3, max. Name: before them labels the plot; ; then values adds outliers. Leave it blank for just the number line.',
+          examples: EXAMPLES,
+        },
+        {
+          type: 'row',
+          fields: [
+            { type: 'number', key: 'boxHeight', label: 'Box height (cm)', default: 0.6, step: 0.1, min: 0.2 },
+            {
+              type: 'select',
+              key: 'caps',
+              label: 'Whisker ends',
+              default: 'bars',
+              options: [
+                { value: 'bars', label: 'Bars' },
+                { value: 'none', label: 'Plain' },
+              ],
+            },
+          ],
+        },
+        {
+          type: 'row',
+          fields: [
+            {
+              type: 'select',
+              key: 'outlierStyle',
+              label: 'Outliers drawn as',
+              default: 'dot',
+              options: [
+                { value: 'dot', label: 'Dots' },
+                { value: 'open', label: 'Open dots' },
+                { value: 'cross', label: 'Crosses' },
+              ],
+            },
+            {
+              type: 'select',
+              key: 'line',
+              label: 'Number line',
+              default: 'below',
+              options: [
+                { value: 'below', label: 'Below the plots' },
+                { value: 'none', label: 'None' },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  ];
+}
 
-function generate(v) {
-  const { plots, problems } = parseSummaries(v.data);
+export function boxGenerate(v) {
+  const { plots, problems } = parseSummaries(v.boxData);
   const all = plots.flatMap((p) => [...p.five, ...p.outliers]);
   const L = numberLineRange(v, all);
   const warnings = [...problems, ...(v.line === 'none' ? [] : L.warnings)];
-  if (!plots.length && !problems.length) warnings.push('Type a five-number summary: min, Q1, median, Q3, max.');
+  // nothing typed: just the number line (to draw a box plot on), unless there's no line either
+  if (!plots.length && !problems.length && v.line === 'none') warnings.push('Type a five-number summary: min, Q1, median, Q3, max.');
   const b = new TikzBuilder();
   const hgt = Number(v.boxHeight) > 0 ? Number(v.boxHeight) : 0.6;
   const gap = hgt + 0.5; // from one plot's middle to the next
@@ -141,12 +146,3 @@ function generate(v) {
   });
   return { code: b.toString(pictureOptions(v, L.xu)), warnings };
 }
-
-export default {
-  id: 'boxplot',
-  name: 'Box plot',
-  category: 'Statistics',
-  description: 'Box-and-whisker plots from five-number summaries, with outliers if you type them, above a number line.',
-  schema,
-  generate,
-};

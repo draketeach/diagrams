@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: CC0-1.0
-// Dot plots: a dot stacked above a number line for each value in the data.
+// Dot plots, for the Statistical graphs type: a dot stacked above a number
+// line for each value in the data.
 
 import { TikzBuilder, n } from '../lib/tikz.js';
-import { NUMBER_LINE_FIELDS, STYLE_FIELDS, numberLineRange, drawNumberLine, pictureOptions } from '../lib/numberLine.js';
+import { numberLineRange, drawNumberLine, pictureOptions } from '../lib/numberLine.js';
 
 const DATA_EXAMPLES = {
   rows: [
@@ -28,56 +29,58 @@ export function parseDots(text) {
   return { dots: [...counts].filter(([, k]) => k > 0).sort((a, b) => a[0] - b[0]), bad };
 }
 
-const schema = [
-  {
-    type: 'group',
-    label: 'Data',
-    fields: [
-      {
-        type: 'textarea',
-        key: 'data',
-        label: 'Values',
-        rows: 4,
-        default: '1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 4, 6, 8, 8',
-        help: 'Each value gets a dot. 4:3 means three dots above 4.',
-        examples: DATA_EXAMPLES,
-      },
-      {
-        type: 'row',
-        fields: [
-          {
-            type: 'select',
-            key: 'dotStyle',
-            label: 'Dots',
-            default: 'filled',
-            options: [
-              { value: 'filled', label: 'Filled' },
-              { value: 'open', label: 'Open' },
-              { value: 'cross', label: 'Crosses' },
-            ],
-          },
-          {
-            type: 'select',
-            key: 'dotSize',
-            label: 'Dot size',
-            default: '2',
-            options: [
-              { value: '1.5', label: 'Small' },
-              { value: '2', label: 'Medium' },
-              { value: '2.5', label: 'Large' },
-            ],
-          },
-          { type: 'number', key: 'gap', label: 'Spacing (cm)', default: 0.3, step: 0.05, min: 0.1 },
-        ],
-      },
-    ],
-  },
-  { type: 'group', label: 'Number line', fields: NUMBER_LINE_FIELDS },
-  { type: 'group', label: 'Drawing', collapsed: true, fields: STYLE_FIELDS },
-];
+/** The dot plot's own options (shown when the graph is a dot plot). */
+export function dotFields(showIf) {
+  return [
+    {
+      type: 'group',
+      label: 'Data',
+      showIf,
+      fields: [
+        {
+          type: 'textarea',
+          key: 'dotData',
+          label: 'Values',
+          rows: 4,
+          default: '1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 4, 6, 8, 8',
+          help: 'Each value gets a dot. 4:3 means three dots above 4.',
+          examples: DATA_EXAMPLES,
+        },
+        {
+          type: 'row',
+          fields: [
+            {
+              type: 'select',
+              key: 'dotStyle',
+              label: 'Dots',
+              default: 'filled',
+              options: [
+                { value: 'filled', label: 'Filled' },
+                { value: 'open', label: 'Open' },
+                { value: 'cross', label: 'Crosses' },
+              ],
+            },
+            {
+              type: 'select',
+              key: 'dotSize',
+              label: 'Dot size',
+              default: '2',
+              options: [
+                { value: '1.5', label: 'Small' },
+                { value: '2', label: 'Medium' },
+                { value: '2.5', label: 'Large' },
+              ],
+            },
+            { type: 'number', key: 'gap', label: 'Spacing (cm)', default: 0.3, step: 0.05, min: 0.1 },
+          ],
+        },
+      ],
+    },
+  ];
+}
 
-function generate(v) {
-  const { dots, bad } = parseDots(v.data);
+export function dotGenerate(v) {
+  const { dots, bad } = parseDots(v.dotData);
   const L = numberLineRange(v, dots.map(([x]) => x));
   const warnings = [...L.warnings];
   if (bad.length) warnings.push(`Not numbers: ${bad.slice(0, 5).join(', ')}`);
@@ -102,12 +105,3 @@ function generate(v) {
   }
   return { code: b.toString(pictureOptions(v, L.xu)), warnings };
 }
-
-export default {
-  id: 'dotplot',
-  name: 'Dot plot',
-  category: 'Statistics',
-  description: 'Dots stacked above a number line, one for each value.',
-  schema,
-  generate,
-};
