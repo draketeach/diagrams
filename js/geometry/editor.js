@@ -1357,7 +1357,7 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
     for (const p of scene.points) {
       if (p.hidden || !p.showLabel) continue;
       const off = placed.get(`p:${p.id}`) ?? pointLabelOffset(scene, p, pts);
-      parts.push(labelSvg('point', p.id, p.x + off.dx, p.y + off.dy, display(p.name), !isWordName(p.name), sel('point', p.id)));
+      parts.push(labelSvg('point', p.id, p.x + off.dx, p.y + off.dy, display(p.text || p.name), !!p.text || !isWordName(p.name), sel('point', p.id)));
     }
 
     // NOT TO SCALE (as in the TikZ)
@@ -1558,6 +1558,7 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
             checkbox('Dot', p.dot, (v) => (p.dot = v)),
             checkbox('Hidden (helper point)', p.hidden, (v) => (p.hidden = v))
           ),
+          row(field('Label (if not its name)', textInput(p.text || '', (v) => (p.text = v.trim()), { placeholder: 'e.g. A\\,(4, 5, 2)' }), 'text')),
           row(
             actionButton('Make it free', () => change(() => delete p.dep)),
             actionButton('Reset label position', () => change(() => (p.label = null))),
@@ -1577,6 +1578,7 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
           checkbox('Dot', p.dot, (v) => (p.dot = v)),
           checkbox('Hidden (helper point)', p.hidden, (v) => (p.hidden = v))
         ),
+        row(field('Label (if not its name)', textInput(p.text || '', (v) => (p.text = v.trim()), { placeholder: 'e.g. A\\,(4, 5, 2)' }), 'text')),
         row(actionButton('Reset label position', () => change(() => (p.label = null))), actionButton('Delete point', deleteSelection))
       );
       return;

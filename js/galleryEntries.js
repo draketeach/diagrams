@@ -587,4 +587,22 @@ export const GALLERY = [
     description: '|z + 2 + 3i| ≤ 1 and Im(z) ≤ Re(z): the part of the disc below y = x shaded, the line across the picture and a dot at the centre.',
     values: { conditions: '|z+2+3i| <= 1\nIm(z) <= Re(z)', xmin: '-4', xmax: '3', ymin: '-5', ymax: '3' },
   },
+  {
+    id: 'geometry-perpendicular-3d',
+    type: 'geometry',
+    title: 'Perpendicular from a point to a line',
+    description: 'A line ℓ, the dashed perpendicular from B to A with a right angle, and points labelled with their coordinates, e.g. A (4, 5, 2).',
+    values: {
+      scene: JSON.stringify({"settings": {"grid": 0.25, "snap": true, "showGrid": true, "lineWidth": "thin", "fontSize": "", "notToScale": false, "unit": "", "lengthDecimals": 0, "view": {"x0": -1.5, "y0": -1, "w": 9, "h": 7}}, "points": [{"id": "L1", "name": "L1", "x": 0.66, "y": 5.32, "showLabel": false, "dot": false, "hidden": true}, {"id": "L2", "name": "L2", "x": 5.42, "y": 0.66, "showLabel": false, "dot": false, "hidden": true}, {"id": "A", "name": "A", "x": 2.982, "y": 3.046, "showLabel": true, "dot": true, "text": "A\\,(4, 5, 2)", "label": {"dx": 0.95, "dy": 0.35}}, {"id": "B", "name": "B", "x": 0.0, "y": 0.0, "showLabel": true, "dot": true, "text": "B\\,(3b, 4b, 4b)", "label": {"dx": 1.05, "dy": -0.42}}], "items": [{"id": "l", "type": "segment", "a": "L1", "b": "L2", "label": ""}, {"id": "ab", "type": "segment", "a": "A", "b": "B", "label": "", "style": "dashed"}, {"id": "ra", "type": "right", "v": "A", "a": "B", "b": "L2", "size": 0.25}, {"id": "tl", "type": "text", "x": 1.21, "y": 5.27, "text": "$\\ell$"}]}),
+    },
+  },
+  {
+    id: 'geometry-reflection-3d',
+    type: 'geometry',
+    title: 'Reflecting a point in a line',
+    description: 'P and its reflection Q across the line through A and B: equal-length marks on PM and MQ, a right angle at M, and coordinate labels.',
+    values: {
+      scene: JSON.stringify({"settings": {"grid": 0.25, "snap": true, "showGrid": true, "lineWidth": "thin", "fontSize": "", "notToScale": false, "unit": "", "lengthDecimals": 0, "view": {"x0": -1, "y0": -1, "w": 13, "h": 7}}, "points": [{"id": "E1", "name": "E1", "x": 0.0, "y": 4.68, "showLabel": false, "dot": false, "hidden": true}, {"id": "E2", "name": "E2", "x": 11.0, "y": 0.68, "showLabel": false, "dot": false, "hidden": true}, {"id": "A", "name": "A", "x": 1.208, "y": 4.241, "showLabel": true, "dot": true, "text": "A\\,(1, -1, 2)", "label": {"dx": 0.95, "dy": 0.38}}, {"id": "B", "name": "B", "x": 3.348, "y": 3.462, "showLabel": true, "dot": true, "text": "B\\,(2, 0, 3)", "label": {"dx": 0.85, "dy": 0.38}}, {"id": "M", "name": "M", "x": 5.482, "y": 2.686, "showLabel": true, "dot": true, "label": {"dx": 0.38, "dy": 0.12}}, {"id": "P", "name": "P", "x": 6.44, "y": 5.32, "showLabel": true, "dot": true, "text": "P\\,(4, -1, 5)", "label": {"dx": 1.1, "dy": 0}}, {"id": "Q", "name": "Q", "x": 4.525, "y": 0.053, "showLabel": true, "dot": true, "label": {"dx": -0.3, "dy": 0}}], "items": [{"id": "line", "type": "segment", "a": "E1", "b": "E2", "label": ""}, {"id": "pm", "type": "segment", "a": "P", "b": "M", "label": "", "ticks": 2}, {"id": "mq", "type": "segment", "a": "M", "b": "Q", "label": "", "ticks": 2}, {"id": "ra", "type": "right", "v": "M", "a": "P", "b": "E1", "size": 0.22}]}),
+    },
+  },
 ];

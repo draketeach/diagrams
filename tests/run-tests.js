@@ -928,6 +928,11 @@ test('complex plane: conditions are read and the region where they all hold is s
   assert.ok(locus.includes('the locus') && !locus.includes('\\fill[gray'), 'an equation is a locus, not shaded');
 });
 
+test('geometry: a point can be labelled with its own text, e.g. its coordinates', () => {
+  const code = geometry.generate(GALLERY.find((e) => e.id === 'geometry-perpendicular-3d').values).code;
+  assert.ok(code.includes('node {$A\\,(4, 5, 2)$};') && code.includes('\\coordinate (A) at'), 'label text, name kept for TikZ');
+});
+
 test('gallery: every entry generates cleanly and has its image', () => {
   const modules = { realgraph, function: fn, sketch, blank, normal, scatter, slopefield, geometry, network, probtree, solids, dotplot, boxplot, complex };
   const ids = new Set();

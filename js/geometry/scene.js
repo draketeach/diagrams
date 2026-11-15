@@ -80,7 +80,12 @@ export function defaultScene() {
 }
 
 export function normalPoint(p) {
-  return { showLabel: true, dot: false, hidden: false, label: null, ...p };
+  return { showLabel: true, dot: false, hidden: false, label: null, text: '', ...p };
+}
+
+/** What a point's label says: its own text (e.g. A\,(4, 5, 2)) if it has one, else its name. */
+export function pointLabel(p) {
+  return p.text ? p.text : p.name;
 }
 
 export function normalItem(it) {
@@ -615,7 +620,7 @@ export function labelPositions(scene, pts = pointMap(scene)) {
     if (p.hidden || !p.showLabel || !p.name) continue;
     if (p.label) {
       out.set(`p:${p.id}`, p.label);
-      placed.push({ x: p.x + p.label.dx, y: p.y + p.label.dy, ...labelBox(p.name) });
+      placed.push({ x: p.x + p.label.dx, y: p.y + p.label.dy, ...labelBox(pointLabel(p)) });
     } else later.push(['point', p]);
   }
   for (const it of scene.items) {
@@ -651,7 +656,7 @@ export function labelPositions(scene, pts = pointMap(scene)) {
 
   for (const [kind, it, text] of later) {
     if (kind === 'point') {
-      const box = labelBox(it.name);
+      const box = labelBox(pointLabel(it));
       const d0 = pointLabelOffset(scene, it, pts);
       const g0 = Math.atan2(d0.dy, d0.dx);
       const cands = [];
@@ -1204,7 +1209,7 @@ export function sceneToTikz(sceneIn) {
   for (const p of scene.points) {
     if (p.hidden || !p.showLabel || !p.name) continue;
     const off = placed.get(`p:${p.id}`) ?? pointLabelOffset(scene, p, pts);
-    labels.push(`\\path (${p.name}) ++(${fmt(off.dx)},${fmt(off.dy)}) node {${nameLabel(p.name)}};`);
+    labels.push(`\\path (${p.name}) ++(${fmt(off.dx)},${fmt(off.dy)}) node {${p.text ? mathLabel(p.text) : nameLabel(p.name)}};`);
   }
   const dots = scene.points.filter((p) => p.dot && !p.hidden);
   for (const it of scene.items.filter((i) => i.type === 'text')) {
