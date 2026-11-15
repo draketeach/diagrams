@@ -93,7 +93,7 @@ export function normalItem(it) {
     segment: { style: 'solid', label: '', labelPos: null, ticks: 0, arrows: 0, tip: 'none', sloped: false, endMode: 'none', endText: '', bend: 0, loopDir: null, loopSize: 0.8, gap: false, bars: false },
     curve: { pts: [], dirs: [], style: 'solid' },
     polygon: { fill: 'gray!20' },
-    angle: { label: null, labelPos: null, arcs: 1, radius: 0.7, reflex: false, arrow: null },
+    angle: { label: null, labelPos: null, arcs: 1, radius: 0.7, reflex: false, arrow: null, sloped: false },
     right: { size: 0.25 },
     circle: { style: 'solid' },
     arc: { style: 'solid' },
@@ -460,8 +460,16 @@ export function angleLabelOffset(it, pts) {
   const mid = ((start + size / 2) * Math.PI) / 180;
   // inside a big enough arc of a wide enough angle, otherwise just outside it
   const r = it.radius ?? 0.7;
-  const dist = size >= 40 && r >= 0.9 ? r * 0.62 : r + 0.32;
+  // a label turned along the half-way line sits beyond the arc, its length pointing out
+  const dist = it.sloped ? r + labelBox(angleText(it, pts) || 'x').w / 2 + 0.1 : size >= 40 && r >= 0.9 ? r * 0.62 : r + 0.32;
   return { dx: r3(Math.cos(mid) * dist), dy: r3(Math.sin(mid) * dist) };
+}
+
+/** How far (degrees) an angle's label turns to run along the angle's half-way line, kept readable. */
+export function angleLabelTurn(it, pts) {
+  const { start, size } = angleSpan(pts.get(it.v), pts.get(it.a), pts.get(it.b), it.reflex);
+  const g = ((start + size / 2) * Math.PI) / 180;
+  return slopeDeg({ x: 0, y: 0 }, { x: Math.cos(g), y: Math.sin(g) });
 }
 
 /** A side's label: its own text, or its measured length (null), or nothing (''). */
@@ -629,9 +637,11 @@ export function labelPositions(scene, pts = pointMap(scene)) {
       if (!v || !pts.get(it.a) || !pts.get(it.b)) continue;
       const text = angleText(it, pts);
       if (!text) continue;
-      if (it.labelPos) {
-        out.set(`a:${it.id}`, it.labelPos);
-        placed.push({ x: v.x + it.labelPos.dx, y: v.y + it.labelPos.dy, ...labelBox(text) });
+      if (it.labelPos || it.sloped) {
+        // a label along the angle sits straight out from the arc (an upright box can't judge it)
+        const off = angleLabelOffset(it, pts);
+        out.set(`a:${it.id}`, off);
+        placed.push({ x: v.x + off.dx, y: v.y + off.dy, ...labelBox(text) });
       } else later.push(['angle', it, text]);
     } else if (it.type === 'segment') {
       const a = pts.get(it.a);
@@ -670,7 +680,10 @@ export function labelPositions(scene, pts = pointMap(scene)) {
       choose(`p:${it.id}`, it, box, cands, { point: it });
     } else if (kind === 'angle') {
       const v = pts.get(it.v);
-      const box = labelBox(text);
+      const flat = labelBox(text);
+      const t = it.sloped ? (angleLabelTurn(it, pts) * Math.PI) / 180 : 0;
+      // a turned label takes up a slanted box: use the box around it
+      const box = { w: flat.w * Math.abs(Math.cos(t)) + flat.h * Math.abs(Math.sin(t)), h: flat.w * Math.abs(Math.sin(t)) + flat.h * Math.abs(Math.cos(t)) };
       const d0 = angleLabelOffset(it, pts);
       const d = Math.hypot(d0.dx, d0.dy) || 1;
       const u = { x: d0.dx / d, y: d0.dy / d };
@@ -678,7 +691,7 @@ export function labelPositions(scene, pts = pointMap(scene)) {
       const cands = [];
       for (const extra of [0, 0.15, 0.3, 0.5, 0.75, 1]) cands.push({ dx: u.x * (d + extra), dy: u.y * (d + extra), penalty: extra * 1.2 });
       // just inside the arc, if that's where it isn't already
-      if (d > r) cands.push({ dx: u.x * r * 0.6, dy: u.y * r * 0.6, penalty: 0.8 });
+      if (d > r && !it.sloped) cands.push({ dx: u.x * r * 0.6, dy: u.y * r * 0.6, penalty: 0.8 });
       choose(`a:${it.id}`, v, box, cands);
     } else {
       const a = pts.get(it.a);
@@ -1188,7 +1201,8 @@ export function sceneToTikz(sceneIn) {
     const text = angleText(it, pts);
     if (text) {
       const off = placed.get(`a:${it.id}`) ?? angleLabelOffset(it, pts);
-      labels.push(`\\path (${v.name}) ++(${fmt(off.dx)},${fmt(off.dy)}) node${it.bg ? `[${BG}]` : ''} {${mathLabel(text)}};`);
+      const opts = [it.sloped ? `rotate=${fmt(angleLabelTurn(it, pts))}` : '', it.bg ? BG : ''].filter(Boolean).join(', ');
+      labels.push(`\\path (${v.name}) ++(${fmt(off.dx)},${fmt(off.dy)}) node${opts ? `[${opts}]` : ''} {${mathLabel(text)}};`);
     }
   }
 

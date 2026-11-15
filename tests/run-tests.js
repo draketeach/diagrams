@@ -1007,6 +1007,17 @@ test('dotted asymptotes, dotted shading and thick geometry lines', () => {
   assert.match(sceneToTikz(scene).code, /very thick/);
 });
 
+test('geometry: an angle label can run along the angle', () => {
+  const scene = { settings: { grid: 0.25 }, points: [{ id: 'V', name: 'V', x: 0, y: 0 }, { id: 'A', name: 'A', x: 4, y: 0 }, { id: 'B', name: 'B', x: 4, y: 4 }], items: [{ id: 'g', type: 'angle', v: 'V', a: 'A', b: 'B', label: '45^\\circ' }] };
+  assert.ok(!sceneToTikz(scene).code.includes('rotate='), 'upright by default');
+  scene.items[0].sloped = true;
+  assert.ok(sceneToTikz(scene).code.includes('node[rotate=22.5] {$45^\\circ$}'), 'turned along the half-way line');
+  // an angle opening to the left still reads left to right
+  scene.points[1].x = -4;
+  scene.points[2].x = -4;
+  assert.ok(sceneToTikz(scene).code.includes('rotate=-22.5'));
+});
+
 test('gallery.html versions are up to date', () => {
   const html = readFileSync(new URL('../gallery.html', import.meta.url), 'utf8');
   assert.equal(html, buildIndex(html));

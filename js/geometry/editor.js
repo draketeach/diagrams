@@ -1674,6 +1674,7 @@ export function mountGeometryEditor(container, { onChange = () => {}, defaults =
         ),
         row(
           checkbox('Reflex angle', it.reflex, (v) => (it.reflex = v)),
+          checkbox('Label along the angle', it.sloped, (v) => (it.sloped = v)),
           checkbox('White background', it.bg, (v) => (it.bg = v)),
           actionButton('Reset label position', () => change(() => (it.labelPos = null))),
           del
