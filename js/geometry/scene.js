@@ -374,6 +374,32 @@ export function segmentLabelOffset(scene, it, pts = pointMap(scene)) {
     nx = -nx;
     ny = -ny;
   }
+  // in a network, the outside is the side that looks out of the network: a line
+  // straight out that way crosses fewer other edges (none, on the outer edge)
+  if (scene.settings?.mode === 'network') {
+    const crossings = (dx, dy) => {
+      let k = 0;
+      for (const o of scene.items) {
+        if (o === it || o.type !== 'segment' || o.a === o.b || o.bend) continue;
+        const p = pts.get(o.a);
+        const q = pts.get(o.b);
+        if (!p || !q) continue;
+        // ray m + t(dx, dy), t > 0, against segment p + u(q - p), 0 ≤ u ≤ 1
+        const ex = q.x - p.x;
+        const ey = q.y - p.y;
+        const den = dx * ey - dy * ex;
+        if (Math.abs(den) < 1e-12) continue;
+        const t = ((p.x - m.x) * ey - (p.y - m.y) * ex) / den;
+        const u = ((p.x - m.x) * dy - (p.y - m.y) * dx) / den;
+        if (t > 1e-6 && u >= 0 && u <= 1) k++;
+      }
+      return k;
+    };
+    if (crossings(-nx, -ny) < crossings(nx, ny)) {
+      nx = -nx;
+      ny = -ny;
+    }
+  }
   // a curved edge between the same two points: the straight one's label goes the other side
   const twin = scene.items.find(
     (o) => o !== it && o.type === 'segment' && o.bend && ((o.a === it.a && o.b === it.b) || (o.a === it.b && o.b === it.a))

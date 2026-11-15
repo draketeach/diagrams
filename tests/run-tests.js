@@ -846,6 +846,9 @@ test('network: edge labels are plain text, with $…$ for maths and real minus s
   assert.equal(plainLabel('$x^2$'), '$x^2$');
   const code = network.generate({ scene: GALLERY.find((e) => e.id === 'network-zoo').values.scene }).code;
   assert.ok(code.includes('{600 m}') && !code.includes('{$600'), 'zoo distances as text');
+  // Otters–Koalas: its label goes on the side facing out of the network (left), not into the face with Lions
+  const m = code.match(/\(Otters\) -- \(Koalas\) node\[midway, xshift=(-?[\d.]+)cm/);
+  assert.ok(m && Number(m[1]) < 0, 'label on the outside of the network');
 });
 
 test('gallery: every entry generates cleanly and has its image', () => {
