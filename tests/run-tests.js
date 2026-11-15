@@ -831,6 +831,14 @@ test('scatter: automatic decimals follow the tick spacing, not the data', () => 
   assert.ok(half.includes('{$1.5$}') && half.includes('{$1.0$}'), 'ticks every 0.5 all have one decimal');
 });
 
+test('function, blank and real-world axes: numbers have as many decimals as the spacing', () => {
+  const b = blank.generate({ ...defaultValues(blank.schema), xCustomTicks: '', windowMode: 'manual', xmin: -1, xmax: 2, ymin: -1, ymax: 2, xScaleTicks: true, xStep: 0.5, yScaleTicks: true, yStep: 1 }).code;
+  assert.ok(b.includes('{$1.0$}') && b.includes('{$1.5$}'), 'x ticks every 0.5: 1.0, 1.5');
+  assert.ok(/at \(0,1\) \{\$1\$\}/.test(b), 'y ticks every 1: whole numbers');
+  const r = realgraph.generate({ ...defaultValues(realgraph.schema), curves: '0,0 2,1', xmax: 2, ymax: 1, xStep: 0.25, yStep: 0.2, xNumbers: '', yNumbers: '' }).code;
+  assert.ok(r.includes('{$0.50$}') && r.includes('{$0.4$}') && !r.includes('{$0.5$}'), 'real-world: 0.25 → two decimals, 0.2 → one');
+});
+
 test('gallery: every entry generates cleanly and has its image', () => {
   const modules = { realgraph, function: fn, sketch, blank, normal, scatter, slopefield, geometry, network, probtree, solids, dotplot, boxplot };
   const ids = new Set();

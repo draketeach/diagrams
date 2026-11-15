@@ -9,6 +9,18 @@ export function n(v, dp = 4) {
   return s === '-0' ? '0' : s;
 }
 
+/** Decimal places in a number as written (0.25 → 2, 5 → 0). */
+export function decimalsOf(v) {
+  const t = n(v);
+  return t.includes('.') ? t.split('.')[1].length : 0;
+}
+
+/** An axis number with a fixed count of decimals, so 1.0, 1.5, 2.0 line up. */
+export function tickText(v, dp) {
+  const s = Number(v).toFixed(dp);
+  return /^-0(\.0*)?$/.test(s) ? s.slice(1) : s;
+}
+
 export const pt = (x, y) => `(${n(x)},${n(y)})`;
 
 /** Builds the lines of a tikzpicture with indentation. */

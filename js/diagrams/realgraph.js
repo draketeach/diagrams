@@ -5,7 +5,7 @@
 // and numbered scales. Several curves, each smooth or straight between points,
 // with jumps, gaps, dots and labels.
 
-import { TikzBuilder, n, pt, escapeText, mathLabel, FONT_SIZES, LINE_WIDTHS } from '../lib/tikz.js';
+import { TikzBuilder, n, pt, escapeText, mathLabel, decimalsOf, tickText, FONT_SIZES, LINE_WIDTHS } from '../lib/tikz.js';
 import { parseConstant } from '../lib/mathParser.js';
 import { smoothSections } from '../lib/smooth.js';
 
@@ -201,14 +201,20 @@ function generate(v) {
   b.add(`\\draw[${['thin', tip].filter(Boolean).join(', ')}] ${pt(x0, ymin)} -- ${pt(x0, ymax)};`);
 
   // ---- scales: ticks and numbers
-  const fmtNum = (x) => (v.decimalComma ? n(x).replace('.', '{,}') : n(x));
   const xNums = numberList(v.xNumbers, 'x numbers') ?? multiples(xmin, xmax - xStep * 0.25, xStep);
   const yNums = numberList(v.yNumbers, 'y numbers') ?? multiples(ymin, ymax - yStep * 0.25, yStep);
+  // every number on an axis has as many decimals as its spacing (or the most in a typed list)
+  const dpFor = (typed, step, list) => (numberList(typed, '') ? Math.max(0, ...list.map(decimalsOf)) : decimalsOf(step));
+  const xDp = dpFor(v.xNumbers, xStep, xNums);
+  const yDp = dpFor(v.yNumbers, yStep, yNums);
+  const fmtWith = (x, dp) => (v.decimalComma ? tickText(x, dp).replace('.', '{,}') : tickText(x, dp));
+  const fmtX = (x) => fmtWith(x, xDp);
+  const fmtNum = (y) => fmtWith(y, yDp);
   const origin = v.origin || 'corner';
   b.comment('scales');
   for (const x of xNums) {
     if (near(x, x0) && origin !== 'both') continue;
-    b.add(`\\draw[thin] ${pt(x, y0)} -- ++(0,-3pt) node[anchor=north, inner sep=2pt] {$${fmtNum(x)}$};`);
+    b.add(`\\draw[thin] ${pt(x, y0)} -- ++(0,-3pt) node[anchor=north, inner sep=2pt] {$${fmtX(x)}$};`);
   }
   for (const y of yNums) {
     if (near(y, y0) && origin !== 'both') continue;

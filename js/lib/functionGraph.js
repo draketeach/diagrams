@@ -7,7 +7,7 @@
 // expression and any exact labels.
 
 import { bisect, derivative, niceLatex, niceRound } from './numeric.js';
-import { n, pt, arrowSpec, mathLabel, LINE_WIDTHS, ARROW_TIPS, FONT_SIZES } from './tikz.js';
+import { n, pt, arrowSpec, mathLabel, decimalsOf, tickText, LINE_WIDTHS, ARROW_TIPS, FONT_SIZES } from './tikz.js';
 import { parseConstant } from './mathParser.js';
 
 /** Radius for dots (filled points), from the "Dot size" option. */
@@ -730,11 +730,13 @@ export function drawScaleTicks(b, win, values, { skipX = [], skipY = [] } = {}) 
       if (labelled.length) {
         // one node per number (not \\foreach) so each label is plain text in
         // the code and the TikZJax minus fix can see it
+        // every number has as many decimals as the spacing (0.5 → 1.0, 1.5, 2.0)
+        const dp = decimalsOf(st);
         for (const t of labelled) {
           b.add(
             name === 'x'
-              ? `\\node[anchor=north, inner sep=2pt, yshift=-2pt] at ${pt(t, 0)} {$${n(t)}$};`
-              : `\\node[anchor=east, inner sep=2pt, xshift=-2pt] at ${pt(0, t)} {$${n(t)}$};`
+              ? `\\node[anchor=north, inner sep=2pt, yshift=-2pt] at ${pt(t, 0)} {$${tickText(t, dp)}$};`
+              : `\\node[anchor=east, inner sep=2pt, xshift=-2pt] at ${pt(0, t)} {$${tickText(t, dp)}$};`
           );
         }
       }

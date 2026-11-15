@@ -5,7 +5,7 @@
 // Points can also be added by clicking the preview (see `click` below).
 
 import { parseExpression } from '../lib/mathParser.js';
-import { TikzBuilder, n, pt, mathLabel, arrowSpec, LINE_WIDTHS, ARROW_TIPS, FONT_SIZES } from '../lib/tikz.js';
+import { TikzBuilder, n, pt, mathLabel, arrowSpec, decimalsOf, LINE_WIDTHS, ARROW_TIPS, FONT_SIZES } from '../lib/tikz.js';
 import { niceStep } from '../lib/functionGraph.js';
 import { row, group } from '../lib/graphOptions.js';
 
@@ -249,7 +249,7 @@ export function regression(points) {
   return { b, a: my - b * mx, r: syy === 0 ? NaN : sxy / Math.sqrt(sxx * syy) };
 }
 
-const dpOf = (step) => Math.max(0, -Math.floor(Math.log10(step) + 1e-9));
+const dpOf = (step) => decimalsOf(step); // 0.25 → 2, 0.5 → 1, 5 → 0
 const fixed = (v, dp) => {
   const s = v.toFixed(dp);
   return s === `-${(0).toFixed(dp)}` ? (0).toFixed(dp) : s;
