@@ -17,6 +17,7 @@ import probtree from '../js/diagrams/probtree.js';
 import realgraph from '../js/diagrams/realgraph.js';
 import network, { DEFAULT_NETWORK } from '../js/diagrams/network.js';
 import solids from '../js/diagrams/solids.js';
+import complex from '../js/diagrams/complex.js';
 import dotplot from '../js/diagrams/dotplot.js';
 import boxplot from '../js/diagrams/boxplot.js';
 import { parseScene as parseNet } from '../js/geometry/scene.js';
@@ -109,6 +110,11 @@ const jobs = [
   ['boxplot-bare', boxplot.generate({ ...defaultValues(boxplot.schema), data: 'Group A: 1, 2, 3, 4, 8; 0.2', line: 'none', caps: 'none', outlierStyle: 'cross' })],
   ...['realgraph-linear', 'realgraph-exponential'].map((id) => [id, realgraph.generate({ ...defaultValues(realgraph.schema), ...GALLERY.find((e) => e.id === id).values })]),
   ['scatter-sketch', scatter.generate({ ...defaultValues(scatter.schema), ...GALLERY.find((e) => e.id === 'scatter-sketch').values })],
+  ['complex-disc', complex.generate({ ...defaultValues(complex.schema), conditions: '|z+2+3i| <= 1\nIm(z) <= Re(z)' , scales: false })],
+  ['complex-annulus', complex.generate({ ...defaultValues(complex.schema), conditions: '|z - 1| > 2\nRe(z) >= -2\n|z-1| <= 3' , scales: true, xLabel: 'Re', yLabel: 'Im' })],
+  ['complex-bisector', complex.generate({ ...defaultValues(complex.schema), conditions: '|z - 1| <= |z + i|\n|z| < 3' , originLabel: true })],
+  ['complex-sector', complex.generate({ ...defaultValues(complex.schema), conditions: '0 <= arg(z - 1) < 3pi/4\n|z - 1| <= 2' , scales: true })],
+  ['complex-locus', complex.generate({ ...defaultValues(complex.schema), conditions: 'arg(z+1) = pi/3\n|z - 2i| = 1\nRe(z) >= 0' , scales: false })],
   ['realgraph-loan', realgraph.generate(defaultValues(realgraph.schema))],
   ['realgraph-travel', realgraph.generate({ ...defaultValues(realgraph.schema), curves: '0,0 -- 2,40 -- 3,40 -- 5,0; label above right: Car\n0,10 1,15 2,30* | 2,35o 4,38; dashed; label: Bus\n1,5:P', xTitle: 'Time (hours)', yTitle: 'Distance from home (km)', yTitlePos: 'top', xmax: 6, ymax: 45, xStep: 1, yStep: 10, yNumbers: '', gridX: 0.5, gridY: 5, gridColour: 'grey', origin: 'both' })],
   ['blank-trig', blank.generate({ ...defaultValues(blank.schema), xPreset: 'radians', xCustomTicks: '', originLabel: true })],

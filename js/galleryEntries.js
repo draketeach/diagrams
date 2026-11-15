@@ -10,6 +10,7 @@ export const GALLERY_GROUPS = [
   { type: 'realgraph', heading: 'Real-world graphs' },
   { type: 'blank', heading: 'Blank axes' },
   { type: 'normal', heading: 'Normal distribution' },
+  { type: 'complex', heading: 'Complex numbers' },
   { type: 'scatter', heading: 'Scatterplots' },
   { type: 'dotplot', heading: 'Dot plots' },
   { type: 'boxplot', heading: 'Box plots' },
@@ -578,5 +579,12 @@ export const GALLERY = [
     values: {
       scene: JSON.stringify({"settings": {"grid": 0.25, "snap": true, "showGrid": true, "lineWidth": "thin", "fontSize": "", "notToScale": true, "unit": "", "lengthDecimals": 0, "view": {"x0": -2, "y0": -1.5, "w": 10, "h": 6}}, "points": [{"id": "O", "name": "O", "x": 0, "y": 0, "showLabel": false}, {"id": "U", "name": "U", "x": 0, "y": 2.7, "showLabel": false}, {"id": "R", "name": "R", "x": 3.6, "y": 0, "showLabel": false}, {"id": "M", "name": "M", "x": 0, "y": 0, "showLabel": false, "hidden": true, "dep": {"kind": "mid", "a": "U", "b": "R"}}], "items": [{"id": "ou", "type": "segment", "a": "O", "b": "U", "label": "6\\ \\mathrm{cm}"}, {"id": "or", "type": "segment", "a": "O", "b": "R", "label": "8\\ \\mathrm{cm}"}, {"id": "ur", "type": "segment", "a": "U", "b": "R", "label": "d", "style": "dashed"}, {"id": "arc", "type": "arc", "c": "M", "a": "R", "b": "U", "style": "solid"}, {"id": "ra", "type": "right", "v": "O", "a": "U", "b": "R", "size": 0.25}]}),
     },
+  },
+  {
+    id: 'complex-disc-line',
+    type: 'complex',
+    title: 'Part of a disc below a line',
+    description: '|z + 2 + 3i| ≤ 1 and Im(z) ≤ Re(z): the part of the disc below y = x shaded, the line across the picture and a dot at the centre.',
+    values: { conditions: '|z+2+3i| <= 1\nIm(z) <= Re(z)', xmin: '-4', xmax: '3', ymin: '-5', ymax: '3' },
   },
 ];

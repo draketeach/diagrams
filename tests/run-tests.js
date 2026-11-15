@@ -24,6 +24,7 @@ import geometry from '../js/diagrams/geometry.js';
 import realgraph, { parseCurve, curveRuns, titleText } from '../js/diagrams/realgraph.js';
 import network, { DEFAULT_NETWORK } from '../js/diagrams/network.js';
 import solids from '../js/diagrams/solids.js';
+import complex, { parseCondition, parseComplex, parseAngle } from '../js/diagrams/complex.js';
 import { plainLabel, bendThrough, loopThrough, edgeShape, shapeAt } from '../js/geometry/scene.js';
 import dotplot, { parseDots } from '../js/diagrams/dotplot.js';
 import boxplot, { parseSummaries } from '../js/diagrams/boxplot.js';
@@ -896,8 +897,34 @@ test('network: dragging the handle bends an edge (or turns a loop) through the p
   assert.ok(Math.abs(far.y - 1) < 0.05, 'loop reaches the pointer');
 });
 
+test('complex plane: conditions are read and the region where they all hold is shaded', () => {
+  assert.deepEqual(parseComplex('2+3i'), { x: 2, y: 3 });
+  assert.deepEqual(parseComplex('-i'), { x: 0, y: -1 });
+  assert.ok(Math.abs(parseAngle('3pi/4') - (3 * Math.PI) / 4) < 1e-12 && Math.abs(parseAngle('-π/2') + Math.PI / 2) < 1e-12);
+  const c = parseCondition('|z+2+3i| ≤ 1');
+  assert.equal(c.kind, 'circle');
+  assert.deepEqual([c.c.x, c.c.y, c.r, c.op], [-2, -3, 1, '<=']);
+  const h = parseCondition('Im(z) <= Re(z)');
+  assert.deepEqual([h.kind, h.a, h.b, h.c, h.op], ['half', -1, 1, 0, '<=']);
+  const bis = parseCondition('|z - 1| < |z + i|'); // nearer 1: x + y > 0
+  assert.ok(bis.kind === 'half' && bis.a * 1 + bis.b * 1 + bis.c < 0 === (bis.op === '<'));
+  const a = parseCondition('0 <= arg(z - 1) < 3pi/4');
+  assert.ok(a.kind === 'arg' && a.lo === 0 && !a.loStrict && a.hiStrict && a.v.x === 1);
+  assert.ok(parseCondition('arg(z) = pi/3').eq > 1.04, 'a ray');
+  assert.ok(parseCondition('banana').error, 'unreadable lines are reported');
+  const d = defaultValues(complex.schema);
+  const code = complex.generate({ ...d, ...GALLERY.find((e) => e.id === 'complex-disc-line').values }).code;
+  assert.ok(code.includes('\\clip (-2,-3) circle[radius=1];') && code.includes('\\fill[gray!35]'), 'disc clip and shading');
+  assert.ok(code.includes('\\draw (-2,-3) circle[radius=1];') && code.includes('\\fill (-2,-3) circle[radius=1.5pt];'), 'circle and centre dot');
+  assert.ok(!code.includes('foreach'), 'no scales by default');
+  const strict = complex.generate({ ...d, conditions: '|z - 1| > 2' }).code;
+  assert.ok(strict.includes('\\draw[dashed] (1,0) circle[radius=2];'), 'strict boundaries dashed');
+  const locus = complex.generate({ ...d, conditions: '|z| = 2\nIm(z) >= 0' }).code;
+  assert.ok(locus.includes('the locus') && !locus.includes('\\fill[gray'), 'an equation is a locus, not shaded');
+});
+
 test('gallery: every entry generates cleanly and has its image', () => {
-  const modules = { realgraph, function: fn, sketch, blank, normal, scatter, slopefield, geometry, network, probtree, solids, dotplot, boxplot };
+  const modules = { realgraph, function: fn, sketch, blank, normal, scatter, slopefield, geometry, network, probtree, solids, dotplot, boxplot, complex };
   const ids = new Set();
   for (const e of GALLERY) {
     assert.ok(!ids.has(e.id), `duplicate gallery id ${e.id}`);

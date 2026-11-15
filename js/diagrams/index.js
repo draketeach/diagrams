@@ -17,5 +17,6 @@ import network from './network.js';
 import solids from './solids.js';
 import dotplot from './dotplot.js';
 import boxplot from './boxplot.js';
+import complex from './complex.js';
 
-[fn, sketch, blank, realgraph, normal, scatter, dotplot, boxplot, slopefield, geometry, solids, network, probtree].forEach(registerDiagram);
+[fn, sketch, blank, realgraph, complex, normal, scatter, dotplot, boxplot, slopefield, geometry, solids, network, probtree].forEach(registerDiagram);
