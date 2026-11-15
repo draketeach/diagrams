@@ -343,8 +343,11 @@ function generate(v) {
 // ---------------------------------------------------------------- options
 
 const round = (v) => ['cylinder', 'cone', 'sphere', 'hemisphere'].includes(v.solid);
-const flat = (v) => !round(v);
-const LABEL_HELP = 'Blank: the length and unit (e.g. 4 cm). Type your own, or - for none.';
+const ball = (v) => v.solid === 'sphere' || v.solid === 'hemisphere';
+const is = (...names) => (v) => names.includes(v.solid);
+const box = is('cuboid', 'prism'); // width, depth and height shared by these two
+const pyramid = is('pyramid');
+const num = (key, label, d) => ({ type: 'number', key, label, default: d, step: 0.5, min: 0 });
 
 const schema = [
   {
@@ -359,7 +362,7 @@ const schema = [
       { value: 'hemisphere', label: 'Hemisphere' },
       { value: 'cuboid', label: 'Cuboid' },
       { value: 'prism', label: 'Triangular prism' },
-      { value: 'pyramid', label: 'Pyramid (square or rectangular base)' },
+      { value: 'pyramid', label: 'Pyramid' },
     ],
   },
   {
@@ -369,26 +372,27 @@ const schema = [
       {
         type: 'row',
         fields: [
-          { type: 'number', key: 'r', label: 'Radius', default: 4, step: 0.5, min: 0, showIf: round },
-          { type: 'number', key: 'w', label: 'Width', default: 6, step: 0.5, min: 0, showIf: (v) => flat(v) && v.solid !== 'pyramid' },
-          { type: 'number', key: 'd', label: 'Depth', default: 4, step: 0.5, min: 0, showIf: (v) => flat(v) && v.solid !== 'pyramid' },
-          { type: 'number', key: 'h', label: 'Height', default: 10, step: 0.5, min: 0, showIf: (v) => !['sphere', 'hemisphere', 'pyramid'].includes(v.solid) },
+          { ...num('r', 'Radius', 4), showIf: round },
+          { ...num('w', 'Width', 6), showIf: box },
+          { ...num('d', 'Depth', 4), showIf: box },
           // a pyramid's own measurements: a square base by default
-          { type: 'number', key: 'pw', label: 'Width', default: 6, step: 0.5, min: 0, showIf: (v) => v.solid === 'pyramid' },
-          { type: 'number', key: 'pd', label: 'Depth', default: 6, step: 0.5, min: 0, showIf: (v) => v.solid === 'pyramid' },
-          { type: 'number', key: 'ph', label: 'Height', default: 6, step: 0.5, min: 0, showIf: (v) => v.solid === 'pyramid' },
+          { ...num('pw', 'Width', 6), showIf: pyramid },
+          { ...num('pd', 'Depth', 6), showIf: pyramid },
+          { ...num('h', 'Height', 10), showIf: (v) => !ball(v) && !pyramid(v) },
+          { ...num('ph', 'Height', 6), showIf: pyramid },
           { type: 'text', key: 'unit', label: 'Unit', default: 'cm' },
         ],
       },
       {
         type: 'number',
         key: 'apex',
-        label: 'Top of the triangle (0 = above the left corner, 0.5 = middle, 1 = right)',
+        label: 'Top of the triangle',
         default: 0.5,
         step: 0.25,
         min: 0,
         max: 1,
-        showIf: (v) => v.solid === 'prism',
+        help: '0 is above the left corner, 0.5 the middle, 1 above the right corner.',
+        showIf: is('prism'),
       },
       {
         type: 'select',
@@ -399,7 +403,7 @@ const schema = [
           { value: 'up', label: 'Up (a bowl)' },
           { value: 'down', label: 'Down (a dome)' },
         ],
-        showIf: (v) => v.solid === 'hemisphere',
+        showIf: is('hemisphere'),
       },
     ],
   },
@@ -407,23 +411,31 @@ const schema = [
     type: 'group',
     label: 'Labels',
     fields: [
-      { type: 'select', key: 'radius', label: 'Radius', default: 'line', options: [{ value: 'line', label: 'Dashed from a centre dot' }, { value: 'none', label: 'Not shown' }], showIf: round },
       {
         type: 'row',
         fields: [
-          { type: 'text', key: 'rLabel', label: 'Radius label', default: '', placeholder: 'auto', help: LABEL_HELP, showIf: (v) => round(v) && v.radius !== 'none' },
-          { type: 'text', key: 'hLabel', label: 'Height label', default: '', placeholder: 'auto', showIf: (v) => v.solid !== 'sphere' && v.solid !== 'hemisphere' },
-          { type: 'text', key: 'sLabel', label: 'Slant edge label', default: '', placeholder: 'none', showIf: (v) => v.solid === 'cone' || v.solid === 'pyramid' },
+          { type: 'select', key: 'radius', label: 'Radius', default: 'line', options: [{ value: 'line', label: 'Dashed line' }, { value: 'none', label: 'Not shown' }], showIf: round },
+          { type: 'text', key: 'rLabel', label: 'Radius label', default: '', placeholder: 'auto', showIf: (v) => round(v) && v.radius !== 'none' },
         ],
+        showIf: round,
       },
       {
         type: 'row',
         fields: [
-          { type: 'text', key: 'wLabel', label: 'Width label', default: '', placeholder: 'auto', help: LABEL_HELP },
+          { type: 'text', key: 'wLabel', label: 'Width label', default: '', placeholder: 'auto' },
           { type: 'text', key: 'dLabel', label: 'Depth label', default: '', placeholder: 'auto' },
         ],
-        showIf: flat,
+        showIf: (v) => !round(v),
       },
+      {
+        type: 'row',
+        fields: [
+          { type: 'text', key: 'hLabel', label: 'Height label', default: '', placeholder: 'auto' },
+          { type: 'text', key: 'sLabel', label: 'Slant edge label', default: '', placeholder: 'none', showIf: is('cone', 'pyramid') },
+        ],
+        showIf: (v) => !ball(v),
+      },
+      { type: 'note', text: 'A blank label shows the length and unit (e.g. 4 cm). Type your own, or - for none.' },
       {
         type: 'select',
         key: 'ends',
@@ -434,25 +446,27 @@ const schema = [
           { value: 'both', label: 'Arrows and bars' },
           { value: 'arrows', label: 'Arrows' },
         ],
-        showIf: (v) => v.solid === 'cylinder',
+        showIf: is('cylinder'),
       },
       {
         type: 'row',
         fields: [
-          { type: 'select', key: 'angle', label: 'Angle', default: 'none', options: [{ value: 'none', label: 'None' }, { value: 'corner', label: 'Between an edge and the base' }, { value: 'face', label: 'Between a face and the base' }] },
-          { type: 'text', key: 'aLabel', label: 'Angle label', default: '$\\theta$', showIf: (v) => v.angle === 'corner' },
+          { type: 'select', key: 'angle', label: 'Angle', default: 'none', options: [{ value: 'none', label: 'None' }, { value: 'corner', label: 'Edge to base' }, { value: 'face', label: 'Face to base' }] },
+          { type: 'text', key: 'aLabel', label: 'Angle label', default: '$\\theta$', showIf: (v) => v.angle === 'corner' || v.angle === 'face' },
         ],
-        showIf: (v) => v.solid === 'pyramid',
+        showIf: pyramid,
       },
       {
         type: 'text',
         key: 'names',
         label: 'Corner names',
         default: '',
-        placeholder: 'e.g. A B C D E F G H',
-        help: 'Pyramid: front left, front right, back right, back left, the top, the centre of the base, then the middle of the right-hand base edge (for a face angle). Cuboid: the front face from bottom left going round, then the back face the same way. Prism: front left, right, top, then the back. - skips one.',
-        showIf: (v) => ['pyramid', 'cuboid', 'prism'].includes(v.solid),
+        placeholder: 'e.g. A B C D',
+        showIf: is('pyramid', 'cuboid', 'prism'),
       },
+      { type: 'note', text: 'Front left, front right, back right, back left, the top, the centre of the base, then the middle of the right-hand base edge (for a face angle). - skips one.', showIf: pyramid },
+      { type: 'note', text: 'The front face from the bottom left going round, then the back face the same way. - skips one.', showIf: is('cuboid') },
+      { type: 'note', text: 'Front left, front right, the top, then the back the same way. - skips one.', showIf: is('prism') },
       { type: 'checkbox', key: 'notToScale', label: 'NOT TO SCALE', default: true },
     ],
   },
@@ -462,21 +476,27 @@ const schema = [
     collapsed: true,
     fields: [
       {
-        type: 'select',
-        key: 'hidden',
-        label: 'Hidden edges',
-        default: 'none',
-        options: [
-          { value: 'none', label: 'Left out' },
-          { value: 'dashed', label: 'Dashed' },
+        type: 'row',
+        fields: [
+          {
+            type: 'select',
+            key: 'hidden',
+            label: 'Hidden edges',
+            default: 'none',
+            options: [
+              { value: 'none', label: 'Left out' },
+              { value: 'dashed', label: 'Dashed' },
+            ],
+          },
+          { type: 'number', key: 'size', label: 'Size (cm)', default: 5, step: 0.5, min: 1 },
         ],
       },
+      { type: 'note', text: 'Size: how long the biggest measurement is drawn.' },
       {
         type: 'row',
         fields: [
-          { type: 'number', key: 'size', label: 'Size (cm, biggest dimension)', default: 5, step: 0.5, min: 1 },
-          { type: 'number', key: 'ellipse', label: 'Round faces: flatness', default: 0.3, step: 0.05, min: 0.1, max: 0.8, showIf: round },
-          { type: 'number', key: 'depthAngle', label: 'Depth angle (°)', default: 35, step: 5, min: 10, max: 80, showIf: flat },
+          { type: 'number', key: 'ellipse', label: 'Flatness of round faces', default: 0.3, step: 0.05, min: 0.1, max: 0.8, showIf: round },
+          { type: 'number', key: 'depthAngle', label: 'Depth angle (°)', default: 35, step: 5, min: 10, max: 80, showIf: (v) => !round(v) },
         ],
       },
       {

@@ -3,12 +3,14 @@
 //
 // Field types:
 //   { type: 'group',    label, fields: [...], showIf?, collapsed? }  (groups can nest)
-//   { type: 'row',      fields: [...], showIf? }   -- fields side by side
+//   { type: 'row',      fields: [...], showIf? }   -- fields side by side, as many
+//                                                    columns as there are fields showing
 //   { type: 'select',   key, label, options: [{ value, label }], default }
 //   { type: 'number',   key, label, default, step?, min?, max? }
 //   { type: 'text',     key, label, default, placeholder? }
 //   { type: 'textarea', key, label, default, rows? }
 //   { type: 'checkbox', key, label, default }
+//   { type: 'note',     text, showIf? }   -- a line of hint text on its own
 // Any field may have:
 //   help: 'small hint text'
 //   examples: { rows: [['code', 'what it does'], …], notes?: ['…'] }
@@ -36,14 +38,15 @@ export function buildForm(container, schema, { onChange } = {}) {
   container.replaceChildren();
   const inputs = new Map(); // key -> { field, el }
   const conditional = []; // { field, wrapper }
+  const rows = []; // row elements, re-columned as their fields show and hide
 
   function makeField(f, parent) {
     if (f.type === 'row') {
       const row = document.createElement('div');
       row.className = 'form-row';
-      row.style.gridTemplateColumns = `repeat(${f.fields.length}, minmax(0, 1fr))`;
       f.fields.forEach((child) => makeField(child, row));
       parent.append(row);
+      rows.push(row);
       if (f.showIf) conditional.push({ field: f, wrapper: row });
       return;
     }
@@ -62,6 +65,15 @@ export function buildForm(container, schema, { onChange } = {}) {
       f.fields.forEach((child) => makeField(child, body));
       parent.append(fs);
       if (f.showIf) conditional.push({ field: f, wrapper: fs });
+      return;
+    }
+
+    if (f.type === 'note') {
+      const note = document.createElement('small');
+      note.className = 'form-help';
+      note.textContent = f.text;
+      parent.append(note);
+      if (f.showIf) conditional.push({ field: f, wrapper: note });
       return;
     }
 
@@ -201,6 +213,11 @@ export function buildForm(container, schema, { onChange } = {}) {
     const values = getValues();
     for (const { field, wrapper } of conditional) {
       wrapper.hidden = !field.showIf(values);
+    }
+    // a row is as many columns wide as it has fields showing
+    for (const row of rows) {
+      const shown = [...row.children].filter((c) => !c.hidden).length;
+      row.style.gridTemplateColumns = `repeat(${Math.max(1, shown)}, minmax(0, 1fr))`;
     }
   }
 
