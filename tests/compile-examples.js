@@ -120,12 +120,11 @@ const jobs = [
       ['pie-spinner', statgraph.generate(g('pie-spinner'))],
       ['histogram-shaded-bars', statgraph.generate(g('histogram-shaded-bars'))],
       ['boxplot-dot-ends', statgraph.generate(g('boxplot-dot-ends'))],
-      ['pie-wheel', statgraph.generate({ ...d, graph: 'pie', pieData: Array.from({ length: 20 }, (_, i) => `${i}: 1`).join('\n'), pieStyle: 'wheel', pieRadius: 2.3 })],
       ['dotplot-class-a', statgraph.generate(g('dotplot-class-a'))],
       ['pie-default', statgraph.generate({ ...d, graph: 'pie', pieTurn: 'anticlockwise' })],
     ];
   })(),
-  ...['realgraph-linear', 'realgraph-exponential', 'realgraph-asset-value', 'realgraph-runner-times', 'realgraph-fundraiser', 'realgraph-distance-sketch'].map((id) => [id, realgraph.generate({ ...defaultValues(realgraph.schema), ...GALLERY.find((e) => e.id === id).values })]),
+  ...['realgraph-linear', 'realgraph-exponential', 'realgraph-asset-value', 'realgraph-runner-times', 'realgraph-distance-sketch'].map((id) => [id, realgraph.generate({ ...defaultValues(realgraph.schema), ...GALLERY.find((e) => e.id === id).values })]),
   ['scatter-sketch', scatter.generate({ ...defaultValues(scatter.schema), ...GALLERY.find((e) => e.id === 'scatter-sketch').values })],
   ['scatter-two-groups', scatter.generate({ ...defaultValues(scatter.schema), ...GALLERY.find((e) => e.id === 'scatter-two-groups').values })],
   ['scatter-heart-rate', scatter.generate({ ...defaultValues(scatter.schema), ...GALLERY.find((e) => e.id === 'scatter-heart-rate').values })],

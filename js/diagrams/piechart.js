@@ -85,22 +85,6 @@ export function pieFields(showIf) {
         {
           type: 'row',
           fields: [
-            {
-              type: 'select',
-              key: 'pieStyle',
-              label: 'Style',
-              default: 'pie',
-              options: [
-                { value: 'pie', label: 'Pie chart' },
-                { value: 'wheel', label: 'Wheel (names round the rim, a pointer at the top)' },
-              ],
-            },
-            { type: 'text', key: 'piePointer', label: 'Pointer label', default: 'Pointer', showIf: (v) => v.pieStyle === 'wheel' },
-          ],
-        },
-        {
-          type: 'row',
-          fields: [
             { type: 'checkbox', key: 'pieLabels', label: 'Names inside', default: true },
             { type: 'checkbox', key: 'pieRight', label: 'Mark right angles', default: false },
           ],
@@ -118,9 +102,7 @@ export function pieGenerate(v) {
   const r = Number(v.pieRadius) > 0 ? Number(v.pieRadius) : 2;
   const total = sectors.reduce((s, x) => s + x.value, 0);
   const dir = v.pieTurn === 'anticlockwise' ? 1 : -1;
-  // a wheel's first sector is centred under the pointer at the top
-  const wheel = v.pieStyle === 'wheel';
-  let a = wheel && sectors.length ? 90 - (dir * 180 * sectors[0].value) / total : 90;
+  let a = 90;
   const parts = sectors.map((s) => {
     const sweep = (360 * s.value) / total;
     const p = { ...s, start: a, end: a + dir * sweep, sweep };
@@ -145,24 +127,7 @@ export function pieGenerate(v) {
       b.add(`\\draw (${n(m, 3)}:${n(s)}) -- (${n(m + 45, 3)}:${n(s * Math.SQRT2, 4)}) -- (${n(m + 90, 3)}:${n(s)});`);
     }
   }
-  if (wheel) {
-    // a rim 0.5 cm wide with the names in it, turned to face outwards; a hub and a pointer
-    const ring = Math.min(0.5, r / 3);
-    b.comment('rim, hub and pointer');
-    b.add(`\\draw (0,0) circle[radius=${n(r - ring)}];`);
-    b.add(`\\draw[thick] (0,0) circle[radius=${n(r)}];`);
-    b.add(`\\fill (0,0) circle[radius=2.5pt];`);
-    if (v.pieLabels !== false) {
-      for (const p of parts.filter((q) => q.label)) {
-        const mid = (p.start + p.end) / 2;
-        b.add(`\\node[rotate=${n(mid - 90, 3)}, inner sep=0pt, font=\\sffamily\\bfseries] at (${n(mid, 3)}:${n(r - ring / 2, 3)}) {${titleText(p.label)}};`);
-      }
-    }
-    b.add(`\\fill (-0.2,${n(r + 0.42)}) rectangle (0.2,${n(r + 0.3)});`);
-    b.add(`\\fill (-0.055,${n(r + 0.3)}) -- (0.055,${n(r + 0.3)}) -- (0.055,${n(r + 0.06)}) -- (0,${n(r - 0.08)}) -- (-0.055,${n(r + 0.06)}) -- cycle;`);
-    if (String(v.piePointer ?? '').trim()) b.usePreamble('\\usetikzlibrary{arrows.meta}');
-    if (String(v.piePointer ?? '').trim()) b.add(`\\draw[-{Stealth[length=4pt]}] (1.3,${n(r + 0.36)}) node[anchor=west, inner sep=2pt] {${titleText(v.piePointer)}} -- (0.26,${n(r + 0.36)});`);
-  } else if (v.pieLabels !== false) {
+  if (v.pieLabels !== false) {
     b.comment('names');
     for (const p of parts.filter((q) => q.label)) {
       const mid = (p.start + p.end) / 2;

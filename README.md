@@ -190,9 +190,7 @@ them doesn't lose what you typed.
   angles). Sectors go round from the top, clockwise or anticlockwise; shades
   are white, light grey, grey, dark grey, dots, sparse dots or hatch (the
   stipples need patterns.meta). Names go inside, and 90° sectors can have a
-  right-angle mark. The **Wheel** style puts the names round a rim (turned to
-  face outwards), centres the first sector at the top under a pointer, and
-  adds a dot at the centre (e.g. a wheel numbered 0 to 19).
+  right-angle mark.
 
 Dot plots and box plots use the same number line: from, to and the tick
 spacing (blank fits the data), numbers at every tick, every second tick or

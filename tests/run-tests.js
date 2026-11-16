@@ -1189,13 +1189,7 @@ test('real-world graph: words for numbers (10 am) and a bold title above', () =>
   assert.ok(code.includes('font=\\sffamily\\bfseries] at (2.75,13) {Fundraiser revenue};'));
 });
 
-test('statistical graphs: a wheel with a pointer, and a title above a dot plot', () => {
-  const pieData = Array.from({ length: 20 }, (_, i) => `${i}: 1`).join('\n');
-  const wheel = statgraph.generate({ ...defaultValues(statgraph.schema), graph: 'pie', pieData, pieStyle: 'wheel' }).code;
-  assert.ok(wheel.includes('at (90:') && wheel.includes('{0};'), '0 is centred at the top');
-  assert.ok(wheel.includes('{Pointer}') && wheel.includes('circle[radius=2.5pt]'));
-  const pie = statgraph.generate({ ...defaultValues(statgraph.schema), graph: 'pie', pieData }).code;
-  assert.ok(!pie.includes('Pointer') && pie.includes('(0,0) -- (90:2)'), 'pie charts still start at the top');
+test('statistical graphs: a title above a dot plot', () => {
   const dots = statgraph.generate({ ...defaultValues(statgraph.schema), graph: 'dot', plotTitle: 'Class $A$' }).code;
   assert.ok(dots.includes('at (current bounding box.north) {Class $A$};'));
 });

@@ -397,13 +397,6 @@ export const GALLERY = [
     values: { solid: 'cuboid', w: 5, d: 5, h: 7, depthAngle: 45, hidden: 'dashed', wLabel: '-', dLabel: '-', hLabel: '-', baseShade: 'dots', baseTicks: true, notToScale: true, size: 4 },
   },
   {
-    id: 'dotplot-basic',
-    type: 'statgraph',
-    title: 'Dot plot',
-    description: 'Fifteen values stacked as dots above a number line from 0 to 9.',
-    values: { graph: 'dot' },
-  },
-  {
     id: 'dotplot-class-a',
     type: 'statgraph',
     title: "Dot plot with a title above",
@@ -694,25 +687,11 @@ export const GALLERY = [
     values: {"curves": "0,0 -- 1,10 -- 1.5,11 -- 3,10 -- 4.5,0", "xTitle": "Time", "yTitle": "Distance from town (km)", "xLetter": "", "yLetter": "", "xmin": 0, "xmax": 5.5, "ymin": 0, "ymax": 13.5, "xStep": 1, "yStep": 1, "xNumbers": "0:10 am, 1:11 am, 2:12 pm, 3:1 pm, 4:2 pm, 5:3 pm", "yNumbers": "0, 2, 4, 6, 8, 10, 12", "allTicks": true, "origin": "both", "width": 8.4, "height": 6, "showGrid": true, "gridX": 0.5, "gridY": 2, "gridXmax": 5, "gridYmax": 12, "gridColour": "grey", "curveWidth": "thin"},
   },
   {
-    id: 'realgraph-fundraiser',
-    type: 'realgraph',
-    title: "Revenue line with a title above",
-    description: "R = 70n from 0 to 150 people on a grid every 25 by $200, darker every $1000, with a bold title above for plotting the cost line.",
-    values: {"graphTitle": "Fundraiser revenue and cost", "curves": "0,0 -- 150,10500", "xTitle": "Number of people", "yTitle": "Revenue/Cost (\\$)", "xLetter": "", "yLetter": "", "xmin": 0, "xmax": 157, "ymin": 0, "ymax": 11500, "xStep": 25, "yStep": 1000, "xNumbers": "", "yNumbers": "", "origin": "both", "width": 8, "height": 9.4, "showGrid": true, "gridX": 25, "gridY": 200, "gridXmax": 150, "gridYmax": 11000, "gridColour": "grey", "majorX": 25, "majorY": 1000, "curveWidth": "thin", "spaceThousands": true},
-  },
-  {
     id: 'realgraph-distance-sketch',
     type: 'realgraph',
     title: "Distance–time sketch",
     description: "A small sketch of distance falling ever faster to 0, with letters d and t at the arrows and the titles Distance and Time, no numbers.",
-    values: {"curves": "0,0.95> 0.4,0.82 0.6,0.63 0.72,0.4 0.8,0@-75", "xTitle": "Time", "yTitle": "Distance", "xLetter": "t", "yLetter": "d", "xmin": 0, "xmax": 1.15, "ymin": 0, "ymax": 1.15, "xStep": 10, "yStep": 10, "xNumbers": "", "yNumbers": "", "origin": "none", "width": 2.6, "height": 2.4, "showGrid": false, "curveWidth": "thin"},
-  },
-  {
-    id: 'realgraph-medication',
-    type: 'realgraph',
-    title: 'Exponential decay on a fine grid',
-    description: 'y = 15(√0.6)^x with dots at (0, 15) and (2, 9), an arrowhead at the end (; arrow), a grey grid every 0.2 by 1 with darker lines every 1 and 5, and two-line titles.',
-    values: {"curves": "0,15.0000* 0.5,13.2017 1,11.6190 1.5,10.2260 2,9.0000* 2.5,7.9210 3,6.9714; arrow", "xTitle": "Number of hours after taking\\\\a dose of medication", "yTitle": "Amount of medication remaining in a person (mg)", "xLetter": "x", "yLetter": "y", "xmin": 0, "xmax": 3.5, "ymin": 0, "ymax": 21.5, "xStep": 1, "yStep": 5, "xNumbers": "0, 1, 2", "yNumbers": "", "origin": "both", "width": 5.2, "height": 6.8, "dotSize": 1.5, "showGrid": true, "gridX": 0.2, "gridY": 1, "gridXmax": 3, "gridYmax": 20, "gridColour": "grey", "majorX": 1, "majorY": 5, "curveWidth": "thin"},
+    values: {"curves": "0,0.95> 0.8,0@-75", "xTitle": "Time", "yTitle": "Distance", "xLetter": "t", "yLetter": "d", "xmax": 1.15, "ymax": 1.15, "yStep": 10, "yNumbers": "", "origin": "none", "width": 2.6, "height": 2.4, "showGrid": false, "curveWidth": "thin"},
   },
   {
     id: 'realgraph-two-populations',
