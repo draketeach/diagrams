@@ -892,25 +892,11 @@ export const GALLERY = [
     },
   },
   {
-    id: 'sketch-cubic-ticks',
-    type: 'sketch',
-    title: "Cubic with half-unit ticks",
-    description: "A cubic through 0, 2 and 4 with ticks every 0.5 and only some of them numbered.",
-    values: {"points": "-0.35, -2.5\n0, 0, 6\n0.85, 2.2, 0\n2, 0, -2.6\n3.15, -2.2, 0\n4, 0, 4.5\n4.3, 2.5", "leftEnd": "plain", "rightEnd": "plain", "labelX": false, "labelY": false, "tpLabel": "none", "originLabel": false, "xScaleTicks": true, "xStep": 0.5, "xScaleNumbers": false, "xCustomTicks": "-2, -1, 1, 2, 3, 4", "windowMode": "manual", "xmin": -2.5, "xmax": 4.9, "ymin": -2.8, "ymax": 2.9, "width": 7, "height": 5.5},
-  },
-  {
     id: 'sketch-horizontal-inflection',
     type: 'sketch',
     title: "Horizontal point of inflection",
     description: "A curve with two minima, a maximum and a horizontal point of inflection Q (gradient 0 between rising sections), marked with a dot and named Q.",
     values: {"points": "0.5, 3.5, -8\n2, -0.8, 0\n3.5, 0, 0\n5, 0.8, -0.5\n6, -1, 0\n6.5, 3.5, 20", "labelX": false, "leftEnd": "plain", "rightEnd": "plain", "curvePoints": "3.5:Q", "curvePointLabel": "name", "height": 4.5, "windowMode": "manual", "xmin": -0.8, "xmax": 7.4, "ymin": -1.2, "ymax": 4.4},
-  },
-  {
-    id: 'sketch-flat-inflection',
-    type: 'sketch',
-    title: "Curve with a flat crossing",
-    description: "A curve with a maximum and a minimum, flattening to a horizontal point of inflection on the x-axis at 1.",
-    values: {"points": "-3.25, -2.8\n-3, 0, 8\n-2.1, 2.4, 0\n0, 0.25, -0.5\n1, 0, 0\n2, -0.45, -0.9\n4.05, -2.3, 0\n5, 0, 6\n5.3, 2.6", "leftEnd": "plain", "rightEnd": "plain", "labelX": false, "labelY": false, "tpLabel": "none", "originLabel": false, "xCustomTicks": "-3, -2, -1, 1, 2, 3, 4, 5", "windowMode": "manual", "xmin": -3.8, "xmax": 6, "ymin": -3, "ymax": 2.9, "width": 7, "height": 5},
   },
   {
     id: 'scatter-exam-grid',
