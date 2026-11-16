@@ -460,13 +460,6 @@ export const GALLERY = [
     values: { graph: 'pie', pieData: 'Yellow: 15, grey\nWhite: 50\nRed: 25, dots\nGreen: 10, sparse dots', pieRight: true, pieRadius: 2.6 },
   },
   {
-    id: 'pie-wheel',
-    type: 'statgraph',
-    title: "Numbered wheel with a pointer",
-    description: "Twenty equal sectors numbered 0 to 19 round the rim (Style: Wheel), 0 under the pointer at the top, with a dot at the centre.",
-    values: {"graph": "pie", "pieData": "0: 1\n1: 1\n2: 1\n3: 1\n4: 1\n5: 1\n6: 1\n7: 1\n8: 1\n9: 1\n10: 1\n11: 1\n12: 1\n13: 1\n14: 1\n15: 1\n16: 1\n17: 1\n18: 1\n19: 1", "pieStyle": "wheel", "pieRadius": 2.3},
-  },
-  {
     id: 'normal-95',
     type: 'normal',
     title: 'Middle 95% between two values',

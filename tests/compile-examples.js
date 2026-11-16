@@ -120,7 +120,7 @@ const jobs = [
       ['pie-spinner', statgraph.generate(g('pie-spinner'))],
       ['histogram-shaded-bars', statgraph.generate(g('histogram-shaded-bars'))],
       ['boxplot-dot-ends', statgraph.generate(g('boxplot-dot-ends'))],
-      ['pie-wheel', statgraph.generate(g('pie-wheel'))],
+      ['pie-wheel', statgraph.generate({ ...d, graph: 'pie', pieData: Array.from({ length: 20 }, (_, i) => `${i}: 1`).join('\n'), pieStyle: 'wheel', pieRadius: 2.3 })],
       ['dotplot-class-a', statgraph.generate(g('dotplot-class-a'))],
       ['pie-default', statgraph.generate({ ...d, graph: 'pie', pieTurn: 'anticlockwise' })],
     ];
