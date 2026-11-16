@@ -8,6 +8,7 @@ import { parseExpression } from '../lib/mathParser.js';
 import { TikzBuilder, n, pt, mathLabel, arrowSpec, decimalsOf, LINE_WIDTHS, ARROW_TIPS, FONT_SIZES } from '../lib/tikz.js';
 import { niceStep } from '../lib/functionGraph.js';
 import { row, group } from '../lib/graphOptions.js';
+import { titleText } from './realgraph.js';
 
 const auto = (v) => v === null || v === undefined || v === '' || !isFinite(v);
 const manual = (v) => v.windowMode === 'manual';
@@ -20,6 +21,23 @@ const DATA_EXAMPLES = {
   ],
   notes: ['Click the preview to add a point there; Shift+click removes the nearest point.'],
 };
+
+const MARKERS = [
+  { value: 'dot', label: 'Dots' },
+  { value: 'circle', label: 'Open circles' },
+  { value: 'square', label: 'Open squares' },
+  { value: 'filled-square', label: 'Filled squares' },
+  { value: 'cross', label: 'Crosses' },
+];
+
+/** A point drawn in a marker style, r its size (e.g. '1.6pt'). */
+function mark(style, p, r) {
+  if (style === 'circle') return `\\draw[thin, fill=white] ${pt(p.x, p.y)} circle[radius=${r}];`;
+  if (style === 'square') return `\\draw[thin, fill=white] ${pt(p.x, p.y)} +(-${r},-${r}) rectangle +(${r},${r});`;
+  if (style === 'filled-square') return `\\fill ${pt(p.x, p.y)} +(-${r},-${r}) rectangle +(${r},${r});`;
+  if (style === 'cross') return `\\draw[thin] ${pt(p.x, p.y)} +(-${r},-${r}) -- +(${r},${r}) +(-${r},${r}) -- +(${r},-${r});`;
+  return `\\fill ${pt(p.x, p.y)} circle[radius=${r}];`;
+}
 
 const schema = [
   {
@@ -68,6 +86,29 @@ const schema = [
   },
   {
     type: 'group',
+    label: 'A second group (and a key)',
+    collapsed: true,
+    fields: [
+      {
+        type: 'textarea',
+        key: 'data2',
+        label: 'Its points, one per line',
+        rows: 4,
+        default: '',
+        help: 'Drawn with their own marker; the line and r use the first group only.',
+      },
+      row(
+        { type: 'select', key: 'pointStyle2', label: 'Its points', default: 'square', options: MARKERS },
+        { type: 'checkbox', key: 'showKey', label: 'Key', default: true }
+      ),
+      row(
+        { type: 'text', key: 'name1', label: 'First group', default: '', placeholder: 'e.g. Female' },
+        { type: 'text', key: 'name2', label: 'Second group', default: '', placeholder: 'e.g. Male' }
+      ),
+    ],
+  },
+  {
+    type: 'group',
     label: 'More options',
     collapsed: true,
     fields: [
@@ -78,11 +119,7 @@ const schema = [
             key: 'pointStyle',
             label: 'Points',
             default: 'dot',
-            options: [
-              { value: 'dot', label: 'Dots' },
-              { value: 'circle', label: 'Open circles' },
-              { value: 'cross', label: 'Crosses' },
-            ],
+            options: MARKERS,
           },
           {
             type: 'select',
@@ -308,9 +345,10 @@ function axisPlan(lo, hi, { step, gridStep, dp, mode, sizeCm, isManual, grid = f
 function generate(values) {
   const warnings = [];
   const { points, header } = parseData(values.data);
+  const points2 = String(values.data2 ?? '').trim() ? parseData(values.data2).points : [];
   if (!points.length) warnings.push('Type some points, or click the preview to add them.');
-  const xs = points.map((p) => p.x);
-  const ys = points.map((p) => p.y);
+  const xs = [...points, ...points2].map((p) => p.x);
+  const ys = [...points, ...points2].map((p) => p.y);
   const isManual = values.windowMode === 'manual';
   const fromData = (vs) => (vs.length ? [Math.min(...vs), Math.max(...vs)] : [0, 10]);
   let [xlo, xhi] = isManual ? [values.xmin, values.xmax] : fromData(xs);
@@ -339,7 +377,7 @@ function generate(values) {
   const xAxisY = Y.brk ? cy : Y.cross ?? Y.start;
   const xEnd = X.end + 0.8 / X.unit;
   const yEnd = Y.end + 0.6 / Y.unit;
-  const out = points.filter((p) => p.x < X.start - 1e-9 || p.x > X.end + 1e-9 || p.y < Y.start - 1e-9 || p.y > Y.end + 1e-9);
+  const out = [...points, ...points2].filter((p) => p.x < X.start - 1e-9 || p.x > X.end + 1e-9 || p.y < Y.start - 1e-9 || p.y > Y.end + 1e-9);
   if (out.length) warnings.push(`${out.length} point${out.length > 1 ? 's are' : ' is'} outside the axes range.`);
 
   const b = new TikzBuilder();
@@ -460,12 +498,26 @@ function generate(values) {
   if (points.length) {
     b.comment('points');
     const r = values.pointSize || '1.6pt';
-    for (const p of points) {
-      if (values.pointStyle === 'circle') b.add(`\\draw[thin, fill=white] ${pt(p.x, p.y)} circle[radius=${r}];`);
-      else if (values.pointStyle === 'cross') {
-        b.add(`\\draw[thin] ${pt(p.x, p.y)} +(-${r},-${r}) -- +(${r},${r}) +(-${r},${r}) -- +(${r},-${r});`);
-      } else b.add(`\\fill ${pt(p.x, p.y)} circle[radius=${r}];`);
-    }
+    for (const p of points) b.add(mark(values.pointStyle, p, r));
+  }
+  if (points2.length) {
+    b.comment('the second group');
+    const r = values.pointSize || '1.6pt';
+    for (const p of points2) b.add(mark(values.pointStyle2 || 'square', p, r));
+  }
+  // ---- the key, right of the top of the plot
+  const names = [values.name1, values.name2].map((t) => String(t ?? '').trim());
+  if (values.showKey !== false && points2.length && (names[0] || names[1])) {
+    b.comment('key');
+    const r = values.pointSize || '1.6pt';
+    const kx = X.end + 0.6 / X.unit;
+    const row0 = Y.end;
+    b.add(`\\node[anchor=west, inner sep=0pt] at ${pt(kx, row0)} {KEY};`);
+    [values.pointStyle || 'dot', values.pointStyle2 || 'square'].forEach((style, i) => {
+      const y = row0 - ((i + 1) * 0.5) / Y.unit;
+      b.add(mark(style, { x: kx + 0.1 / X.unit, y }, r));
+      if (names[i]) b.add(`\\node[anchor=west, inner sep=0pt] at ${pt(kx + 0.35 / X.unit, y)} {${titleText(names[i])}};`);
+    });
   }
 
   // picture units so the plotting area fills width × height

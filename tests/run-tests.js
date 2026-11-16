@@ -1134,6 +1134,25 @@ test('function: the automatic window copes with graphs that only meet near the o
   assert.ok(/x=[\d.]+cm, y=[\d.]+cm/.test(r.code));
 });
 
+test('scatterplot: a second group with its own marker, and a key', () => {
+  const d = { ...defaultValues(scatter.schema), data: '0, 87\n1, 140', data2: '0, 75\n1, 125', pointStyle: 'square', pointStyle2: 'dot', name1: 'Female', name2: 'Male', line: 'none' };
+  const code = scatter.generate(d).code;
+  assert.ok(code.includes('% the second group') && code.includes('\\fill (0,75) circle'), 'second group as dots');
+  assert.ok(code.includes('(0,87) +(-1.6pt,-1.6pt) rectangle +(1.6pt,1.6pt)'), 'first group as open squares');
+  assert.ok(code.includes('{KEY}') && code.includes('{Female}') && code.includes('{Male}'), 'a key');
+  assert.ok(!scatter.generate({ ...d, showKey: false }).code.includes('KEY'), 'key can be left out');
+});
+
+test('statistical graphs: bars with their own shades; box plots with dots at the whisker ends', () => {
+  const d = { ...defaultValues(statgraph.schema), graph: 'histogram', histData: '3 dots\n2\n4 grey' };
+  const code = statgraph.generate(d).code;
+  assert.ok(code.includes('\\filldraw[pattern={Dots') && code.includes('\\filldraw[fill=gray!30] (2.5,0) rectangle (3.5,4)'), 'shaded bars');
+  assert.ok(!code.includes('++(0,-3pt)'), 'no ticks under unnamed bars');
+  assert.ok(statgraph.generate({ ...d, histData: '3 purple' }).warnings.some((w) => /isn't a shade/.test(w)));
+  const box = statgraph.generate({ ...defaultValues(statgraph.schema), graph: 'box', boxData: '1, 2, 3, 4, 8', caps: 'dots' }).code;
+  assert.ok(box.includes('circle[radius=1.5pt]'), 'dots at the whisker ends');
+});
+
 test('gallery.html versions are up to date', () => {
   const html = readFileSync(new URL('../gallery.html', import.meta.url), 'utf8');
   assert.equal(html, buildIndex(html));

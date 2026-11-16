@@ -8,12 +8,14 @@
 import { TikzBuilder, n } from '../lib/tikz.js';
 import { niceStep } from '../lib/functionGraph.js';
 import { titleText } from './realgraph.js';
+import { PIE_SHADES } from './piechart.js';
 
 export const HIST_EXAMPLES = {
   rows: [
     ['Red: 25\nWhite: 50\nGreen: 10\nYellow: 15', 'Categories: a bar each, named under it'],
     ['135: 15\n145: 17.5\n155: 22.5', 'Classes by their centres (the label is the centre)'],
     ['Red: 25, White: 50', 'Commas between bars work too'],
+    ['3 dots\n2\n4 grey', 'A shade after a bar\'s frequency (white, grey, dots, sparse dots, hatch); no label, no tick'],
   ],
   notes: 'Each bar is label: frequency, in order from left to right.',
 };
@@ -29,9 +31,13 @@ export function parseBars(text) {
     .forEach((item) => {
       const i = item.lastIndexOf(':');
       const label = i >= 0 ? item.slice(0, i).trim() : '';
-      const f = Number(i >= 0 ? item.slice(i + 1).trim() : item);
+      // the frequency, then optionally the bar's own shade: "Red: 25 dots", "3 grey"
+      const m = (i >= 0 ? item.slice(i + 1) : item).trim().match(/^(-?[\d.]+)\s*(.*)$/);
+      const f = m ? Number(m[1]) : NaN;
+      const shade = m && m[2] ? m[2].toLowerCase().replace(/\s+/g, ' ') : '';
       if (!isFinite(f) || f < 0) problems.push(`"${item}" needs a frequency of 0 or more, e.g. Red: 25.`);
-      else bars.push({ label, f });
+      else if (shade && !PIE_SHADES[shade]) problems.push(`"${item}": "${shade}" isn't a shade. Try white, grey, dots or sparse dots.`);
+      else bars.push(shade ? { label, f, shade } : { label, f });
     });
   return { bars, problems };
 }
@@ -152,8 +158,17 @@ export function histogramGenerate(v) {
   }
   b.comment('bars');
   bars.forEach((bar, i) => {
-    const fill = v.histFill && v.histFill !== 'white' ? v.histFill : 'white';
-    b.add(`\\filldraw[fill=${fill}] (${n(g + i)},0) rectangle (${n(g + i + 1)},${n(bar.f)});`);
+    const box = `(${n(g + i)},0) rectangle (${n(g + i + 1)},${n(bar.f)})`;
+    const own = bar.shade ? PIE_SHADES[bar.shade] : null;
+    if (own?.pattern) {
+      // a white bar with the stipple over it, so lines behind don't show through
+      b.usePreamble('\\usetikzlibrary{patterns.meta}');
+      b.add(`\\fill[white] ${box};`);
+      b.add(`\\filldraw[pattern={${own.pattern}}] ${box};`);
+    } else {
+      const fill = own ? own.fill || 'white' : v.histFill && v.histFill !== 'white' ? v.histFill : 'white';
+      b.add(`\\filldraw[fill=${fill}] ${box};`);
+    }
   });
   b.comment('axes');
   b.add(`\\draw${tip ? `[${tip}]` : ''} (0,0) -- (${n(right)},0);`);
@@ -162,7 +177,8 @@ export function histogramGenerate(v) {
   bars.forEach((bar, i) => {
     const x = n(g + i + 0.5);
     const label = bar.label ? (/^-?[\d.]+$/.test(bar.label) ? `$${bar.label}$` : titleText(bar.label)) : '';
-    b.add(`\\draw (${x},0) -- ++(0,-3pt)${label ? ` node[below, inner sep=2pt] {${label}}` : ''};`);
+    // a tick and its label under each named bar (unnamed bars have neither)
+    if (label) b.add(`\\draw (${x},0) -- ++(0,-3pt) node[below, inner sep=2pt] {${label}};`);
   });
   if (bars.length && v.histLine === 'polygon') {
     b.comment('frequency polygon: through the middle of each bar’s top, down to the axis half a bar beyond');

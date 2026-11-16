@@ -74,6 +74,7 @@ export function boxFields(showIf) {
               default: 'bars',
               options: [
                 { value: 'bars', label: 'Bars' },
+                { value: 'dots', label: 'Dots' },
                 { value: 'none', label: 'Plain' },
               ],
             },
@@ -131,7 +132,8 @@ export function boxGenerate(v) {
     b.add(`\\draw (${n(q1)},${lo}) rectangle (${n(q3)},${hi});`);
     b.add(`\\draw (${n(md)},${lo}) -- (${n(md)},${hi});`);
     b.add(`\\draw (${n(mn)},${n(y)}) -- (${n(q1)},${n(y)}) (${n(q3)},${n(y)}) -- (${n(mx)},${n(y)});`);
-    if (v.caps !== 'none') {
+    if (v.caps === 'dots') b.add(`\\fill (${n(mn)},${n(y)}) circle[radius=1.5pt] (${n(mx)},${n(y)}) circle[radius=1.5pt];`);
+    else if (v.caps !== 'none') {
       const c = hgt / 4;
       b.add(`\\draw (${n(mn)},${n(y - c)}) -- (${n(mn)},${n(y + c)}) (${n(mx)},${n(y - c)}) -- (${n(mx)},${n(y + c)});`);
     }

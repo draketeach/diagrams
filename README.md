@@ -86,7 +86,10 @@ rotated); a grid with roughly square cells; scale numbers to the data's
 decimals; and zig-zag axis breaks, with 0 at the corner, when an axis starts
 far from 0 (automatic, always or never). With a grid, each break is exactly
 one grid square (squares up to 8 mm), so the axes sit on grid lines and the
-zig-zag is centred in the square.
+zig-zag is centred in the square. Points can be dots, open circles, open or
+filled squares, or crosses. A second group of points (with its own marker)
+goes under "A second group (and a key)"; naming the groups adds a key at the
+top right. The line and r use the first group only.
 
 A diagram type can take clicks on its preview: its `generate` returns
 `click: { area, decimals, scale }` and the module has `onPreviewClick`. The
@@ -167,7 +170,7 @@ them doesn't lose what you typed.
   Several lines give parallel box plots on one number line (the first line on
   top); `Boys: …` names a plot, and values after a semicolon
   (`10, 14, 17, 19, 24; 31, 35`) are outliers, drawn as dots, open dots or
-  crosses. Whiskers end in bars or plain. Leave the summaries blank for just
+  crosses. Whiskers end in bars, dots or plain. Leave the summaries blank for just
   the number line (to draw a box plot on), or leave the number line out to put
   a box plot together with a dot plot by hand.
 - **Histogram**: one bar per line, `label: frequency` (`Red: 25`, or a class
@@ -177,8 +180,9 @@ them doesn't lose what you typed.
   each number behind the bars, and a frequency polygon (through the middles of
   the tops, down to the axis half a bar beyond) or a cumulative frequency line
   (an ogive, from the start of the first bar through each top right-hand
-  corner) can go over them. Bars are white or grey; titles go under the bars
-  and beside the numbers.
+  corner) can go over them. Bars are white or grey, or each its own shade typed
+  after its frequency (`3 dots`, `Red: 25 grey`); unnamed bars have no tick.
+  Titles go under the bars and beside the numbers.
 - **Pie chart** (or a spinner): one sector per line, `name: value, shade`
   (`Red: 25, dots`). Only the values' sizes matter (counts, percentages or
   angles). Sectors go round from the top, clockwise or anticlockwise; shades

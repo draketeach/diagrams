@@ -340,6 +340,13 @@ export const GALLERY = [
     description: 'Two stages entered as stages: walk or not, then correct uniform or not.',
     values: {},
   },
+  {
+    id: 'probtree-without-replacement',
+    type: 'probtree',
+    title: "Tree without replacement",
+    description: "Two marbles drawn together: the second stage\u2019s probabilities depend on the first (entered as an outline).",
+    values: {"input": "outline", "outline": "Red : 2/5\n> Red : 1/4\n> White : 3/4\nWhite : 3/5\n> Red : 2/4\n> White : 2/4", "outcomes": "none"},
+  },
 
   {
     id: 'geometry-grass',
@@ -430,6 +437,20 @@ export const GALLERY = [
     title: 'Cumulative frequency histogram and ogive',
     description: 'Classes named by their centres, lines across at every 5 behind the bars, and the ogive from the first bar’s start through each top right-hand corner.',
     values: { graph: 'histogram', histData: '135: 15\n145: 17.5\n155: 22.5\n165: 27.5\n175: 30', histLine: 'ogive', histLines: true, histTop: '35', histStep: '5', histXTitle: 'Height (cm)', histYTitle: 'Number of students', barWidth: 1, histHeight: 4 },
+  },
+  {
+    id: 'boxplot-dot-ends',
+    type: 'statgraph',
+    title: "Parallel box plots with dotted ends",
+    description: "Garden A and Garden B over a number line from 140 to 185, with dots at the ends of the whiskers.",
+    values: {"graph": "box", "boxData": "Garden A: 144, 159, 171, 176, 184\nGarden B: 144, 149, 152, 158, 172", "caps": "dots", "from": "140", "to": "185", "step": "5", "width": 10},
+  },
+  {
+    id: 'histogram-shaded-bars',
+    type: 'statgraph',
+    title: "Histogram with differently shaded bars",
+    description: "Seven unnamed bars, each with its own shade (typed after its frequency, e.g. 3 dots), and lines across behind them.",
+    values: {"graph": "histogram", "histData": "3 dots\n2 dots\n1 dots\n4 light grey\n1 dots\n2 sparse dots\n3 dots", "histLines": true, "histTop": "4", "histStep": "1", "histXTitle": "", "histYTitle": "", "barWidth": 0.6, "histHeight": 3.2},
   },
   {
     id: 'pie-spinner',
@@ -524,6 +545,13 @@ export const GALLERY = [
     title: 'Scatterplot with a line of best fit',
     description: 'Thirty-four points and a typed line y = 70 − x across the axes, on a grid every 5 with numbers every 10, and axis titles.',
     values: {"data": "6, 70\n8, 72\n11.5, 70\n10, 61\n10, 48\n12, 42\n15, 64\n18, 60\n18, 57\n18, 55\n21.5, 31\n21.5, 41\n25, 49\n25, 42\n28.5, 45\n28.5, 39\n30, 32\n34, 32\n36.5, 40\n36.5, 15\n39.5, 39\n39.5, 35\n44.5, 30\n46.5, 15\n48.5, 28\n50, 18\n50, 13\n54, 5\n55, 20\n55, 10\n57.5, 18\n60, 15\n61.5, 14\n65, 10", "line": "typed", "lineEquation": "70 - x", "lineExtent": "axes", "xTitle": "Average minutes per day watching television", "yTitle": "Average minutes per day exercising", "windowMode": "manual", "xmin": 0, "xmax": 72, "ymin": 0, "ymax": 82, "xStep": 10, "yStep": 10, "gridX": 5, "gridY": 5, "axisBreak": "off", "width": 10, "height": 6.5},
+  },
+  {
+    id: 'scatter-two-groups',
+    type: 'scatter',
+    title: "Two groups with a key",
+    description: "Female (open squares) and male (dots) lengths against age on a fine grid, with a key; the second group goes under \"A second group (and a key)\".",
+    values: {"data": "0, 87\n1, 140\n2, 200\n3, 265\n4, 285\n4, 270\n5, 290\n6, 325\n7, 350\n7, 335\n8, 360\n8, 345\n9, 395\n10, 400", "data2": "0, 75\n1, 125\n2, 150\n3, 200\n3, 185\n4, 240\n4, 230\n5, 245\n6, 260\n6, 245\n7, 270\n7, 255\n8, 265\n8, 250\n9, 290\n9, 270\n10, 285\n10, 275", "pointStyle": "square", "pointStyle2": "dot", "name1": "Female", "name2": "Male", "pointSize": "1.6pt", "line": "none", "xTitle": "Age (years)", "yTitle": "Length (cm)", "windowMode": "manual", "xmin": 0, "xmax": 10, "ymin": 0, "ymax": 450, "xStep": 1, "yStep": 50, "gridX": 0.2, "gridY": 10, "axisBreak": "off", "width": 10, "height": 8},
   },
   {
     id: 'scatter-points-grid',
@@ -636,6 +664,13 @@ export const GALLERY = [
     title: 'Exponential decay on a fine grid',
     description: 'y = 15(√0.6)^x with dots at (0, 15) and (2, 9), an arrowhead at the end (; arrow), a grey grid every 0.2 by 1 with darker lines every 1 and 5, and two-line titles.',
     values: {"curves": "0,15.0000* 0.5,13.2017 1,11.6190 1.5,10.2260 2,9.0000* 2.5,7.9210 3,6.9714; arrow", "xTitle": "Number of hours after taking\\\\a dose of medication", "yTitle": "Amount of medication remaining in a person (mg)", "xLetter": "x", "yLetter": "y", "xmin": 0, "xmax": 3.5, "ymin": 0, "ymax": 21.5, "xStep": 1, "yStep": 5, "xNumbers": "0, 1, 2", "yNumbers": "", "origin": "both", "width": 5.2, "height": 6.8, "dotSize": 1.5, "showGrid": true, "gridX": 0.2, "gridY": 1, "gridXmax": 3, "gridYmax": 20, "gridColour": "grey", "majorX": 1, "majorY": 5, "curveWidth": "thin"},
+  },
+  {
+    id: 'realgraph-two-populations',
+    type: 'realgraph',
+    title: "Exponential growth and decay",
+    description: "W = 34(1.055)\u02e3 and K = 280(0.97)\u02e3 crossing on a fine grey grid with darker lines every 5 and every 50.",
+    values: {"curves": "0,34.0 5,44.4 10,58.1 15,75.9 20,99.2 25,129.7 30,169.5 35,221.5 40,289.5 45,378.3 45.6,390.7\n0,280.0 5,240.4 10,206.5 15,177.3 20,152.3 25,130.8 30,112.3 35,96.4 40,82.8 45,71.1 50,61.1 55,52.4", "xTitle": "Number of years since 1985", "yTitle": "Population", "xLetter": "x", "yLetter": "y", "xmin": 0, "xmax": 58, "ymin": 0, "ymax": 425, "xStep": 5, "yStep": 50, "xNumbers": "", "yNumbers": "", "origin": "both", "width": 11, "height": 7.5, "showGrid": true, "gridX": 1, "gridY": 10, "gridXmax": 55, "gridYmax": 400, "gridColour": "grey", "majorX": 5, "majorY": 50, "curveWidth": "thin"},
   },
   {
     id: 'complex-disc-line',
@@ -893,6 +928,27 @@ export const GALLERY = [
       ymin: -2.2,
       ymax: 2.2,
     },
+  },
+  {
+    id: 'sketch-cubic-ticks',
+    type: 'sketch',
+    title: "Cubic with half-unit ticks",
+    description: "A cubic through 0, 2 and 4 with ticks every 0.5 and only some of them numbered.",
+    values: {"points": "-0.35, -2.5\n0, 0, 6\n0.85, 2.2, 0\n2, 0, -2.6\n3.15, -2.2, 0\n4, 0, 4.5\n4.3, 2.5", "leftEnd": "plain", "rightEnd": "plain", "labelX": false, "labelY": false, "tpLabel": "none", "originLabel": false, "xScaleTicks": true, "xStep": 0.5, "xScaleNumbers": false, "xCustomTicks": "-2, -1, 1, 2, 3, 4", "windowMode": "manual", "xmin": -2.5, "xmax": 4.9, "ymin": -2.8, "ymax": 2.9, "width": 7, "height": 5.5},
+  },
+  {
+    id: 'sketch-horizontal-inflection',
+    type: 'sketch',
+    title: "Horizontal point of inflection",
+    description: "A curve with two minima, a maximum and a horizontal point of inflection Q (gradient 0 between rising sections), marked with a dot and named Q.",
+    values: {"points": "0.6, 3.5\n1.1, 0, -2.2\n1.95, -0.6, 0\n3.5, 0, 0\n4.9, 0.55, 0\n5.5, 0, -1.6\n6.05, -0.8, 0\n6.3, 0, 7\n6.45, 3.5", "curvePoints": "3.5:Q", "curvePointLabel": "name", "curvePointDots": true, "leftEnd": "plain", "rightEnd": "plain", "labelX": false, "labelY": false, "tpLabel": "none", "windowMode": "manual", "xmin": -0.8, "xmax": 7.4, "ymin": -1.2, "ymax": 4.4, "width": 8, "height": 4.5},
+  },
+  {
+    id: 'sketch-flat-inflection',
+    type: 'sketch',
+    title: "Curve with a flat crossing",
+    description: "A curve with a maximum and a minimum, flattening to a horizontal point of inflection on the x-axis at 1.",
+    values: {"points": "-3.25, -2.8\n-3, 0, 8\n-2.1, 2.4, 0\n0, 0.25, -0.5\n1, 0, 0\n2, -0.45, -0.9\n4.05, -2.3, 0\n5, 0, 6\n5.3, 2.6", "leftEnd": "plain", "rightEnd": "plain", "labelX": false, "labelY": false, "tpLabel": "none", "originLabel": false, "xCustomTicks": "-3, -2, -1, 1, 2, 3, 4, 5", "windowMode": "manual", "xmin": -3.8, "xmax": 6, "ymin": -3, "ymax": 2.9, "width": 7, "height": 5},
   },
   {
     id: 'scatter-exam-grid',
