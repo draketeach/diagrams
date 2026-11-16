@@ -197,22 +197,28 @@ function generate(v) {
 
   // ---- grid: up to the last grid line before the arrowheads
   if (v.showGrid) {
-    const gx = Number(v.gridX) || xStep;
-    const gy = Number(v.gridY) || yStep;
-    const gxMax = pick(v.gridXmax, Math.floor((xmax - 1e-9) / gx) * gx);
-    const gyMax = pick(v.gridYmax, Math.floor((ymax - 1e-9) / gy) * gy);
+    // a spacing of 0 leaves out the lines that way (e.g. only upright lines, one for each year)
+    const zero = (x) => x !== null && x !== undefined && String(x).trim() !== '' && Number(x) === 0;
+    const noX = zero(v.gridX);
+    const noY = zero(v.gridY);
+    const big = (xmax - xmin + ymax - ymin) * 10; // a step too big to draw: no lines that way
+    const gx = noX ? big : Number(v.gridX) || xStep;
+    const gy = noY ? big : Number(v.gridY) || yStep;
+    const gxMax = pick(v.gridXmax, noX ? Math.floor((xmax - 1e-9) / xStep) * xStep : Math.floor((xmax - 1e-9) / gx) * gx);
+    const gyMax = pick(v.gridYmax, noY ? Math.floor((ymax - 1e-9) / yStep) * yStep : Math.floor((ymax - 1e-9) / gy) * gy);
+    const ex = noX ? xStep * 1e-3 : gx * 1e-3;
+    const ey = noY ? yStep * 1e-3 : gy * 1e-3;
     const colour = v.gridColour === 'grey' ? ', gray!60' : '';
     // TikZ's grid draws lines at multiples of the steps (in the axes' units); the far corner goes
     // a hair past the last line so rounding can't drop it
     b.comment('grid');
-    b.add(`\\draw[very thin${colour}, xstep=${n(gx)}, ystep=${n(gy)}] ${pt(xmin, ymin)} grid ${pt(gxMax + gx * 1e-3, gyMax + gy * 1e-3)};`);
+    b.add(`\\draw[very thin${colour}, xstep=${n(gx)}, ystep=${n(gy)}] ${pt(xmin, ymin)} grid ${pt(gxMax + ex, gyMax + ey)};`);
     // darker lines every so often over the fine grid (e.g. every 1 day and every 20 000)
     const mx = Number(v.majorX) > 0 ? Number(v.majorX) : 0;
     const my = Number(v.majorY) > 0 ? Number(v.majorY) : 0;
     if (mx || my) {
       b.comment('darker grid lines');
-      const big = (xmax - xmin + ymax - ymin) * 10; // a step too big to draw: no lines that way
-      b.add(`\\draw[thin, xstep=${n(mx || big)}, ystep=${n(my || big)}] ${pt(xmin, ymin)} grid ${pt(gxMax + gx * 1e-3, gyMax + gy * 1e-3)};`);
+      b.add(`\\draw[thin, xstep=${n(mx || big)}, ystep=${n(my || big)}] ${pt(xmin, ymin)} grid ${pt(gxMax + ex, gyMax + ey)};`);
     }
   }
 
@@ -249,6 +255,14 @@ function generate(v) {
   for (const y of yNums) {
     if (near(y, y0) && origin !== 'both') continue;
     b.add(`\\draw[thin] ${pt(x0, y)} -- ++(-3pt,0) node[anchor=east, inner sep=2pt] {$${fmtNum(y)}$};`);
+  }
+  // with only some numbers typed, a bare tick at every other step (e.g. every year, numbered 0, 4 and 10)
+  if (v.allTicks) {
+    // only between the first and last numbers, so no ticks run on past the last number
+    const has = (list, t) => list.some((u) => near(u, t));
+    const upTo = (list, lo, hi, step) => multiples(lo, list.length ? Math.max(...list) : hi, step).filter((t) => !list.length || t >= Math.min(...list) - 1e-9);
+    for (const x of upTo(xNums, xmin, xmax - xStep * 0.25, xStep)) if (!has(xNums, x) && !near(x, x0)) b.add(`\\draw[thin] ${pt(x, y0)} -- ++(0,-3pt);`);
+    for (const y of upTo(yNums, ymin, ymax - yStep * 0.25, yStep)) if (!has(yNums, y) && !near(y, y0)) b.add(`\\draw[thin] ${pt(x0, y)} -- ++(-3pt,0);`);
   }
   // one 0, level with the x-axis and in line with the y numbers
   if (origin === 'corner') b.add(`\\node[anchor=east, inner sep=2pt, xshift=-3pt] at ${pt(x0, y0)} {$0$};`);
@@ -302,6 +316,11 @@ function generate(v) {
       }
     }
   });
+
+  if (v.notToScale) {
+    b.comment('note');
+    b.add(`\\node[anchor=north west, align=center, xshift=0.6cm] at ${pt(xmax, ymax)} {NOT TO\\\\SCALE};`);
+  }
 
   // units small enough for big data (e.g. 0.0000311cm per mg) keep their significant figures
   const unit = (u) => (u >= 0.01 ? n(u) : String(Number(u.toPrecision(4))).replace(/e(-?\d+)$/, 'e$1'));
@@ -413,6 +432,7 @@ const schema = [
           { type: 'text', key: 'yNumbers', label: 'Only these y numbers', default: '8', placeholder: 'e.g. 8' },
         ],
       },
+      { type: 'checkbox', key: 'allTicks', label: 'A tick at every step, even without a number', default: false },
       {
         type: 'select',
         key: 'origin',
@@ -441,8 +461,8 @@ const schema = [
       {
         type: 'row',
         fields: [
-          { type: 'number', key: 'gridX', label: 'x spacing', default: 3.3333, step: 0.5, min: 0 },
-          { type: 'number', key: 'gridY', label: 'y spacing', default: 1, step: 0.5, min: 0 },
+          { type: 'number', key: 'gridX', label: 'x spacing (0: none)', default: 3.3333, step: 0.5, min: 0 },
+          { type: 'number', key: 'gridY', label: 'y spacing (0: none)', default: 1, step: 0.5, min: 0 },
         ],
         showIf: (v) => v.showGrid,
       },
@@ -508,6 +528,7 @@ const schema = [
         fields: [
           { type: 'checkbox', key: 'decimalComma', label: 'Decimal comma in numbers', default: false },
           { type: 'checkbox', key: 'spaceThousands', label: 'Space in 10 000 and over', default: false },
+          { type: 'checkbox', key: 'notToScale', label: 'NOT TO SCALE note', default: false },
         ],
       },
     ],

@@ -1160,6 +1160,19 @@ test('scatterplot: darker grid lines every so often', () => {
   assert.ok(!scatter.generate({ ...d, majorX: null, majorY: null }).code.includes('darker grid lines'), 'none unless asked');
 });
 
+test('real-world graph: upright grid lines only, bare ticks between numbers, NOT TO SCALE', () => {
+  const d = { ...defaultValues(realgraph.schema), curves: '0,50000 -- 4,39000 7,11800 10,6800', xmin: 0, xmax: 11.9, ymin: 0, ymax: 57500, xStep: 1, yStep: 50000,
+    xNumbers: '0, 4, 10', yNumbers: '0, 50000', showGrid: true, gridX: 1, gridY: 0, gridXmax: 10, gridYmax: 50000 };
+  const code = realgraph.generate(d).code;
+  const ystep = Number(code.match(/xstep=1, ystep=([\d.]+)\]/)[1]);
+  assert.ok(ystep > 57500, 'a y spacing of 0 draws no level lines');
+  assert.ok(!code.includes('(1,0) -- ++(0,-3pt);'), 'no bare ticks unless asked');
+  const ticked = realgraph.generate({ ...d, allTicks: true, notToScale: true }).code;
+  assert.ok(ticked.includes('(1,0) -- ++(0,-3pt);') && ticked.includes('(9,0) -- ++(0,-3pt);'));
+  assert.ok(!ticked.includes('(11,0) -- ++(0,-3pt);'), 'none past the last number');
+  assert.ok(ticked.includes('{NOT TO\\\\SCALE}'));
+});
+
 test('gallery.html versions are up to date', () => {
   const html = readFileSync(new URL('../gallery.html', import.meta.url), 'utf8');
   assert.equal(html, buildIndex(html));

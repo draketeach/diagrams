@@ -432,6 +432,13 @@ export const GALLERY = [
     values: {"graph": "box", "boxData": "Garden A: 144, 159, 171, 176, 184\nGarden B: 144, 149, 152, 158, 172", "caps": "dots", "from": "140", "to": "185", "step": "5", "width": 10},
   },
   {
+    id: 'boxplot-bare',
+    type: 'statgraph',
+    title: "Box plot without a scale",
+    description: "A single box plot on its own, with no number line or caps on the whiskers.",
+    values: {"graph": "box", "boxData": "0, 1, 3, 5, 6", "caps": "none", "line": "none", "from": "0", "to": "6", "step": "1", "width": 6},
+  },
+  {
     id: 'histogram-shaded-bars',
     type: 'statgraph',
     title: "Histogram with differently shaded bars",
@@ -540,6 +547,13 @@ export const GALLERY = [
     values: {"data": "0, 87\n1, 140\n2, 200\n3, 265\n4, 285\n4, 270\n5, 290\n6, 325\n7, 350\n7, 335\n8, 360\n8, 345\n9, 395\n10, 400", "data2": "0, 75\n1, 125\n2, 150\n3, 200\n3, 185\n4, 240\n4, 230\n5, 245\n6, 260\n6, 245\n7, 270\n7, 255\n8, 265\n8, 250\n9, 290\n9, 270\n10, 285\n10, 275", "pointStyle": "square", "pointStyle2": "dot", "name1": "Female", "name2": "Male", "pointSize": "1.6pt", "line": "none", "xTitle": "Age (years)", "yTitle": "Length (cm)", "windowMode": "manual", "xmin": 0, "xmax": 10, "ymin": 0, "ymax": 450, "xStep": 1, "yStep": 50, "gridX": 0.2, "gridY": 10, "gridShade": "gray!60", "majorX": 1, "majorY": 50, "axisBreak": "off", "width": 10, "height": 8},
   },
   {
+    id: 'scatter-regression-grid',
+    type: 'scatter',
+    title: "Regression line on a grid",
+    description: "Five students' marks with the least-squares line y = 6 + 1.4x across the axes, on a fine grey grid with darker lines every 2 and every 4.",
+    values: {"data": "3, 11\n5, 14\n6, 12\n7, 15\n9, 20", "line": "lsr", "lineExtent": "axes", "xTitle": "Assignment mark", "yTitle": "Test mark", "windowMode": "manual", "xmin": 0, "xmax": 10, "ymin": 0, "ymax": 24, "xStep": 1, "yStep": 4, "gridX": 0.2, "gridY": 0.8, "gridShade": "gray!60", "majorX": 2, "majorY": 4, "axisBreak": "off", "width": 10, "height": 4.8},
+  },
+  {
     id: 'scatter-points-grid',
     type: 'scatter',
     title: 'Scatterplot for a line of best fit',
@@ -553,15 +567,6 @@ export const GALLERY = [
     description: "Edges bent to curve round the drawing, each labelled with a weight; vertices named with letters.",
     values: {
       scene: JSON.stringify({"settings": {"grid": 0.25, "snap": true, "showGrid": true, "lineWidth": "thin", "fontSize": "", "notToScale": false, "unit": "", "lengthDecimals": 0, "mode": "network", "view": {"x0": -1.5, "y0": -1.8, "w": 10.5, "h": 6.2}}, "points": [{"id": "A", "name": "A", "x": 0.0, "y": 0.0, "showLabel": true, "dot": true}, {"id": "B", "name": "B", "x": 1.543, "y": 3.229, "showLabel": true, "dot": true}, {"id": "D", "name": "D", "x": 1.614, "y": 1.786, "showLabel": true, "dot": true}, {"id": "C", "name": "C", "x": 5.171, "y": 2.929, "showLabel": true, "dot": true}, {"id": "E", "name": "E", "x": 5.729, "y": 1.586, "showLabel": true, "dot": true}, {"id": "F", "name": "F", "x": 3.614, "y": 0.4, "showLabel": true, "dot": true}, {"id": "G", "name": "G", "x": 7.171, "y": -0.371, "showLabel": true, "dot": true}], "items": [{"id": "e0", "type": "segment", "a": "A", "b": "B", "label": "3"}, {"id": "e1", "type": "segment", "a": "A", "b": "D", "label": "2"}, {"id": "e2", "type": "segment", "a": "A", "b": "F", "label": "3", "bend": -25}, {"id": "e3", "type": "segment", "a": "B", "b": "D", "label": "1"}, {"id": "e4", "type": "segment", "a": "B", "b": "C", "label": "3"}, {"id": "e5", "type": "segment", "a": "C", "b": "E", "label": "1"}, {"id": "e6", "type": "segment", "a": "C", "b": "G", "label": "3", "bend": 60}, {"id": "e7", "type": "segment", "a": "D", "b": "F", "label": "2", "bend": -35}, {"id": "e8", "type": "segment", "a": "E", "b": "F", "label": "2", "bend": -15}, {"id": "e9", "type": "segment", "a": "E", "b": "G", "label": "2", "bend": 40}, {"id": "e10", "type": "segment", "a": "F", "b": "G", "label": "3"}]}),
-    },
-  },
-  {
-    id: 'network-weighted',
-    type: 'network',
-    title: "Weighted network (letters)",
-    description: "Seven lettered vertices and nine weighted edges, three of them in a straight line through D and E.",
-    values: {
-      scene: JSON.stringify({"settings": {"grid": 0.25, "snap": true, "showGrid": true, "lineWidth": "thin", "fontSize": "", "notToScale": false, "unit": "", "lengthDecimals": 0, "mode": "network", "view": {"x0": -1, "y0": -3, "w": 8.5, "h": 6}}, "points": [{"id": "A", "name": "A", "x": 0.0, "y": 0.0, "showLabel": true, "dot": true}, {"id": "B", "name": "B", "x": 1.3, "y": 1.3, "showLabel": true, "dot": true}, {"id": "C", "name": "C", "x": 3.95, "y": 2.533, "showLabel": true, "dot": true}, {"id": "D", "name": "D", "x": 1.3, "y": 0.0, "showLabel": true, "dot": true}, {"id": "E", "name": "E", "x": 4.2, "y": 0.0, "showLabel": true, "dot": true}, {"id": "G", "name": "G", "x": 6.167, "y": 0.0, "showLabel": true, "dot": true}, {"id": "F", "name": "F", "x": 2.167, "y": -2.233, "showLabel": true, "dot": true}], "items": [{"id": "e0", "type": "segment", "a": "A", "b": "B", "label": "2"}, {"id": "e1", "type": "segment", "a": "A", "b": "D", "label": "1"}, {"id": "e2", "type": "segment", "a": "B", "b": "D", "label": "1"}, {"id": "e3", "type": "segment", "a": "B", "b": "C", "label": "3"}, {"id": "e4", "type": "segment", "a": "C", "b": "E", "label": "4"}, {"id": "e5", "type": "segment", "a": "D", "b": "E", "label": "3"}, {"id": "e6", "type": "segment", "a": "E", "b": "G", "label": "2"}, {"id": "e7", "type": "segment", "a": "D", "b": "F", "label": "3"}, {"id": "e8", "type": "segment", "a": "F", "b": "G", "label": "5"}]}),
     },
   },
   {
@@ -589,6 +594,15 @@ export const GALLERY = [
     description: "Directed edges labelled A, 3 to H, 5 (italic activity letters), with unnamed vertices.",
     values: {
       scene: JSON.stringify({"settings": {"mode": "network", "grid": 0.25, "snap": true, "showGrid": true, "lineWidth": "thin", "fontSize": "", "notToScale": false, "view": {"x0": -1, "y0": -1, "w": 10, "h": 4.8}}, "points": [{"id": "S", "name": "S", "x": 0, "y": 1, "dot": true, "showLabel": false}, {"id": "P1", "name": "P1", "x": 1.25, "y": 2.2, "dot": true, "showLabel": false}, {"id": "P2", "name": "P2", "x": 1.42, "y": 0, "dot": true, "showLabel": false}, {"id": "M", "name": "M", "x": 3, "y": 1.37, "dot": true, "showLabel": false}, {"id": "N", "name": "N", "x": 5.22, "y": 1.45, "dot": true, "showLabel": false}, {"id": "U", "name": "U", "x": 6.82, "y": 2.9, "dot": true, "showLabel": false}, {"id": "V", "name": "V", "x": 7.83, "y": 1.08, "dot": true, "showLabel": false}], "items": [{"id": "a", "type": "segment", "a": "S", "b": "P1", "label": "$A$, 3", "arrows": 1}, {"id": "b", "type": "segment", "a": "S", "b": "P2", "label": "$B$, 4", "arrows": 1}, {"id": "c", "type": "segment", "a": "P1", "b": "M", "label": "$C$, 3", "arrows": 1}, {"id": "d", "type": "segment", "a": "P2", "b": "M", "label": "$D$, 5", "arrows": 1}, {"id": "e", "type": "segment", "a": "M", "b": "N", "label": "$E$, 5", "arrows": 1}, {"id": "f", "type": "segment", "a": "N", "b": "U", "label": "$F$, 7", "arrows": 1}, {"id": "h", "type": "segment", "a": "U", "b": "V", "label": "$H$, 5", "arrows": 1}, {"id": "g", "type": "segment", "a": "N", "b": "V", "label": "$G$, 3", "arrows": 1}]}),
+    },
+  },
+  {
+    id: 'network-activity-letters',
+    type: 'network',
+    title: "Activity network with nine activities",
+    description: "Activities A to I as arrows between unnamed dots, with no durations, each letter beside its arrow.",
+    values: {
+      scene: JSON.stringify({"settings":{"mode":"network","grid":0.25,"snap":true,"showGrid":true,"lineWidth":"thin","fontSize":"","notToScale":false,"view":{"x0":-0.7,"y0":-3,"w":10.5,"h":5.5}},"points":[{"id":"S","name":"S","x":0,"y":0,"dot":true,"showLabel":false},{"id":"T","name":"T","x":2.35,"y":1.9,"dot":true,"showLabel":false},{"id":"M","name":"M","x":2.35,"y":0,"dot":true,"showLabel":false},{"id":"R","name":"R","x":5.7,"y":0,"dot":true,"showLabel":false},{"id":"J","name":"J","x":7.3,"y":-1.35,"dot":true,"showLabel":false},{"id":"Z","name":"Z","x":9.05,"y":-1.35,"dot":true,"showLabel":false},{"id":"L","name":"L","x":2.35,"y":-2.35,"dot":true,"showLabel":false},{"id":"Q","name":"Q","x":5.7,"y":-2.35,"dot":true,"showLabel":false}],"items":[{"id":"a","type":"segment","a":"S","b":"T","label":"$A$","arrows":1},{"id":"b","type":"segment","a":"S","b":"M","label":"$B$","arrows":1,"labelPos":{"dx":0,"dy":0.3}},{"id":"c","type":"segment","a":"S","b":"L","label":"$C$","arrows":1},{"id":"d","type":"segment","a":"T","b":"R","label":"$D$","arrows":1},{"id":"e","type":"segment","a":"M","b":"R","label":"$E$","arrows":1,"labelPos":{"dx":0,"dy":0.3}},{"id":"f","type":"segment","a":"L","b":"Q","label":"$F$","arrows":1,"labelPos":{"dx":0,"dy":-0.3}},{"id":"g","type":"segment","a":"R","b":"J","label":"$G$","arrows":1,"labelPos":{"dx":0.25,"dy":0.25}},{"id":"h","type":"segment","a":"Q","b":"J","label":"$H$","arrows":1},{"id":"i","type":"segment","a":"J","b":"Z","label":"$I$","arrows":1,"labelPos":{"dx":0,"dy":0.3}}]}),
     },
   },
   {
@@ -643,6 +657,13 @@ export const GALLERY = [
     title: 'Salvage value (declining balance)',
     description: 'V = 55 000 × 0.8^t over 5 years on a grid every year by $11 000, with a 0 on each axis and spaced thousands.',
     values: {"curves": "0,55000 1,44000 2,35200 3,28160 4,22528 5,18022.4", "xTitle": "Time (years)", "yTitle": "Value (\\$)", "xLetter": "", "yLetter": "", "xmin": 0, "xmax": 5.5, "ymin": 0, "ymax": 61000, "xStep": 1, "yStep": 11000, "xNumbers": "", "yNumbers": "", "origin": "both", "width": 5.4, "height": 5.2, "showGrid": true, "gridX": 1, "gridY": 11000, "gridXmax": 5, "gridYmax": 55000, "gridColour": "black", "curveWidth": "thin", "spaceThousands": true},
+  },
+  {
+    id: 'realgraph-asset-value',
+    type: 'realgraph',
+    title: "Straight-line then declining-balance value",
+    description: "A straight line for 4 years, then a curve, with a grey upright line every year (y spacing 0), ticks every year but only 0, 4 and 10 numbered, and NOT TO SCALE.",
+    values: {"curves": "0,50000 -- 4,39000 5,23200 6,15500 7,11800 8,9200 9,7700 10,6800", "xTitle": "Number of years", "yTitle": "Value of asset (\\$)", "xLetter": "", "yLetter": "", "xmin": 0, "xmax": 11.9, "ymin": 0, "ymax": 57500, "xStep": 1, "yStep": 50000, "xNumbers": "0, 4, 10", "yNumbers": "0, 50000", "allTicks": true, "origin": "both", "width": 7.1, "height": 5.6, "showGrid": true, "gridX": 1, "gridY": 0, "gridXmax": 10, "gridYmax": 50000, "gridColour": "grey", "curveWidth": "thin", "spaceThousands": true, "notToScale": true},
   },
   {
     id: 'realgraph-medication',

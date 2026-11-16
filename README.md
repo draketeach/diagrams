@@ -244,8 +244,10 @@ a thin space (`22 000`). Smooth sections are written as
 Bézier curves (`.. controls … ..`) so the directions can be set.
 
 The axes meet at the corner, with numbers every so often (or only the ones you
-list), one 0 at the corner (or one on each axis, or none), and an optional
-grid. Axis titles are text, centred under the x-axis and turned beside the
+list, with a bare tick at every other step if you like), one 0 at the corner
+(or one on each axis, or none), an optional grid (a spacing of 0 leaves out the
+lines that way, e.g. only an upright line each year) and an optional NOT TO
+SCALE note. Axis titles are text, centred under the x-axis and turned beside the
 y-axis (or at the axis ends): `\\` starts a new line, `$…$` is maths, `\$` is a
 dollar sign and `×` works.
 

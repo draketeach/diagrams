@@ -123,9 +123,11 @@ const jobs = [
       ['pie-default', statgraph.generate({ ...d, graph: 'pie', pieTurn: 'anticlockwise' })],
     ];
   })(),
-  ...['realgraph-linear', 'realgraph-exponential'].map((id) => [id, realgraph.generate({ ...defaultValues(realgraph.schema), ...GALLERY.find((e) => e.id === id).values })]),
+  ...['realgraph-linear', 'realgraph-exponential', 'realgraph-asset-value'].map((id) => [id, realgraph.generate({ ...defaultValues(realgraph.schema), ...GALLERY.find((e) => e.id === id).values })]),
   ['scatter-sketch', scatter.generate({ ...defaultValues(scatter.schema), ...GALLERY.find((e) => e.id === 'scatter-sketch').values })],
   ['scatter-two-groups', scatter.generate({ ...defaultValues(scatter.schema), ...GALLERY.find((e) => e.id === 'scatter-two-groups').values })],
+  ['scatter-regression-grid', scatter.generate({ ...defaultValues(scatter.schema), ...GALLERY.find((e) => e.id === 'scatter-regression-grid').values })],
+  ['network-activity-letters', network.generate(GALLERY.find((e) => e.id === 'network-activity-letters').values)],
   ['complex-disc', complex.generate({ ...defaultValues(complex.schema), conditions: '|z+2+3i| <= 1\nIm(z) <= Re(z)' , scales: false })],
   ['complex-annulus', complex.generate({ ...defaultValues(complex.schema), conditions: '|z - 1| > 2\nRe(z) >= -2\n|z-1| <= 3' , scales: true, xLabel: 'Re', yLabel: 'Im' })],
   ['complex-bisector', complex.generate({ ...defaultValues(complex.schema), conditions: '|z - 1| <= |z + i|\n|z| < 3' , originLabel: true })],
