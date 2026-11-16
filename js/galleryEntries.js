@@ -892,13 +892,6 @@ export const GALLERY = [
     },
   },
   {
-    id: 'sketch-horizontal-inflection',
-    type: 'sketch',
-    title: "Horizontal point of inflection",
-    description: "A curve with two minima, a maximum and a horizontal point of inflection Q (gradient 0 between rising sections), marked with a dot and named Q.",
-    values: {"points": "0.5, 3.5, -8\n2, -0.8, 0\n3.5, 0, 0\n5, 0.8, -0.5\n6, -1, 0\n6.5, 3.5, 20", "labelX": false, "leftEnd": "plain", "rightEnd": "plain", "curvePoints": "3.5:Q", "curvePointLabel": "name", "height": 4.5, "windowMode": "manual", "xmin": -0.8, "xmax": 7.4, "ymin": -1.2, "ymax": 4.4},
-  },
-  {
     id: 'scatter-exam-grid',
     type: 'scatter',
     title: 'Scatterplot with a negative trend',
