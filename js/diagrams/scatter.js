@@ -223,6 +223,10 @@ const schema = [
           { type: 'number', key: 'gridX', label: 'x spacing', default: null, step: 0.1, min: 0, showIf: (v) => v.showGrid },
           { type: 'number', key: 'gridY', label: 'y spacing', default: null, step: 0.1, min: 0, showIf: (v) => v.showGrid }
         ),
+        row(
+          { type: 'number', key: 'majorX', label: 'Darker lines every x', default: null, step: 1, min: 0, placeholder: 'none', showIf: (v) => v.showGrid },
+          { type: 'number', key: 'majorY', label: 'Darker lines every y', default: null, step: 1, min: 0, placeholder: 'none', showIf: (v) => v.showGrid }
+        ),
         {
           type: 'select',
           key: 'gridShade',
@@ -397,6 +401,17 @@ function generate(values) {
       `\\draw[${values.gridShade || 'black'}, very thin, xstep=${n(X.grid * X.unit, 4)}cm, ystep=${n(Y.grid * Y.unit, 4)}cm, ` +
         `shift={${pt(X.start, Y.start)}}] ${pt(gx, gy)} grid ${pt(X.end - X.start + ex, Y.end - Y.start + ey)};`
     );
+    // darker lines every so often over the fine grid (e.g. every 1 year and every 50 cm)
+    const mx = Number(values.majorX) > 0 ? Number(values.majorX) : 0;
+    const my = Number(values.majorY) > 0 ? Number(values.majorY) : 0;
+    if (mx || my) {
+      b.comment('darker grid lines');
+      const big = 1000; // a step (cm) too big to draw: no lines that way
+      b.add(
+        `\\draw[black, thin, xstep=${mx ? n(mx * X.unit, 4) : big}cm, ystep=${my ? n(my * Y.unit, 4) : big}cm, ` +
+          `shift={${pt(X.start, Y.start)}}] ${pt(gx, gy)} grid ${pt(X.end - X.start + ex, Y.end - Y.start + ey)};`
+      );
+    }
   }
 
   // ---- axes (with zig-zag breaks)

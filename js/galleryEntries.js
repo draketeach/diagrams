@@ -411,13 +411,6 @@ export const GALLERY = [
     values: { graph: 'dot' },
   },
   {
-    id: 'boxplot-parallel',
-    type: 'statgraph',
-    title: 'Parallel box plots',
-    description: 'Two named five-number summaries on one number line, one with two outliers typed after a semicolon.',
-    values: { graph: 'box', boxData: 'Boys: 12, 15, 18, 22, 30\nGirls: 10, 14, 17, 19, 24; 31, 35', axisTitle: 'Score' },
-  },
-  {
     id: 'number-line-blank',
     type: 'statgraph',
     title: 'Number line to draw a box plot on',
@@ -550,8 +543,8 @@ export const GALLERY = [
     id: 'scatter-two-groups',
     type: 'scatter',
     title: "Two groups with a key",
-    description: "Female (open squares) and male (dots) lengths against age on a fine grid, with a key; the second group goes under \"A second group (and a key)\".",
-    values: {"data": "0, 87\n1, 140\n2, 200\n3, 265\n4, 285\n4, 270\n5, 290\n6, 325\n7, 350\n7, 335\n8, 360\n8, 345\n9, 395\n10, 400", "data2": "0, 75\n1, 125\n2, 150\n3, 200\n3, 185\n4, 240\n4, 230\n5, 245\n6, 260\n6, 245\n7, 270\n7, 255\n8, 265\n8, 250\n9, 290\n9, 270\n10, 285\n10, 275", "pointStyle": "square", "pointStyle2": "dot", "name1": "Female", "name2": "Male", "pointSize": "1.6pt", "line": "none", "xTitle": "Age (years)", "yTitle": "Length (cm)", "windowMode": "manual", "xmin": 0, "xmax": 10, "ymin": 0, "ymax": 450, "xStep": 1, "yStep": 50, "gridX": 0.2, "gridY": 10, "axisBreak": "off", "width": 10, "height": 8},
+    description: "Female (open squares) and male (dots) lengths against age on a fine grey grid with darker lines every 1 and 50, with a key; the second group goes under \"A second group (and a key)\".",
+    values: {"data": "0, 87\n1, 140\n2, 200\n3, 265\n4, 285\n4, 270\n5, 290\n6, 325\n7, 350\n7, 335\n8, 360\n8, 345\n9, 395\n10, 400", "data2": "0, 75\n1, 125\n2, 150\n3, 200\n3, 185\n4, 240\n4, 230\n5, 245\n6, 260\n6, 245\n7, 270\n7, 255\n8, 265\n8, 250\n9, 290\n9, 270\n10, 285\n10, 275", "pointStyle": "square", "pointStyle2": "dot", "name1": "Female", "name2": "Male", "pointSize": "1.6pt", "line": "none", "xTitle": "Age (years)", "yTitle": "Length (cm)", "windowMode": "manual", "xmin": 0, "xmax": 10, "ymin": 0, "ymax": 450, "xStep": 1, "yStep": 50, "gridX": 0.2, "gridY": 10, "gridShade": "gray!60", "majorX": 1, "majorY": 50, "axisBreak": "off", "width": 10, "height": 8},
   },
   {
     id: 'scatter-points-grid',

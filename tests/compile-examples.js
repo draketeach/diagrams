@@ -111,7 +111,7 @@ const jobs = [
       ['dotplot-styles', statgraph.generate({ ...d, graph: 'dot', dotData: '2.5:3 3 3.5:2 5', dotStyle: 'open', axisTitle: 'Time (h)', step: '0.5', numbers: 'second', axisArrow: 'latex' })],
       ['dotplot-crosses', statgraph.generate({ ...d, graph: 'dot', dotStyle: 'cross', numbers: 'none' })],
       ['boxplot-default', statgraph.generate({ ...d, graph: 'box' })],
-      ['boxplot-parallel', statgraph.generate(g('boxplot-parallel'))],
+      ['boxplot-parallel', statgraph.generate({ ...d, graph: 'box', boxData: 'Boys: 12, 15, 18, 22, 30\nGirls: 10, 14, 17, 19, 24; 31, 35', axisTitle: 'Score' })],
       ['boxplot-bare', statgraph.generate({ ...d, graph: 'box', boxData: 'Group A: 1, 2, 3, 4, 8; 0.2', line: 'none', caps: 'none', outlierStyle: 'cross' })],
       ['number-line-blank', statgraph.generate(g('number-line-blank'))],
       ['histogram-categories', statgraph.generate(g('histogram-categories'))],

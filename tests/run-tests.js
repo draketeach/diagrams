@@ -1153,6 +1153,13 @@ test('statistical graphs: bars with their own shades; box plots with dots at the
   assert.ok(box.includes('circle[radius=1.5pt]'), 'dots at the whisker ends');
 });
 
+test('scatterplot: darker grid lines every so often', () => {
+  const d = { ...defaultValues(scatter.schema), showGrid: true, gridX: 0.2, gridY: 10, majorX: 1, majorY: 50, windowMode: 'manual', xmin: 0, xmax: 10, ymin: 0, ymax: 450, axisBreak: 'off' };
+  const code = scatter.generate(d).code;
+  assert.ok(code.includes('% darker grid lines') && /\\draw\[black, thin, xstep=[\d.]+cm, ystep=[\d.]+cm/.test(code));
+  assert.ok(!scatter.generate({ ...d, majorX: null, majorY: null }).code.includes('darker grid lines'), 'none unless asked');
+});
+
 test('gallery.html versions are up to date', () => {
   const html = readFileSync(new URL('../gallery.html', import.meta.url), 'utf8');
   assert.equal(html, buildIndex(html));

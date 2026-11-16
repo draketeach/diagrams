@@ -84,7 +84,8 @@ Shift+click to remove the nearest one. Optional least-squares regression line
 (or a typed line), with its equation and/or r (separate options); axis titles (the y title is
 rotated); a grid with roughly square cells; scale numbers to the data's
 decimals; and zig-zag axis breaks, with 0 at the corner, when an axis starts
-far from 0 (automatic, always or never). With a grid, each break is exactly
+far from 0 (automatic, always or never), with darker grid lines every so often
+if you like (e.g. every 1 and every 50). With a grid, each break is exactly
 one grid square (squares up to 8 mm), so the axes sit on grid lines and the
 zig-zag is centred in the square. Points can be dots, open circles, open or
 filled squares, or crosses. A second group of points (with its own marker)
