@@ -38,7 +38,15 @@ export const NUMBER_LINE_FIELDS = [
     ],
   },
   { type: 'text', key: 'axisTitle', label: 'Title under the line', default: '', placeholder: 'e.g. Number of pets' },
+  { type: 'text', key: 'plotTitle', label: 'Title above (bold)', default: '', placeholder: 'e.g. Class A' },
 ];
+
+/** A bold heading centred over the whole picture (e.g. "Class A"), as on exam papers. */
+export function drawTitleAbove(b, title) {
+  if (!String(title ?? '').trim()) return;
+  b.comment('title');
+  b.add(`\\node[anchor=south, inner sep=2pt, yshift=4pt, font=\\sffamily\\bfseries] at (current bounding box.north) {${titleText(title)}};`);
+}
 
 /** Drawing options shared by the statistics plots. */
 export const STYLE_FIELDS = [

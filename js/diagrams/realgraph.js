@@ -141,10 +141,24 @@ export function titleText(s) {
 function numberList(s, where) {
   const t = String(s ?? '').trim();
   if (!t) return null;
+  // "0:10 am, 1:11 am": a number, then the words shown there (split at commas only)
+  if (t.includes(':')) return t.split(',').map((x) => x.trim()).filter(Boolean).map((x) => num(x.split(':')[0].trim(), where));
   return t
     .split(/[,;\s]+/)
     .filter(Boolean)
     .map((x) => num(x, where));
+}
+
+/** The words typed after the numbers ("1:11 am"), keyed by number; empty when there are none. */
+function numberWords(s, where) {
+  const out = [];
+  const t = String(s ?? '').trim();
+  if (!t.includes(':')) return out;
+  for (const x of t.split(',').map((y) => y.trim()).filter(Boolean)) {
+    const i = x.indexOf(':');
+    if (i >= 0) out.push([num(x.slice(0, i).trim(), where), x.slice(i + 1).trim()]);
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------- drawing
@@ -244,17 +258,23 @@ function generate(v) {
     if (v.spaceThousands && Math.abs(x) >= 10000) t = t.replace(/^(-?)(\d+)/, (m, sign, int) => sign + int.replace(/\B(?=(\d{3})+$)/g, '\\,'));
     return v.decimalComma ? t.replace('.', '{,}') : t;
   };
+  // words in place of a number ("1:11 am") are text; numbers are maths
+  const xWords = numberWords(v.xNumbers, 'x numbers');
+  const yWords = numberWords(v.yNumbers, 'y numbers');
+  const words = (list, t) => list.find(([u]) => near(u, t))?.[1];
   const fmtX = (x) => fmtWith(x, xDp);
   const fmtNum = (y) => fmtWith(y, yDp);
+  const showX = (x) => (words(xWords, x) !== undefined ? titleText(words(xWords, x)) : `$${fmtX(x)}$`);
+  const showY = (y) => (words(yWords, y) !== undefined ? titleText(words(yWords, y)) : `$${fmtNum(y)}$`);
   const origin = v.origin || 'corner';
   b.comment('scales');
   for (const x of xNums) {
     if (near(x, x0) && origin !== 'both') continue;
-    b.add(`\\draw[thin] ${pt(x, y0)} -- ++(0,-3pt) node[anchor=north, inner sep=2pt] {$${fmtX(x)}$};`);
+    b.add(`\\draw[thin] ${pt(x, y0)} -- ++(0,-3pt) node[anchor=north, inner sep=2pt] {${showX(x)}};`);
   }
   for (const y of yNums) {
     if (near(y, y0) && origin !== 'both') continue;
-    b.add(`\\draw[thin] ${pt(x0, y)} -- ++(-3pt,0) node[anchor=east, inner sep=2pt] {$${fmtNum(y)}$};`);
+    b.add(`\\draw[thin] ${pt(x0, y)} -- ++(-3pt,0) node[anchor=east, inner sep=2pt] {${showY(y)}};`);
   }
   // with only some numbers typed, a bare tick at every other step (e.g. every year, numbered 0, 4 and 10)
   if (v.allTicks) {
@@ -317,6 +337,10 @@ function generate(v) {
     }
   });
 
+  if (String(v.graphTitle ?? '').trim()) {
+    b.comment('title');
+    b.add(`\\node[anchor=south, inner sep=2pt, font=\\sffamily\\bfseries] at ${pt((xmin + xmax) / 2, ymax)} {${titleText(v.graphTitle)}};`);
+  }
   if (v.notToScale) {
     b.comment('note');
     b.add(`\\node[anchor=north west, align=center, xshift=0.6cm] at ${pt(xmax, ymax)} {NOT TO\\\\SCALE};`);
@@ -364,6 +388,7 @@ const schema = [
     type: 'group',
     label: 'Axis titles',
     fields: [
+      { type: 'text', key: 'graphTitle', label: 'Title above (bold)', default: '', placeholder: 'e.g. Fundraiser revenue and cost' },
       {
         type: 'row',
         fields: [

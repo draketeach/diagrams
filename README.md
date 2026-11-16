@@ -89,7 +89,8 @@ if you like (e.g. every 1 and every 50). With a grid, each break is exactly
 one grid square (squares up to 8 mm), so the axes sit on grid lines and the
 zig-zag is centred in the square. Points can be dots, open circles, open or
 filled squares, or crosses. A second group of points (with its own marker)
-goes under "A second group (and a key)"; naming the groups adds a key at the
+goes under "A second group (and a key)". Names typed under the x-axis
+(`Jo, Kim, Lee, Mal`) go at x = 1, 2, 3, … in place of the numbers. Naming the groups adds a key at the
 top right. The line and r use the first group only.
 
 A diagram type can take clicks on its preview: its `generate` returns
@@ -105,7 +106,7 @@ Segments (or short arrows) of chosen spacing and length over a chosen range,
 optionally none on the axes; labelled points (`x, y : A`); solution curves
 through the points (dashed or solid, computed with the Runge–Kutta method);
 dotted isoclines where dy/dx takes given values, optionally labelled; and the
-usual axis labels, scale ticks and NOT TO SCALE note.
+usual axis labels, scale ticks and NOT TO SCALE note, and a bold title can go above the graph.
 
 Fractions in labels are drawn full size (`\\displaystyle`), as on exam papers.
 
@@ -189,11 +190,13 @@ them doesn't lose what you typed.
   angles). Sectors go round from the top, clockwise or anticlockwise; shades
   are white, light grey, grey, dark grey, dots, sparse dots or hatch (the
   stipples need patterns.meta). Names go inside, and 90° sectors can have a
-  right-angle mark.
+  right-angle mark. The **Wheel** style puts the names round a rim (turned to
+  face outwards), centres the first sector at the top under a pointer, and
+  adds a dot at the centre (e.g. a wheel numbered 0 to 19).
 
 Dot plots and box plots use the same number line: from, to and the tick
 spacing (blank fits the data), numbers at every tick, every second tick or
-none, its length in cm, a title under it, and arrowheads at its ends. The
+none, its length in cm, a title under it, a bold title above (`Class $A$`), and arrowheads at its ends. The
 picture's x unit is the data's unit (`x=0.89cm`), so the code reads in the
 data's own numbers.
 
@@ -244,10 +247,11 @@ a thin space (`22 000`). Smooth sections are written as
 Bézier curves (`.. controls … ..`) so the directions can be set.
 
 The axes meet at the corner, with numbers every so often (or only the ones you
-list, with a bare tick at every other step if you like), one 0 at the corner
+list, with a bare tick at every other step if you like; `0:10 am, 1:11 am`
+shows words in place of numbers), one 0 at the corner
 (or one on each axis, or none), an optional grid (a spacing of 0 leaves out the
 lines that way, e.g. only an upright line each year) and an optional NOT TO
-SCALE note. Axis titles are text, centred under the x-axis and turned beside the
+SCALE note, and a bold title can go above the graph. Axis titles are text, centred under the x-axis and turned beside the
 y-axis (or at the axis ends): `\\` starts a new line, `$…$` is maths, `\$` is a
 dollar sign and `×` works.
 

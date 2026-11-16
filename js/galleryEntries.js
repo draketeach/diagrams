@@ -404,6 +404,13 @@ export const GALLERY = [
     values: { graph: 'dot' },
   },
   {
+    id: 'dotplot-class-a',
+    type: 'statgraph',
+    title: "Dot plot with a title above",
+    description: "Class A’s text messages from 1 to 6, with a bold title above and a title under the line.",
+    values: {"graph": "dot", "dotData": "1:2 2:2 3:4 4:4 5:6", "from": "1", "to": "6", "step": "1", "axisArrow": "none", "axisTitle": "Number of text messages", "plotTitle": "Class $A$", "width": 5},
+  },
+  {
     id: 'number-line-blank',
     type: 'statgraph',
     title: 'Number line to draw a box plot on',
@@ -451,6 +458,13 @@ export const GALLERY = [
     title: 'Spinner (pie chart)',
     description: 'Four sectors sized 15 : 50 : 25 : 10, going clockwise from the top, shaded grey, white, dotted and sparsely dotted, named inside, with the right angle marked.',
     values: { graph: 'pie', pieData: 'Yellow: 15, grey\nWhite: 50\nRed: 25, dots\nGreen: 10, sparse dots', pieRight: true, pieRadius: 2.6 },
+  },
+  {
+    id: 'pie-wheel',
+    type: 'statgraph',
+    title: "Numbered wheel with a pointer",
+    description: "Twenty equal sectors numbered 0 to 19 round the rim (Style: Wheel), 0 under the pointer at the top, with a dot at the centre.",
+    values: {"graph": "pie", "pieData": "0: 1\n1: 1\n2: 1\n3: 1\n4: 1\n5: 1\n6: 1\n7: 1\n8: 1\n9: 1\n10: 1\n11: 1\n12: 1\n13: 1\n14: 1\n15: 1\n16: 1\n17: 1\n18: 1\n19: 1", "pieStyle": "wheel", "pieRadius": 2.3},
   },
   {
     id: 'normal-95',
@@ -552,6 +566,20 @@ export const GALLERY = [
     title: "Regression line on a grid",
     description: "Five students' marks with the least-squares line y = 6 + 1.4x across the axes, on a fine grey grid with darker lines every 2 and every 4.",
     values: {"data": "3, 11\n5, 14\n6, 12\n7, 15\n9, 20", "line": "lsr", "lineExtent": "axes", "xTitle": "Assignment mark", "yTitle": "Test mark", "windowMode": "manual", "xmin": 0, "xmax": 10, "ymin": 0, "ymax": 24, "xStep": 1, "yStep": 4, "gridX": 0.2, "gridY": 0.8, "gridShade": "gray!60", "majorX": 2, "majorY": 4, "axisBreak": "off", "width": 10, "height": 4.8},
+  },
+  {
+    id: 'scatter-heart-rate',
+    type: 'scatter',
+    title: "Names under the x-axis",
+    description: "Heart rates before (dots) and after (squares) for Jo, Kim, Lee and Mal, typed in “Names under the x-axis” and placed at x = 1, 2, 3, 4, with level grid lines and a key.",
+    values: {"data": "1, 120\n2, 120\n3, 120\n4, 150", "data2": "1, 80\n2, 100\n3, 90\n4, 100", "pointStyle": "square", "pointStyle2": "dot", "name1": "After", "name2": "Before", "line": "none", "xTitle": "", "yTitle": "Heart rate", "xAxisLabel": "", "yAxisLabel": "", "xNames": "Jo, Kim, Lee, Mal", "windowMode": "manual", "xmin": 0, "xmax": 4.95, "ymin": 0, "ymax": 160, "xStep": 1, "yStep": 20, "showGrid": true, "gridX": 1, "gridY": 20, "gridShade": "gray!60", "axisArrow": "none", "axisBreak": "off", "width": 8, "height": 4.2},
+  },
+  {
+    id: 'scatter-bivariate-grid',
+    type: 'scatter',
+    title: "Scatterplot for strength and direction",
+    description: "Thirteen points with a moderate negative trend on a 1-by-50 grid, without axis letters.",
+    values: {"data": "0, 197\n1, 170\n2, 154\n2, 142\n3, 170\n4, 125\n4, 80\n5, 96\n5, 92\n6, 67\n6, 63\n8, 43\n8, 35", "line": "none", "xTitle": "", "yTitle": "", "xAxisLabel": "", "yAxisLabel": "", "windowMode": "manual", "xmin": 0, "xmax": 9, "ymin": 0, "ymax": 250, "xStep": 1, "yStep": 50, "showGrid": true, "gridX": 1, "gridY": 50, "gridShade": "gray!60", "axisBreak": "off", "width": 7, "height": 4.6},
   },
   {
     id: 'scatter-points-grid',
@@ -664,6 +692,27 @@ export const GALLERY = [
     title: "Straight-line then declining-balance value",
     description: "A straight line for 4 years, then a curve, with a grey upright line every year (y spacing 0), ticks every year but only 0, 4 and 10 numbered, and NOT TO SCALE.",
     values: {"curves": "0,50000 -- 4,39000 5,23200 6,15500 7,11800 8,9200 9,7700 10,6800", "xTitle": "Number of years", "yTitle": "Value of asset (\\$)", "xLetter": "", "yLetter": "", "xmin": 0, "xmax": 11.9, "ymin": 0, "ymax": 57500, "xStep": 1, "yStep": 50000, "xNumbers": "0, 4, 10", "yNumbers": "0, 50000", "allTicks": true, "origin": "both", "width": 7.1, "height": 5.6, "showGrid": true, "gridX": 1, "gridY": 0, "gridXmax": 10, "gridYmax": 50000, "gridColour": "grey", "curveWidth": "thin", "spaceThousands": true, "notToScale": true},
+  },
+  {
+    id: 'realgraph-runner-times',
+    type: 'realgraph',
+    title: "Travel graph with times",
+    description: "A runner’s distance from town in straight segments on a grey grid, with times under the x-axis typed as 0:10 am, 1:11 am, … and a tick at every 1 km.",
+    values: {"curves": "0,0 -- 1,10 -- 1.5,11 -- 3,10 -- 4.5,0", "xTitle": "Time", "yTitle": "Distance from town (km)", "xLetter": "", "yLetter": "", "xmin": 0, "xmax": 5.5, "ymin": 0, "ymax": 13.5, "xStep": 1, "yStep": 1, "xNumbers": "0:10 am, 1:11 am, 2:12 pm, 3:1 pm, 4:2 pm, 5:3 pm", "yNumbers": "0, 2, 4, 6, 8, 10, 12", "allTicks": true, "origin": "both", "width": 8.4, "height": 6, "showGrid": true, "gridX": 0.5, "gridY": 2, "gridXmax": 5, "gridYmax": 12, "gridColour": "grey", "curveWidth": "thin"},
+  },
+  {
+    id: 'realgraph-fundraiser',
+    type: 'realgraph',
+    title: "Revenue line with a title above",
+    description: "R = 70n from 0 to 150 people on a grid every 25 by $200, darker every $1000, with a bold title above for plotting the cost line.",
+    values: {"graphTitle": "Fundraiser revenue and cost", "curves": "0,0 -- 150,10500", "xTitle": "Number of people", "yTitle": "Revenue/Cost (\\$)", "xLetter": "", "yLetter": "", "xmin": 0, "xmax": 157, "ymin": 0, "ymax": 11500, "xStep": 25, "yStep": 1000, "xNumbers": "", "yNumbers": "", "origin": "both", "width": 8, "height": 9.4, "showGrid": true, "gridX": 25, "gridY": 200, "gridXmax": 150, "gridYmax": 11000, "gridColour": "grey", "majorX": 25, "majorY": 1000, "curveWidth": "thin", "spaceThousands": true},
+  },
+  {
+    id: 'realgraph-distance-sketch',
+    type: 'realgraph',
+    title: "Distance–time sketch",
+    description: "A small sketch of distance falling ever faster to 0, with letters d and t at the arrows and the titles Distance and Time, no numbers.",
+    values: {"curves": "0,0.95> 0.4,0.82 0.6,0.63 0.72,0.4 0.8,0@-75", "xTitle": "Time", "yTitle": "Distance", "xLetter": "t", "yLetter": "d", "xmin": 0, "xmax": 1.15, "ymin": 0, "ymax": 1.15, "xStep": 10, "yStep": 10, "xNumbers": "", "yNumbers": "", "origin": "none", "width": 2.6, "height": 2.4, "showGrid": false, "curveWidth": "thin"},
   },
   {
     id: 'realgraph-medication',

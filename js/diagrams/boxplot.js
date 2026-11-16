@@ -5,7 +5,7 @@
 // draw on.
 
 import { TikzBuilder, n } from '../lib/tikz.js';
-import { numberLineRange, drawNumberLine, pictureOptions } from '../lib/numberLine.js';
+import { numberLineRange, drawNumberLine, pictureOptions, drawTitleAbove } from '../lib/numberLine.js';
 import { titleText } from './realgraph.js';
 
 const EXAMPLES = {
@@ -146,5 +146,6 @@ export function boxGenerate(v) {
       b.add(`\\node[left] at (${n(left, 2)},${n(y)}) {${titleText(p.name)}};`);
     }
   });
+  drawTitleAbove(b, v.plotTitle);
   return { code: b.toString(pictureOptions(v, L.xu)), warnings };
 }

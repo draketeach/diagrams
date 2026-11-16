@@ -3,7 +3,7 @@
 // line for each value in the data.
 
 import { TikzBuilder, n } from '../lib/tikz.js';
-import { numberLineRange, drawNumberLine, pictureOptions } from '../lib/numberLine.js';
+import { numberLineRange, drawNumberLine, pictureOptions, drawTitleAbove } from '../lib/numberLine.js';
 
 const DATA_EXAMPLES = {
   rows: [
@@ -103,5 +103,6 @@ export function dotGenerate(v) {
       b.add(k === 1 ? one : `\\foreach \\k in {1,...,${k}} ${mark(x)}`);
     }
   }
+  drawTitleAbove(b, v.plotTitle);
   return { code: b.toString(pictureOptions(v, L.xu)), warnings };
 }

@@ -6,7 +6,7 @@
 
 import { parseExpression } from '../lib/mathParser.js';
 import { TikzBuilder, n, pt, mathLabel, arrowSpec, decimalsOf, LINE_WIDTHS, ARROW_TIPS, FONT_SIZES } from '../lib/tikz.js';
-import { niceStep } from '../lib/functionGraph.js';
+import { niceStep, splitList } from '../lib/functionGraph.js';
 import { row, group } from '../lib/graphOptions.js';
 import { titleText } from './realgraph.js';
 
@@ -157,6 +157,7 @@ const schema = [
           { type: 'text', key: 'yAxisLabel', label: 'y label', default: 'y' }
         ),
         { type: 'checkbox', key: 'scales', label: 'Ticks and numbers on the axes', default: true },
+        { type: 'text', key: 'xNames', label: 'Names under the x-axis (at x = 1, 2, 3, …)', default: '', placeholder: 'e.g. Jo, Kim, Lee, Mal' },
         row(
           { type: 'number', key: 'xStep', label: 'x tick spacing', default: null, step: 0.1, min: 0 },
           { type: 'number', key: 'yStep', label: 'y tick spacing', default: null, step: 0.1, min: 0 }
@@ -436,9 +437,13 @@ function generate(values) {
   // ---- tick labels (0 at the corner when an axis is broken)
   const scales = values.scales !== false; // off: bare axes, as in a sketch of the data
   if (scales) b.comment('scales');
-  for (const t of scales ? X.ticks : []) {
+  // names (Jo, Kim, …) at x = 1, 2, 3, … in place of the x numbers
+  const nameList = splitList(values.xNames).map((t) => t.trim());
+  const xNames = nameList.some(Boolean) ? nameList : [];
+  for (const t of scales && !xNames.length ? X.ticks : []) {
     b.add(`\\draw[${w}] ${pt(t, xAxisY)} -- ++(0,-3pt) node[anchor=north, inner sep=2pt] {$${fixed(t, X.dp)}$};`);
   }
+  xNames.forEach((name, i) => name && b.add(`\\node[anchor=north, inner sep=2pt, yshift=-3pt] at ${pt(i + 1, xAxisY)} {${titleText(name)}};`));
   for (const t of scales ? Y.ticks : []) {
     b.add(`\\draw[${w}] ${pt(yAxisX, t)} -- ++(-3pt,0) node[anchor=east, inner sep=2pt] {$${fixed(t, Y.dp)}$};`);
   }
@@ -459,7 +464,7 @@ function generate(values) {
   const yLabelChars = scales ? Math.max(1, ...Y.ticks.map((t) => fixed(t, Y.dp).length)) : 0;
   if (xTitle || yTitle) b.comment('axis titles');
   // below the scale numbers / left of them (distances in cm turned into graph units)
-  if (xTitle) b.add(`\\node[anchor=north] at ${pt((X.start + X.end) / 2, xAxisY - (scales ? 0.6 : 0.2) / Y.unit)} {${tex(xTitle)}};`);
+  if (xTitle) b.add(`\\node[anchor=north] at ${pt((X.start + X.end) / 2, xAxisY - (scales || xNames.length ? 0.6 : 0.2) / Y.unit)} {${tex(xTitle)}};`);
   if (yTitle) {
     const off = (0.3 + 0.2 * yLabelChars) / X.unit;
     b.add(`\\node[anchor=south, rotate=90] at ${pt(yAxisX - off, (Y.start + Y.end) / 2)} {${tex(yTitle)}};`);

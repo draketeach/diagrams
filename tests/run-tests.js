@@ -1173,6 +1173,33 @@ test('real-world graph: upright grid lines only, bare ticks between numbers, NOT
   assert.ok(ticked.includes('{NOT TO\\\\SCALE}'));
 });
 
+test('scatterplot: names under the x-axis in place of numbers', () => {
+  const d = { ...defaultValues(scatter.schema), data: '1, 120\n2, 100', windowMode: 'manual', xmin: 0, xmax: 5, ymin: 0, ymax: 160, axisBreak: 'off' };
+  const code = scatter.generate({ ...d, xNames: 'Jo, Kim, Lee, Mal' }).code;
+  assert.ok(code.includes('at (1,0) {Jo};') && code.includes('at (4,0) {Mal};'));
+  assert.ok(!code.includes('node[anchor=north, inner sep=2pt] {$1$}'), 'no x numbers');
+  assert.ok(scatter.generate(d).code.includes('{$1$}'), 'numbers when no names');
+});
+
+test('real-world graph: words for numbers (10 am) and a bold title above', () => {
+  const d = { ...defaultValues(realgraph.schema), curves: '0,0 -- 1,10', xmin: 0, xmax: 5.5, ymin: 0, ymax: 13, xStep: 1, yStep: 2,
+    xNumbers: '0:10 am, 1:11 am, 2:12 pm', yNumbers: '', origin: 'both', graphTitle: 'Fundraiser revenue' };
+  const code = realgraph.generate(d).code;
+  assert.ok(code.includes('{10 am};') && code.includes('{12 pm};') && !code.includes('(3,0) -- ++(0,-3pt)'));
+  assert.ok(code.includes('font=\\sffamily\\bfseries] at (2.75,13) {Fundraiser revenue};'));
+});
+
+test('statistical graphs: a wheel with a pointer, and a title above a dot plot', () => {
+  const pieData = Array.from({ length: 20 }, (_, i) => `${i}: 1`).join('\n');
+  const wheel = statgraph.generate({ ...defaultValues(statgraph.schema), graph: 'pie', pieData, pieStyle: 'wheel' }).code;
+  assert.ok(wheel.includes('at (90:') && wheel.includes('{0};'), '0 is centred at the top');
+  assert.ok(wheel.includes('{Pointer}') && wheel.includes('circle[radius=2.5pt]'));
+  const pie = statgraph.generate({ ...defaultValues(statgraph.schema), graph: 'pie', pieData }).code;
+  assert.ok(!pie.includes('Pointer') && pie.includes('(0,0) -- (90:2)'), 'pie charts still start at the top');
+  const dots = statgraph.generate({ ...defaultValues(statgraph.schema), graph: 'dot', plotTitle: 'Class $A$' }).code;
+  assert.ok(dots.includes('at (current bounding box.north) {Class $A$};'));
+});
+
 test('gallery.html versions are up to date', () => {
   const html = readFileSync(new URL('../gallery.html', import.meta.url), 'utf8');
   assert.equal(html, buildIndex(html));
