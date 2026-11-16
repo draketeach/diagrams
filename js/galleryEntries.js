@@ -903,7 +903,7 @@ export const GALLERY = [
     type: 'sketch',
     title: "Horizontal point of inflection",
     description: "A curve with two minima, a maximum and a horizontal point of inflection Q (gradient 0 between rising sections), marked with a dot and named Q.",
-    values: {"points": "0.6, 3.5\n1.1, 0, -2.2\n1.95, -0.6, 0\n3.5, 0, 0\n4.9, 0.55, 0\n5.5, 0, -1.6\n6.05, -0.8, 0\n6.3, 0, 7\n6.45, 3.5", "curvePoints": "3.5:Q", "curvePointLabel": "name", "curvePointDots": true, "leftEnd": "plain", "rightEnd": "plain", "labelX": false, "labelY": false, "tpLabel": "none", "windowMode": "manual", "xmin": -0.8, "xmax": 7.4, "ymin": -1.2, "ymax": 4.4, "width": 8, "height": 4.5},
+    values: {"points": "0.5, 3.5, -8\n2, -0.8, 0\n3.5, 0, 0\n5, 0.8, -0.5\n6, -1, 0\n6.5, 3.5, 20", "labelX": false, "leftEnd": "plain", "rightEnd": "plain", "curvePoints": "3.5:Q", "curvePointLabel": "name", "height": 4.5, "windowMode": "manual", "xmin": -0.8, "xmax": 7.4, "ymin": -1.2, "ymax": 4.4},
   },
   {
     id: 'sketch-flat-inflection',
